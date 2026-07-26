@@ -9,14 +9,56 @@ import { localeMiddleware } from '@/locale/middleware';
  */
 console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
+/**
+ * CORS support for the browser extension (mkext-template).
+ * Extension requests arrive with `Origin: chrome-extension://<id>`. We only add
+ * CORS headers for that origin so normal web/SSR traffic is completely unaffected.
+ * Bearer-token auth is used (not cookies), so credentials are not required.
+ */
+function isExtensionOrigin(origin: string | null): origin is string {
+  return !!origin && origin.startsWith('chrome-extension://');
+}
+
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Expose-Headers': 'set-auth-token',
+    Vary: 'Origin',
+  };
+}
+
 export default {
-  fetch(request: Request) {
-    return localeMiddleware(request, () =>
+  async fetch(request: Request) {
+    const origin = request.headers.get('Origin');
+
+    // Preflight from the extension: answer directly, don't hit the app handler.
+    if (isExtensionOrigin(origin) && request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    const response = await localeMiddleware(request, () =>
       handler.fetch(request, {
         context: {
           fromFetch: true,
         },
       })
     );
+
+    // Add CORS headers to extension responses (clone so headers stay mutable).
+    if (isExtensionOrigin(origin)) {
+      const headers = new Headers(response.headers);
+      for (const [key, value] of Object.entries(corsHeaders(origin))) {
+        headers.set(key, value);
+      }
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    }
+
+    return response;
   },
 };

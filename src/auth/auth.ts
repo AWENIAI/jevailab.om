@@ -10,7 +10,7 @@ import { serverEnv } from '@/env/server';
 import { websiteConfig } from '@/config/website';
 import { emailHarmony } from 'better-auth-harmony';
 import { apiKey } from '@better-auth/api-key';
-import { admin } from 'better-auth/plugins';
+import { admin, bearer } from 'better-auth/plugins';
 
 /**
  * Better Auth Configuration
@@ -20,6 +20,10 @@ import { admin } from 'better-auth/plugins';
 export const auth = betterAuth({
   baseURL: getBaseUrl(),
   appName: websiteConfig.metadata?.name,
+  // Allow the browser extension to authenticate cross-origin. The id is fixed
+  // via the extension's manifest `key` (see mkext-template/wxt.config.ts).
+  // https://www.better-auth.com/docs/reference/options#trustedorigins
+  trustedOrigins: ['chrome-extension://khlfglankbegadpognhkkgpgkamanfhi'],
   database: drizzleAdapter(getDb(), {
     provider: 'sqlite',
   }),
@@ -108,6 +112,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // https://www.better-auth.com/docs/plugins/bearer
+    // Let the browser extension authenticate via `Authorization: Bearer
+    // <token>`; the token is returned in the `set-auth-token` header.
+    bearer(),
     // https://www.better-auth.com/docs/plugins/admin
     // support user management, ban/unban user, manage user roles, etc.
     admin({
