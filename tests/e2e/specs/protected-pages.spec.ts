@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   cleanupE2EUsers,
   loginByForm,
@@ -64,4 +64,28 @@ test.describe('protected page smoke coverage', () => {
       }
     });
   }
+
+  test('keeps the desktop sidebar collapsed across protected route groups', async ({
+    page,
+    request,
+  }) => {
+    const user = await registerE2EUser(request, { role: 'user' });
+    await loginByForm(page, user);
+
+    const sidebar = page.locator('[data-slot="sidebar"]');
+    await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+
+    await sidebar.locator('a[href$="/settings/profile"]').click();
+    await expect(page).toHaveURL(/\/settings\/profile\/?$/);
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+
+    await sidebar.locator('a[href$="/settings/security"]').click();
+    await expect(page).toHaveURL(/\/settings\/security\/?$/);
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+
+    await sidebar.locator('a[href$="/dashboard"]').click();
+    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+  });
 });
