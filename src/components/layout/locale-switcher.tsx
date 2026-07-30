@@ -89,6 +89,7 @@ export function LocaleSwitcher({
         {locales.map((locale) => (
           <DropdownMenuItem
             key={locale}
+            className="h-8 py-0.5"
             onClick={() => switchLocale(locale)}
             disabled={locale === currentLocale}
           >

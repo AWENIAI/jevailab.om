@@ -155,6 +155,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
                       {locales.map((locale: Locale) => (
                         <DropdownMenuItem
                           key={locale}
+                          className="h-8 py-0.5"
                           onClick={() => switchLocale(locale)}
                           disabled={locale === currentLocale}
                         >
