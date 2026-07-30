@@ -15,7 +15,6 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
-import { Skeleton } from '@/components/ui/skeleton';
 import Container from '@/components/layout/container';
 import { Logo } from '@/components/shared/logo';
 import { ModeSwitcher } from '@/components/theme/mode-switcher';
@@ -168,7 +167,28 @@ export function Navbar({ scroll = true }: NavbarProps) {
               <ModeSwitcher />
               {websiteConfig.auth?.enable &&
                 (!mounted || isPending ? (
-                  <Skeleton className="size-8 rounded-full" />
+                  <div
+                    data-slot="auth-actions-placeholder"
+                    aria-hidden="true"
+                    className="flex shrink-0 items-center gap-4"
+                  >
+                    <span
+                      className={cn(
+                        buttonVariants({ variant: 'outline', size: 'sm' }),
+                        'pointer-events-none select-none'
+                      )}
+                    >
+                      {m.auth_common_login()}
+                    </span>
+                    <span
+                      className={cn(
+                        buttonVariants({ size: 'sm' }),
+                        'pointer-events-none select-none'
+                      )}
+                    >
+                      {m.auth_common_signup()}
+                    </span>
+                  </div>
                 ) : user ? (
                   <UserButton user={user} />
                 ) : (

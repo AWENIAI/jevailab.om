@@ -69,6 +69,47 @@ test.describe('public page smoke coverage', () => {
     monitor.expectNoErrors('home login modal');
   });
 
+  test('keeps desktop auth action width stable while session loads', async ({
+    page,
+  }) => {
+    let releaseSession = () => {};
+    const sessionGate = new Promise<void>((resolve) => {
+      releaseSession = resolve;
+    });
+
+    await page.route('**/api/auth/get-session', async (route) => {
+      await sessionGate;
+      await route.continue();
+    });
+
+    await page.goto('/');
+
+    const placeholder = page.locator('[data-slot="auth-actions-placeholder"]');
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toContainText('Log in');
+    await expect(placeholder).toContainText('Sign up');
+    const placeholderBox = await placeholder.boundingBox();
+    expect(placeholderBox).not.toBeNull();
+
+    releaseSession();
+
+    const loginButton = page.getByRole('button', { name: 'Log in' });
+    const signupLink = page.getByRole('link', { name: 'Sign up' });
+    await expect(loginButton).toBeVisible();
+    await expect(signupLink).toBeVisible();
+    await expect(placeholder).toHaveCount(0);
+
+    const loginBox = await loginButton.boundingBox();
+    const signupBox = await signupLink.boundingBox();
+    expect(loginBox).not.toBeNull();
+    expect(signupBox).not.toBeNull();
+    expect(
+      Math.abs(
+        signupBox!.x + signupBox!.width - loginBox!.x - placeholderBox!.width
+      )
+    ).toBeLessThanOrEqual(1);
+  });
+
   test('health check responds with pong', async ({ request }) => {
     const response = await request.get('/api/ping');
 

@@ -53,7 +53,8 @@ browser console errors or page errors.
 |---|---|---|
 | 1 | Public pages render successfully | Open `/`, `/pricing`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`, in `dark` and `light` mode. Verify each returns 2xx, renders a visible body, applies the requested theme, and emits no browser errors. |
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
-| 3 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
+| 3 | Desktop auth actions keep stable width while loading | Delay the session request, verify inert Login and Sign up placeholders are visible, then release the request and confirm the resolved actions occupy the same width. |
+| 4 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
 
 ## 2. Authentication And Protected Routes
 
