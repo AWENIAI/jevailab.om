@@ -22,10 +22,11 @@ import { UserButtonMobile } from '@/components/shared/user-button-mobile';
 import { LoginWrapper } from '@/components/auth/login-wrapper';
 import { websiteConfig } from '@/config/website';
 const mobileLinkClass =
-  'flex w-full items-center rounded-md p-2 text-base text-muted-foreground transition-colors duration-150 hover:text-foreground';
-const mobileLinkActiveClass = 'font-semibold text-primary';
+  'flex h-8 w-full items-center rounded-lg px-2.5 text-base text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:aria-expanded:bg-muted/50';
+const mobileLinkActiveClass =
+  'bg-muted font-semibold text-foreground dark:bg-muted/50';
 const mobileSubLinkClass =
-  'flex w-full items-center gap-4 rounded-md p-2 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground';
+  'flex w-full items-center gap-4 rounded-md p-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground dark:hover:bg-muted/50';
 interface NavbarMobileProps extends React.HTMLAttributes<HTMLDivElement> {}
 export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
   const pathname = useLocation().pathname;
@@ -124,9 +125,9 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
                               type="button"
                               variant="ghost"
                               className={cn(
-                                'w-full justify-between text-left text-base',
-                                'bg-transparent text-muted-foreground hover:text-foreground',
-                                active && 'font-semibold text-primary'
+                                mobileLinkClass,
+                                'justify-between bg-transparent text-left',
+                                active && mobileLinkActiveClass
                               )}
                             >
                               {item.title}

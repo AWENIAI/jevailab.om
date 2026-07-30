@@ -55,7 +55,8 @@ browser console errors or page errors.
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
 | 3 | Desktop auth actions keep stable width while loading | Delay the session request, verify inert Login and Sign up placeholders are visible, then release the request and confirm the resolved actions occupy the same width. |
 | 4 | Open mobile navigation hides at desktop breakpoint | Open the mobile navigation at a narrow viewport, resize to desktop width, and verify the mobile dialog no longer covers the desktop navigation. |
-| 5 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
+| 5 | Mobile navigation uses consistent interactive backgrounds | At a narrow viewport, verify standalone links gain the muted background on hover and active standalone, group, and nested links retain the same background treatment. |
+| 6 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
 
 ## 2. Authentication And Protected Routes
 

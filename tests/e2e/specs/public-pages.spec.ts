@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import {
   expectHealthyPage,
   installPageHealthMonitor,
@@ -127,6 +127,75 @@ test.describe('public page smoke coverage', () => {
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(mobileNavigation).toBeHidden();
+  });
+
+  test('uses consistent mobile navigation interaction backgrounds', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setTheme(page, 'light');
+
+    const openMobileNavigation = async () => {
+      await page.getByRole('button', { name: 'Toggle menu' }).click();
+      const navigation = page.getByRole('dialog', {
+        name: 'Mobile navigation',
+      });
+      await expect(navigation).toBeVisible();
+      return navigation;
+    };
+    const backgroundColor = (locator: Locator) =>
+      locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+    await page.goto('/');
+    let mobileNavigation = await openMobileNavigation();
+    const featuresLink = mobileNavigation.getByRole('link', {
+      name: 'Features',
+      exact: true,
+    });
+    const idleBackground = await backgroundColor(featuresLink);
+    await featuresLink.hover();
+    await expect
+      .poll(() => backgroundColor(featuresLink))
+      .not.toBe(idleBackground);
+
+    await page.goto('/pricing');
+    mobileNavigation = await openMobileNavigation();
+    const pricingLink = mobileNavigation.getByRole('link', {
+      name: 'Pricing',
+      exact: true,
+    });
+    expect(await backgroundColor(pricingLink)).not.toBe(
+      await backgroundColor(
+        mobileNavigation.getByRole('link', {
+          name: 'Features',
+          exact: true,
+        })
+      )
+    );
+
+    await page.goto('/contact');
+    mobileNavigation = await openMobileNavigation();
+    const pagesTrigger = mobileNavigation.getByRole('button', {
+      name: 'Pages',
+      exact: true,
+    });
+    expect(await backgroundColor(pagesTrigger)).not.toBe(
+      await backgroundColor(
+        mobileNavigation.getByRole('button', { name: 'AI', exact: true })
+      )
+    );
+
+    await pagesTrigger.click();
+    const contactLink = mobileNavigation.getByRole('link', {
+      name: 'Contact',
+      exact: true,
+    });
+    await expect(contactLink).toBeVisible();
+    expect(await backgroundColor(contactLink)).not.toBe(
+      await backgroundColor(
+        mobileNavigation.getByRole('link', { name: 'About', exact: true })
+      )
+    );
   });
 
   test('health check responds with pong', async ({ request }) => {
