@@ -110,6 +110,25 @@ test.describe('public page smoke coverage', () => {
     ).toBeLessThanOrEqual(1);
   });
 
+  test('hides open mobile navigation at the desktop breakpoint', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setTheme(page, 'light');
+
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveClass(/\blight\b/);
+    await page.getByRole('button', { name: 'Toggle menu' }).click();
+
+    const mobileNavigation = page.getByRole('dialog', {
+      name: 'Mobile navigation',
+    });
+    await expect(mobileNavigation).toBeVisible();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(mobileNavigation).toBeHidden();
+  });
+
   test('health check responds with pong', async ({ request }) => {
     const response = await request.get('/api/ping');
 
