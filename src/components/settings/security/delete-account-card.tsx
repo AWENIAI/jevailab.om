@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { authClient } from '@/auth/client';
-import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
@@ -55,11 +54,7 @@ export function DeleteAccountCard() {
     );
   };
   return (
-    <Card
-      className={cn(
-        'w-full border-destructive/50 overflow-hidden pt-6 pb-0 flex flex-col'
-      )}
-    >
+    <Card className="w-full overflow-hidden pt-6 pb-0 flex flex-col">
       <CardHeader>
         <CardTitle className="text-lg font-bold text-destructive">
           {m.settings_security_delete_account_title()}
