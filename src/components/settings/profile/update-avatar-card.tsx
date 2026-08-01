@@ -44,8 +44,9 @@ export function UpdateAvatarCard({ className }: UpdateAvatarCardProps) {
   const handleFileUpload = (file: File) => {
     const maxSize = websiteConfig.storage?.maxFileSize ?? DEFAULT_MAX_FILE_SIZE;
     if (file.size > maxSize) {
-      setError('File size exceeds the server limit');
-      toast.error('File size exceeds the server limit');
+      const message = m.settings_profile_avatar_file_too_large();
+      setError(message);
+      toast.error(message);
       return;
     }
     setError('');

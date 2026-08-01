@@ -34,7 +34,7 @@ function ChangelogPage() {
           </p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-8">
           {releases?.map((release) => (
             <ReleaseCard key={release.slug} release={release} />
           ))}

@@ -14,6 +14,7 @@ import { Footer } from '@/components/layout/footer';
 import { DefaultNotFound } from '@/components/layout/default-not-found';
 import { Toaster } from '@/components/shared/toaster';
 import { websiteConfig } from '@/config/website';
+import { m } from '@/locale/paraglide/messages';
 import appCss from '../styles.css?url';
 import { DefaultCatchBoundary } from '@/components/layout/default-catch-boundary';
 import { Routes } from '@/lib/routes';
@@ -168,6 +169,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-primary"
+        >
+          {m.common_skip_to_content()}
+        </a>
         <ThemeProvider>
           <TooltipProvider>
             {children}

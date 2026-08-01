@@ -19,13 +19,13 @@
 
 ### Aesthetic Direction
 
-**Visual tone:** Ultra-minimal. Monochrome neutral palette with zero decorative color. Dark mode is the default and primary experience. Surfaces are flat with minimal elevation — prefer subtle rings and translucent borders over shadows. Density is compact, respecting screen real estate.
+**Visual tone:** Ultra-minimal. Warm-charcoal neutrals with a single amber accent; decorative color is limited to low-opacity amber/ochre gradients. Dark mode is the default and primary experience. Surfaces are flat with minimal elevation — prefer subtle rings and translucent borders over shadows. Density is compact, respecting screen real estate.
 
 **Typography:** Bricolage Grotesque at medium weight (500) as the default. A distinctive but professional grotesque sans-serif that adds just enough personality without being distracting. Bold (700) for headings only.
 
 **Shape language:** Moderately rounded (8px base radius). Not pill-shaped, not sharp — balanced and quiet.
 
-**Color philosophy:** Achromatic grayscale using oklch color space. The only chromatic accents are functional (destructive red, chart blues). No brand accent color — the monochrome palette IS the brand. Even more minimal than typical dark SaaS themes.
+**Color philosophy:** Warm-charcoal grayscale in oklch color space with one amber primary (oklch 0.553 0.195 38.402) shared by both themes. Chroma is reserved for the primary accent, functional states (destructive red), chart hues, and low-opacity warm gradients. The restraint of the neutrals is the brand, and the amber is earned rather than sprayed.
 
 **Theme:** Dark-first with full light/dark/system support. Dark mode uses semi-transparent white borders for a subtle glassy depth effect.
 
@@ -43,7 +43,7 @@
 
 ### Design Principles
 
-1. **Content over chrome.** The interface should disappear. No decorative elements, no gratuitous color, no visual noise. Every pixel serves a purpose.
+1. **Content over chrome.** The interface should disappear. No decorative elements, no gratuitous color — the amber accent earns its place or disappears. Every pixel serves a purpose.
 
 2. **Quiet confidence.** The design should feel assured without being loud. Subtle polish (consistent spacing, precise alignment, smooth transitions) communicates quality better than bold visuals.
 
@@ -62,3 +62,4 @@
 - **Animation:** tw-animate-css (minimal, purposeful transitions)
 - **Font:** Bricolage Grotesque (400, 500, 600, 700 weights, Latin subset)
 - **Dark mode:** Class-based (`.dark` on `<html>`), localStorage-persisted
+- **Color tokens:** oklch variables with the warm amber primary (`--primary`), a warm off-white primary foreground (`--primary-foreground`), and warm chart hues (`--chart-1..5`)

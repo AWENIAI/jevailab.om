@@ -14,19 +14,27 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
   const formattedDate = formatDate(new Date(release.date));
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold tracking-tight">{release.title}</h2>
           <Badge variant="default" className="w-fit">
-            <IconTag className="mr-1 size-3" />
+            <IconTag className="mr-1 size-3" aria-hidden="true" />
             {release.version}
           </Badge>
         </div>
         <p className="text-muted-foreground">{release.description}</p>
         <div className="flex items-center gap-2">
-          <IconCalendar className="size-4 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          <IconCalendar
+            className="size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <time
+            dateTime={release.date}
+            className="text-sm text-muted-foreground"
+          >
+            {formattedDate}
+          </time>
         </div>
         <Separator />
       </CardHeader>

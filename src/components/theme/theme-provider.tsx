@@ -160,10 +160,22 @@ export function ThemeProvider({
   React.useEffect(() => {
     setIsMounted(true);
 
+    let hydratedTheme = theme;
+    try {
+      const storedTheme = localStorage.getItem(storageKey) as Theme | null;
+      if (storedTheme) {
+        hydratedTheme = storedTheme;
+        if (storedTheme !== theme) setThemeState(storedTheme);
+      }
+    } catch {
+      // Ignore localStorage errors and keep the configured default theme.
+    }
+
     // Immediately apply the correct theme on hydration
-    const currentTheme = theme === 'system' ? systemTheme : theme;
+    const currentTheme =
+      hydratedTheme === 'system' ? systemTheme : hydratedTheme;
     applyTheme(currentTheme);
-  }, [theme, systemTheme, applyTheme]);
+  }, [theme, systemTheme, storageKey, applyTheme]);
 
   const value = React.useMemo(
     () => ({
@@ -193,3 +205,23 @@ export const useTheme = () => {
 
   return context;
 };
+
+export function useResolvedTheme() {
+  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>(
+    'dark'
+  );
+
+  React.useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => {
+      setResolvedTheme(root.classList.contains('dark') ? 'dark' : 'light');
+    };
+
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  return resolvedTheme;
+}

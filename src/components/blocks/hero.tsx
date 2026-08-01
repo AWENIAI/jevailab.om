@@ -5,7 +5,10 @@ import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Routes } from '@/lib/routes';
+import { useResolvedTheme } from '@/components/theme/theme-provider';
 export default function HeroSection() {
+  const isDark = useResolvedTheme() === 'dark';
+
   return (
     <section id="hero" className="overflow-hidden">
       {/* background, warm-tinted light blobs on top of the hero section */}
@@ -81,19 +84,13 @@ export default function HeroSection() {
 
           {/* images */}
           <div className="animate-fade-up delay-4 relative overflow-hidden px-2 my-8 sm:my-12 md:my-16">
-            <div className="inset-shadow-2xs ring-muted/50 dark:inset-shadow-white/20 bg-muted/50 relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+            <div className="inset-shadow-2xs ring-muted/50 dark:inset-shadow-white/20 bg-muted/50 relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-black/15 ring-1">
               <img
-                className="bg-muted/50 relative hidden rounded-2xl dark:block w-full"
-                src="https://cdn.mksaas.com/blocks/music.png"
-                alt={m.block_hero_image_alt({ mode: 'dark' })}
-                fetchPriority="high"
-                width={2796}
-                height={2008}
-              />
-              <img
-                className="z-2 border-border/25 relative rounded-2xl border dark:hidden w-full"
-                src="https://cdn.mksaas.com/blocks/music-light.png"
-                alt={m.block_hero_image_alt({ mode: 'light' })}
+                className="bg-muted/50 relative rounded-2xl w-full"
+                src={isDark ? '/blocks/music.webp' : '/blocks/music-light.webp'}
+                alt={m.block_hero_image_alt({
+                  mode: isDark ? 'dark' : 'light',
+                })}
                 fetchPriority="high"
                 width={2796}
                 height={2008}

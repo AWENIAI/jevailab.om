@@ -1,4 +1,5 @@
 import { m } from '@/locale/paraglide/messages';
+import { TableRowSkeleton } from '@/components/data-table/table-row-skeleton';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -18,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import {
   Table,
@@ -47,17 +47,6 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
-function TableRowSkeleton({ columns }: { columns: number }) {
-  return (
-    <TableRow className="h-14">
-      {Array.from({ length: columns }).map((_, index) => (
-        <TableCell key={index} className="py-3">
-          <Skeleton className="h-4 w-24" />
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-}
 function toDate(value: number | Date | undefined | null): Date | null {
   if (value == null) return null;
   return value instanceof Date ? value : new Date(value);
@@ -145,7 +134,9 @@ export function FilesTable({
                 : 'bg-muted text-muted-foreground'
             )}
           >
-            {row.original.isPublic ? 'Public' : 'Private'}
+            {row.original.isPublic
+              ? m.settings_files_public()
+              : m.settings_files_private()}
           </span>
         ),
         minSize: 80,
@@ -369,7 +360,10 @@ export function FilesTable({
             <TableBody>
               {loading ? (
                 Array.from({ length: pageSize }).map((_, index) => (
-                  <TableRowSkeleton key={index} columns={columns.length} />
+                  <TableRowSkeleton
+                    key={index}
+                    columns={table.getVisibleLeafColumns().length}
+                  />
                 ))
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (

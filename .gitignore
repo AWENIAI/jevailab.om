@@ -24,6 +24,9 @@ src/locale/paraglide
 # claude code
 .claude
 
+# impeccable tooling (runtime state and local live config)
+.impeccable
+
 # codebuddy
 .codebuddy
 

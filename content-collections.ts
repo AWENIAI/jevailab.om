@@ -22,7 +22,7 @@ const blog = defineCollection({
     date: z.string(),
     category: z.string(),
     content: z.string(),
-    image: z.url(),
+    image: z.string().min(1),
   }),
   transform: (doc) => {
     const { locale, slug } = getLocaleSlug(

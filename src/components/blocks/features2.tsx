@@ -7,7 +7,10 @@ import {
   IconCompass,
   IconMail,
 } from '@tabler/icons-react';
+import { useResolvedTheme } from '@/components/theme/theme-provider';
 export default function Features2Section() {
+  const isDark = useResolvedTheme() === 'dark';
+
   return (
     <section id="features2" className="px-4 py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-2 lg:px-0 space-y-8 lg:space-y-20">
@@ -52,17 +55,15 @@ export default function Features2Section() {
             </div>
 
             <div className="relative rounded-3xl border border-border/50 p-3 lg:col-span-3">
-              <div className="relative aspect-76/59 rounded-2xl bg-linear-to-b from-zinc-300 to-transparent p-px dark:from-zinc-700">
+              <div className="relative aspect-76/59 rounded-2xl bg-linear-to-b from-border to-transparent p-px">
                 <img
-                  src="https://cdn.mksaas.com/blocks/dark-card.webp"
-                  alt={m.block_features2_card_alt({ mode: 'dark' })}
-                  className="hidden size-full rounded-[15px] object-cover dark:block"
-                  loading="lazy"
-                />
-                <img
-                  src="https://cdn.mksaas.com/blocks/card.png"
-                  alt={m.block_features2_card_alt({ mode: 'light' })}
-                  className="size-full rounded-[15px] object-cover shadow dark:hidden"
+                  src={isDark ? '/blocks/dark-card.webp' : '/blocks/card.webp'}
+                  alt={m.block_features2_card_alt({
+                    mode: isDark ? 'dark' : 'light',
+                  })}
+                  width={isDark ? 2400 : 2880}
+                  height={isDark ? 1800 : 2074}
+                  className="size-full rounded-[15px] object-cover shadow"
                   loading="lazy"
                 />
               </div>

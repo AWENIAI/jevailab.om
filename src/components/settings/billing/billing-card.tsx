@@ -215,7 +215,7 @@ export function BillingCard() {
               </div>
             )}
             {subscription.status === 'trialing' && trialEndDate && (
-              <div className="text-amber-600">
+              <div className="text-amber-600 dark:text-amber-400">
                 {m.settings_billing_card_trial_ends()} {trialEndDate}
               </div>
             )}

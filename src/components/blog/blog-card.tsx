@@ -14,7 +14,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
 
   return (
     <Link to="/blog/$slug" params={{ slug }} className="h-full">
-      <Card className="h-full py-0 transition-[box-shadow,ring-color] hover:shadow-md dark:hover:ring-foreground/20">
+      <Card className="h-full border border-border py-0 ring-0 transition-colors hover:border-primary">
         {post.image && (
           <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-muted">
             <img
@@ -37,7 +37,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
           </span>
         </CardHeader>
         <CardContent className="pb-4">
-          <CardTitle className="line-clamp-2 text-lg">
+          <CardTitle className="line-clamp-2 text-lg font-semibold">
             <h2>{post.title}</h2>
           </CardTitle>
           {post.description && (

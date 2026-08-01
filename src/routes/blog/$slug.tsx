@@ -2,6 +2,8 @@ import { m } from '@/locale/paraglide/messages';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import Container from '@/components/layout/container';
 import { Markdown } from '@/components/markdown/markdown';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { getPostBySlug } from '@/lib/blog';
 import { websiteConfig } from '@/config/website';
 import { getCanonicalUrl, getImageUrl } from '@/lib/urls';
@@ -79,49 +81,44 @@ function BlogPostPage() {
   return (
     <Container className="py-16 px-4">
       <div className="mx-auto max-w-4xl">
-        <Link
-          to="/blog"
-          search={{ page: 1 }}
-          className="mb-6 inline-flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground"
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-6"
+          nativeButton={false}
+          render={<Link to="/blog" search={{ page: 1 }} />}
         >
-          <IconArrowLeft className="size-4" />
+          <IconArrowLeft className="size-4" aria-hidden="true" />
           {m.blog_all_posts()}
-        </Link>
+        </Button>
 
-        <article>
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
-            <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium capitalize">
-              {post.category}
-            </span>
-            <span>{formatDate(new Date(post.date))}</span>
-          </div>
+        <Card className="px-5 py-8 md:px-10 md:py-12">
+          <article>
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
+              <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium capitalize">
+                {post.category}
+              </span>
+              <time dateTime={post.date}>
+                {formatDate(new Date(post.date))}
+              </time>
+            </div>
 
-          <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
 
-          {post.description && (
-            <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              {post.description}
-            </p>
-          )}
+            {post.description && (
+              <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
+                {post.description}
+              </p>
+            )}
 
-          <div className="mt-6 pt-10 border-t border-border">
-            <Markdown
-              content={post.content}
-              className="prose prose-neutral dark:prose-invert max-w-none"
-            />
-          </div>
-
-          <div className="mt-10 pt-6 border-t border-border">
-            <Link
-              to="/blog"
-              search={{ page: 1 }}
-              className="inline-flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground"
-            >
-              <IconArrowLeft className="size-4" />
-              {m.blog_all_posts()}
-            </Link>
-          </div>
-        </article>
+            <div className="mt-6 pt-10 border-t border-border">
+              <Markdown
+                content={post.content}
+                className="prose prose-neutral dark:prose-invert max-w-none"
+              />
+            </div>
+          </article>
+        </Card>
       </div>
     </Container>
   );

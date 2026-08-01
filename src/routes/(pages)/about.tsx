@@ -36,7 +36,7 @@ function AboutPage() {
                     alt={m.about_avatar()}
                   />
                   <AvatarFallback className="absolute inset-0">
-                    <div className="size-32 text-muted-foreground" />
+                    {websiteConfig.metadata?.name?.charAt(0) ?? 'T'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -60,12 +60,12 @@ function AboutPage() {
                       href={twitter}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={cn(
-                        buttonVariants({ variant: 'outline' }),
-                        'rounded-lg'
-                      )}
+                      className={buttonVariants({ variant: 'outline' })}
                     >
-                      <IconBrandXFilled className="mr-1 size-4" />
+                      <IconBrandXFilled
+                        className="mr-1 size-4"
+                        aria-hidden="true"
+                      />
                       {m.about_follow_us()}
                     </a>
                   )}
@@ -74,10 +74,13 @@ function AboutPage() {
                       href={supportEmail}
                       className={cn(
                         buttonVariants(),
-                        'rounded-lg inline-flex items-center'
+                        'inline-flex items-center'
                       )}
                     >
-                      <IconMailFilled className="mr-1 size-4" />
+                      <IconMailFilled
+                        className="mr-1 size-4"
+                        aria-hidden="true"
+                      />
                       {m.about_contact_us()}
                     </a>
                   )}

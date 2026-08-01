@@ -18,12 +18,15 @@ export function MarkdownPage({ page }: { page: PageDoc }) {
           </p>
         )}
         {date && (
-          <p className="text-center text-sm text-muted-foreground">
+          <time
+            dateTime={date}
+            className="text-center text-sm text-muted-foreground"
+          >
             {formatDate(new Date(date))}
-          </p>
+          </time>
         )}
       </div>
-      <Card className="ring-0 border border-border">
+      <Card>
         <CardContent>
           <Markdown
             content={content}

@@ -17,10 +17,10 @@ import { useMemo } from 'react';
  * Filters sidebar links based on user role (authorizeOnly)
  */
 function useFilteredSidebarLinks(user: SessionUser): MenuItemConfig[] {
-  const links = getSidebarLinks();
   const userRole = user.role;
 
   return useMemo(() => {
+    const links = getSidebarLinks();
     const filterByRole = (items: MenuItemConfig[]): MenuItemConfig[] => {
       return items
         .filter((item) => {
@@ -41,7 +41,7 @@ function useFilteredSidebarLinks(user: SessionUser): MenuItemConfig[] {
     };
 
     return filterByRole(links);
-  }, [links, userRole]);
+  }, [userRole]);
 }
 
 interface SidebarMainProps {

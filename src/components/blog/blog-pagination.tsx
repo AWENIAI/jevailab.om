@@ -24,7 +24,10 @@ export function BlogPagination({
           {m.blog_previous()}
         </Link>
       ) : (
-        <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-border px-4 py-2 text-muted-foreground text-sm">
+        <span
+          aria-disabled="true"
+          className="inline-flex cursor-not-allowed items-center rounded-lg border border-border px-4 py-2 text-muted-foreground text-sm"
+        >
           {m.blog_previous()}
         </span>
       )}
@@ -40,7 +43,10 @@ export function BlogPagination({
           {m.blog_next()}
         </Link>
       ) : (
-        <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-border px-4 py-2 text-muted-foreground text-sm">
+        <span
+          aria-disabled="true"
+          className="inline-flex cursor-not-allowed items-center rounded-lg border border-border px-4 py-2 text-muted-foreground text-sm"
+        >
           {m.blog_next()}
         </span>
       )}
