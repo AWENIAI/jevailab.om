@@ -59,12 +59,12 @@ export default function NewsletterCard() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex w-full max-w-md flex-col items-center gap-4"
           >
-            <div className="flex w-full items-center">
+            <div className="flex w-full items-start">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem className="relative w-full space-y-0">
+                  <FormItem className="w-full space-y-0">
                     <FormLabel className="sr-only">
                       {m.newsletter_email()}
                     </FormLabel>
@@ -76,9 +76,11 @@ export default function NewsletterCard() {
                         {...field}
                       />
                     </FormControl>
-                    <div className="absolute -bottom-6 left-0">
-                      <FormMessage className="text-destructive text-sm" />
-                    </div>
+                    {form.formState.errors.email ? (
+                      <div className="mt-1">
+                        <FormMessage className="text-destructive text-sm" />
+                      </div>
+                    ) : null}
                   </FormItem>
                 )}
               />

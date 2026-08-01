@@ -14,6 +14,7 @@ import {
   IconFingerprint,
   IconId,
 } from '@tabler/icons-react';
+import { useResolvedTheme } from '@/components/theme/theme-provider';
 import { useState } from 'react';
 type ImageKey = 'item-1' | 'item-2' | 'item-3' | 'item-4';
 const icons: Record<ImageKey, Icon> = {
@@ -27,32 +28,38 @@ const images: Record<
   {
     image: string;
     darkImage: string;
-    alt: string;
+    width: number;
+    height: number;
   }
 > = {
   'item-1': {
-    image: 'https://cdn.mksaas.com/blocks/charts-light.png',
-    darkImage: 'https://cdn.mksaas.com/blocks/charts.png',
-    alt: 'Product Feature One',
+    image: '/blocks/charts-light.webp',
+    darkImage: '/blocks/charts.webp',
+    width: 2572,
+    height: 868,
   },
   'item-2': {
-    image: 'https://cdn.mksaas.com/blocks/music-light.png',
-    darkImage: 'https://cdn.mksaas.com/blocks/music.png',
-    alt: 'Product Feature Two',
+    image: '/blocks/music-light.webp',
+    darkImage: '/blocks/music.webp',
+    width: 2796,
+    height: 2008,
   },
   'item-3': {
-    image: 'https://cdn.mksaas.com/blocks/mail2-light.png',
-    darkImage: 'https://cdn.mksaas.com/blocks/mail2.png',
-    alt: 'Product Feature Three',
+    image: '/blocks/mail2-light.webp',
+    darkImage: '/blocks/mail2.webp',
+    width: 2700,
+    height: 1440,
   },
   'item-4': {
-    image: 'https://cdn.mksaas.com/blocks/payments-light.png',
-    darkImage: 'https://cdn.mksaas.com/blocks/payments.png',
-    alt: 'Product Feature Four',
+    image: '/blocks/payments-light.webp',
+    darkImage: '/blocks/payments.webp',
+    width: 1207,
+    height: 929,
   },
 };
 export default function FeaturesSection() {
   const [activeItem, setActiveItem] = useState<ImageKey>('item-1');
+  const isDark = useResolvedTheme() === 'dark';
   const featureItems = [
     {
       key: 'item-1' as const,
@@ -130,16 +137,19 @@ export default function FeaturesSection() {
                   className="animate-crossfade-in size-full overflow-hidden rounded-2xl border bg-muted shadow-md"
                 >
                   <img
-                    src={images[activeItem].image}
-                    alt={images[activeItem].alt}
+                    src={
+                      isDark
+                        ? images[activeItem].darkImage
+                        : images[activeItem].image
+                    }
+                    alt={
+                      featureItems.find((item) => item.key === activeItem)
+                        ?.title ?? ''
+                    }
                     loading="lazy"
-                    className="size-full object-cover object-top-left rounded-2xl dark:hidden"
-                  />
-                  <img
-                    src={images[activeItem].darkImage}
-                    alt={images[activeItem].alt}
-                    loading="lazy"
-                    className="hidden size-full object-cover object-top-left rounded-2xl dark:block"
+                    width={images[activeItem].width}
+                    height={images[activeItem].height}
+                    className="size-full object-cover object-top-left rounded-2xl"
                   />
                 </div>
               </div>

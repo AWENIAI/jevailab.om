@@ -53,17 +53,38 @@ function StatusIcon({ status }: { status: PaymentStatus }) {
   switch (status) {
     case 'processing':
       return (
-        <IconLoader2 className="size-12 shrink-0 text-cyan-600 animate-spin" />
+        <IconLoader2
+          className="size-12 shrink-0 text-cyan-600 animate-spin dark:text-cyan-400"
+          aria-hidden="true"
+        />
       );
     case 'success':
-      return <IconCircleCheck className="size-12 shrink-0 text-green-600" />;
+      return (
+        <IconCircleCheck
+          className="size-12 shrink-0 text-green-600 dark:text-green-400"
+          aria-hidden="true"
+        />
+      );
     case 'failed':
-      return <IconCircleX className="size-12 shrink-0 text-red-600" />;
+      return (
+        <IconCircleX
+          className="size-12 shrink-0 text-red-600 dark:text-red-400"
+          aria-hidden="true"
+        />
+      );
     case 'timeout':
-      return <IconAlertCircle className="size-12 shrink-0 text-yellow-600" />;
+      return (
+        <IconAlertCircle
+          className="size-12 shrink-0 text-yellow-600 dark:text-yellow-400"
+          aria-hidden="true"
+        />
+      );
     default:
       return (
-        <IconLoader2 className="size-12 shrink-0 text-muted-foreground animate-spin" />
+        <IconLoader2
+          className="size-12 shrink-0 text-muted-foreground animate-spin"
+          aria-hidden="true"
+        />
       );
   }
 }

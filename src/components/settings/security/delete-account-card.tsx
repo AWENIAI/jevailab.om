@@ -56,7 +56,7 @@ export function DeleteAccountCard() {
   return (
     <Card className="w-full overflow-hidden pt-6 pb-0 flex flex-col">
       <CardHeader>
-        <CardTitle className="text-lg font-bold text-destructive">
+        <CardTitle className="text-lg font-semibold text-destructive">
           {m.settings_security_delete_account_title()}
         </CardTitle>
         <CardDescription>

@@ -2,6 +2,7 @@ import { m } from '@/locale/paraglide/messages';
 import { websiteConfig } from '@/config/website';
 import { useSubscribeNewsletter } from '@/hooks/use-newsletter';
 import { FormError } from '@/components/shared/form-error';
+import { FormSuccess } from '@/components/shared/form-success';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -36,6 +37,7 @@ export function WaitlistFormCard() {
     defaultValues: { email: '' },
   });
   const isPending = subscribeMutation.isPending;
+  const isSuccess = subscribeMutation.isSuccess;
   async function onSubmit(values: FormValues) {
     setError(undefined);
     try {
@@ -73,6 +75,7 @@ export function WaitlistFormCard() {
               )}
             />
             <FormError message={error} />
+            {isSuccess && <FormSuccess message={m.waitlist_success()} />}
           </CardContent>
           <CardFooter className="mt-6 flex items-center justify-between rounded-none border-t bg-muted px-6 py-4">
             <Button type="submit" disabled={isPending}>

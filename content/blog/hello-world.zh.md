@@ -3,7 +3,7 @@ title: Hello World
 description: 博客的简单介绍，以及你可以在这里发布什么内容。
 date: 2026-02-11
 category: 通用
-image: https://cdn.mksaas.com/tanstarter/template/blog-hello-world.jpeg
+image: /blocks/blog-hello-world.webp
 ---
 
 这是博客的第一篇文章。你可以在这里使用 **Markdown** 编写内容。
@@ -22,7 +22,7 @@ image: https://cdn.mksaas.com/tanstarter/template/blog-hello-world.jpeg
 
 你可以添加 [链接](https://example.com)，也可以引用图片。建议保持布局简单清晰，便于阅读。
 
-![img](https://cdn.mksaas.com/tanstarter/template/blog-hello-world.jpeg)
+![img](/blocks/blog-hello-world.webp)
 
 ## 代码
 

@@ -69,6 +69,34 @@ test.describe('public page smoke coverage', () => {
     monitor.expectNoErrors('home login modal');
   });
 
+  for (const theme of ['dark', 'light'] as const) {
+    test(`renders one theme-specific marketing image in ${theme} mode`, async ({
+      page,
+    }) => {
+      await setTheme(page, theme);
+      await page.goto('/');
+      await expect(page.locator('html')).toHaveClass(
+        new RegExp(`\\b${theme}\\b`)
+      );
+
+      const heroImage = page.locator('#hero img');
+      await expect(heroImage).toHaveCount(1);
+      await expect(heroImage).toHaveAttribute(
+        'alt',
+        new RegExp(`${theme} mode`)
+      );
+      await expect(heroImage).toHaveAttribute('width', '2796');
+      await expect(heroImage).toHaveAttribute('height', '2008');
+
+      const featuresImage = page.locator('#features img');
+      await expect(featuresImage).toHaveCount(1);
+      await expect(featuresImage).toHaveAttribute('width');
+      await expect(featuresImage).toHaveAttribute('height');
+
+      await expect(page.locator('#features2 img')).toHaveCount(1);
+    });
+  }
+
   test('keeps desktop auth action width stable while session loads', async ({
     page,
   }) => {

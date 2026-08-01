@@ -409,7 +409,10 @@ export function UsersTable({
             <TableBody>
               {loading ? (
                 Array.from({ length: pageSize }).map((_, i) => (
-                  <TableRowSkeleton key={i} columns={columns.length} />
+                  <TableRowSkeleton
+                    key={i}
+                    columns={table.getVisibleLeafColumns().length}
+                  />
                 ))
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (

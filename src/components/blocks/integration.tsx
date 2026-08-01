@@ -4,24 +4,23 @@ import { ScrollReveal } from '@/components/shared/scroll-reveal';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import {
-  IconBrandCodesandbox,
+  IconBrandCloudflare,
   IconBrandGoogleFilled,
   IconBrandOpenai,
   IconBrandReact,
-  IconBrandVisualStudio,
-  IconBrandWikipedia,
+  IconBrandStripe,
+  IconBrandTypescript,
   IconChevronRight,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
 // Brand colors (visible on both light and dark backgrounds)
 export const BRAND_COLORS = {
   openai: '#0d8c6c',
-  codesandbox: '#e06a10',
+  stripe: '#635bff',
+  cloudflare: '#f38020',
   react: '#149eca',
-  vs: '#0065a9',
-  wikipedia: '#9c27b0',
+  typescript: '#3178c6',
   google: '#2a6fdb',
 } as const;
 function getItems(): Array<{
@@ -29,6 +28,7 @@ function getItems(): Array<{
   description: string;
   icon: Icon;
   color: string;
+  href: string;
 }> {
   return [
     {
@@ -36,36 +36,42 @@ function getItems(): Array<{
       description: m.home_integration_items_item_1_description(),
       icon: IconBrandOpenai,
       color: BRAND_COLORS.openai,
+      href: 'https://openai.com',
     },
     {
       title: m.home_integration_items_item_2_title(),
       description: m.home_integration_items_item_2_description(),
-      icon: IconBrandCodesandbox,
-      color: BRAND_COLORS.codesandbox,
+      icon: IconBrandStripe,
+      color: BRAND_COLORS.stripe,
+      href: 'https://stripe.com',
     },
     {
       title: m.home_integration_items_item_3_title(),
       description: m.home_integration_items_item_3_description(),
-      icon: IconBrandReact,
-      color: BRAND_COLORS.react,
+      icon: IconBrandCloudflare,
+      color: BRAND_COLORS.cloudflare,
+      href: 'https://www.cloudflare.com',
     },
     {
       title: m.home_integration_items_item_4_title(),
       description: m.home_integration_items_item_4_description(),
-      icon: IconBrandVisualStudio,
-      color: BRAND_COLORS.vs,
+      icon: IconBrandReact,
+      color: BRAND_COLORS.react,
+      href: 'https://react.dev',
     },
     {
       title: m.home_integration_items_item_5_title(),
       description: m.home_integration_items_item_5_description(),
-      icon: IconBrandWikipedia,
-      color: BRAND_COLORS.wikipedia,
+      icon: IconBrandTypescript,
+      color: BRAND_COLORS.typescript,
+      href: 'https://www.typescriptlang.org',
     },
     {
       title: m.home_integration_items_item_6_title(),
       description: m.home_integration_items_item_6_description(),
       icon: IconBrandGoogleFilled,
       color: BRAND_COLORS.google,
+      href: 'https://ai.google.dev',
     },
   ];
 }
@@ -75,13 +81,19 @@ function IntegrationCard({
   icon: Icon,
   color,
   learnMore,
+  href,
 }: {
   title: string;
   description: string;
   icon: Icon;
   color: string;
   learnMore: string;
+  href: string;
 }) {
+  const linkClasses = cn(
+    buttonVariants({ variant: 'outline', size: 'sm' }),
+    'gap-1 pr-2 shadow-none'
+  );
   return (
     <Card className="bg-transparent p-6 transition-colors duration-200 hover:bg-accent dark:hover:bg-card">
       <div className="relative">
@@ -95,16 +107,15 @@ function IntegrationCard({
         </div>
 
         <div className="flex gap-3 border-t border-dashed pt-6">
-          <Link
-            to="/"
-            className={cn(
-              buttonVariants({ variant: 'outline', size: 'sm' }),
-              'gap-1 pr-2 shadow-none'
-            )}
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={linkClasses}
           >
             {learnMore}
             <IconChevronRight className="ml-0 size-3.5 opacity-50" />
-          </Link>
+          </a>
         </div>
       </div>
     </Card>
@@ -131,6 +142,7 @@ export default function IntegrationSection() {
                 description={item.description}
                 icon={item.icon}
                 color={item.color}
+                href={item.href}
                 learnMore={m.home_integration_learn_more()}
               />
             </ScrollReveal>

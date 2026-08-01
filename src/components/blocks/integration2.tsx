@@ -5,20 +5,20 @@ import { buttonVariants } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import {
-  IconBrandCodesandbox,
+  IconBrandCloudflare,
   IconBrandGoogleFilled,
   IconBrandOpenai,
   IconBrandReact,
-  IconBrandVisualStudio,
-  IconBrandWikipedia,
+  IconBrandStripe,
+  IconBrandTypescript,
 } from '@tabler/icons-react';
 import { BRAND_COLORS } from '@/components/blocks/integration';
 const BRAND_ICONS = [
   { Icon: IconBrandOpenai, color: BRAND_COLORS.openai },
-  { Icon: IconBrandCodesandbox, color: BRAND_COLORS.codesandbox },
+  { Icon: IconBrandStripe, color: BRAND_COLORS.stripe },
+  { Icon: IconBrandCloudflare, color: BRAND_COLORS.cloudflare },
   { Icon: IconBrandReact, color: BRAND_COLORS.react },
-  { Icon: IconBrandVisualStudio, color: BRAND_COLORS.vs },
-  { Icon: IconBrandWikipedia, color: BRAND_COLORS.wikipedia },
+  { Icon: IconBrandTypescript, color: BRAND_COLORS.typescript },
   { Icon: IconBrandGoogleFilled, color: BRAND_COLORS.google },
 ];
 function IntegrationCard({
