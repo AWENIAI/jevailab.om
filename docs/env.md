@@ -24,7 +24,7 @@ Values are read by Vite from `.env*` during `pnpm dev` / `pnpm build` and inline
 | **Base** | | | |
 | `VITE_BASE_URL` | Site origin (e.g. `getBaseUrl()`) | No | Default: `http://localhost:3000` |
 | **Payment** | | | |
-| `VITE_PAYMENT_PROVIDER` | Payment provider (`stripe`, `creem`, or `''`) | No | Default: `''` (payment disabled); set to `stripe` or `creem` to enable |
+| `VITE_PAYMENT_PROVIDER` | Payment provider (`stripe`, `creem`, `waffo`, or `''`) | No | Default: `''` (payment disabled); set to one provider to enable |
 | **Payment (Stripe)** | | | |
 | `VITE_STRIPE_PRICE_PRO_MONTHLY` | Stripe Price ID (Pro monthly) | No | Required for pricing/checkout when using Stripe |
 | `VITE_STRIPE_PRICE_PRO_YEARLY` | Stripe Price ID (Pro yearly) | No | |
@@ -33,6 +33,10 @@ Values are read by Vite from `.env*` during `pnpm dev` / `pnpm build` and inline
 | `VITE_CREEM_PRODUCT_PRO_MONTHLY` | Creem Product ID (Pro monthly) | No | Required for pricing/checkout when using Creem |
 | `VITE_CREEM_PRODUCT_PRO_YEARLY` | Creem Product ID (Pro yearly) | No | |
 | `VITE_CREEM_PRODUCT_LIFETIME` | Creem Product ID (Lifetime) | No | |
+| **Payment (Waffo Pancake)** | | | |
+| `VITE_WAFFO_PRODUCT_PRO_MONTHLY` | Waffo Product ID (Pro monthly) | No | Required for pricing/checkout when using Waffo |
+| `VITE_WAFFO_PRODUCT_PRO_YEARLY` | Waffo Product ID (Pro yearly) | No | |
+| `VITE_WAFFO_PRODUCT_LIFETIME` | Waffo Product ID (Lifetime) | No | |
 | **Analytics** | | | |
 | `VITE_GOOGLE_ANALYTICS_ID` | Google Analytics | No | |
 | `VITE_CLARITY_PROJECT_ID` | Microsoft Clarity | No | |
@@ -80,6 +84,10 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | `CREEM_API_KEY` | Creem API key | No | [Payment](./payment.md); required when using Creem |
 | `CREEM_WEBHOOK_SECRET` | Creem webhook signing | No | Payment webhook (Creem) |
 | `CREEM_DEBUG` | Use Creem sandbox API | No | Set to `true` for test mode (`test-api.creem.io`) |
+| **Payment (Waffo Pancake)** | | | |
+| `WAFFO_DEBUG` | Accept sandbox webhook events in a production build | No | Set to `true` for smoke-testing prod deployments against a Waffo test merchant; leave unset in real production so `mode: "test"` webhooks are ignored |
+| `WAFFO_MERCHANT_ID` | Waffo Merchant ID | No | [Payment](./payment.md); required when using Waffo |
+| `WAFFO_PRIVATE_KEY` | Waffo RSA private key | No | [Payment](./payment.md); server-only secret; never expose it client-side or prefix it with `VITE_` |
 | **AI** | | | |
 | `FAL_KEY` | fal.ai API key | No | [AI](../src/api/ai.ts); required for image generation/edit via fal.ai |
 

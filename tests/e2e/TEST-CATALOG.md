@@ -185,3 +185,64 @@ Playwright to complete hosted Checkout with Stripe's success test card.
 
 The sandbox suite does not cover failed cards, cancellation, refunds, renewals,
 or Test Clocks.
+
+## Waffo Payment Coverage
+
+**File:** `tests/e2e/waffo/waffo-sandbox.spec.ts` | **Priority:** P1
+
+Run the focused suite with `pnpm e2e:waffo`. The unit boundary
+(`tests/unit/payment/waffo-provider.test.ts`) already runs in `pnpm check` and
+covers checkout mapping, order completion, subscription cancellation/renewal
+state, and refund handling.
+
+The Playwright journey registers and signs in, completes Waffo test checkout
+for the monthly, yearly and lifetime products, asserts the Billing page
+reflects the corresponding plan (Pro + Active, Pro + Active, Lifetime), and
+covers the sandbox renewal event (`subscription.payment_succeeded`).
+
+Hosted checkouts return through the payment processing page
+(`/settings/payment?callback=...`, detected by "callback present and no
+`session_id`"), which polls the current plan until the webhook lands and then
+navigates to Billing. The specs assert Billing settles into the paid plan
+**without a manual reload** — regression coverage for a stale-plan bug where
+returning from Waffo rendered the old plan until a hard refresh.
+
+Waffo test mode delivers `subscription.payment_succeeded` immediately after
+`subscription.activated`, so the monthly/yearly journeys exercise the renewal
+handler on every run. The dedicated renewal test additionally asserts from the
+E2E API that the renewal leaves the subscription row `active` with no
+scheduled cancellation and no duplicate payment rows.
+
+### Prerequisites
+
+`pnpm e2e:waffo` currently expects the following to be set up manually before
+running — there is no bootstrap script yet:
+
+1. Local dev server running on port `3018` (`PORT=3018 pnpm dev` or an
+   equivalent E2E-mode entrypoint) with `MODE=e2e` and the E2E secret header
+   accepted by `src/routes/api/e2e/users.ts`.
+2. Public tunnel to `http://localhost:3018` via **cloudflared**
+   (`cloudflared tunnel --url http://localhost:3018`). It preserves the
+   `X-Waffo-Signature` header, needs no account, and has no 2-hour session
+   cap. ngrok works too but requires signup. Do **not** use localtunnel — it
+   strips custom headers, so Waffo webhook signature verification fails.
+3. Waffo dashboard configured with:
+   - test-mode products whose IDs match the price plans in
+     `src/config/website.ts` (monthly / yearly / lifetime),
+   - a `http` webhook pointing at `<tunnel>/api/webhooks/waffo` for the test
+     environment (see `docs/waffo/SKILL.md` → Configuring Webhook URLs).
+4. `.dev.vars` containing `WAFFO_MERCHANT_ID` and `WAFFO_PRIVATE_KEY`
+   (PEM). If deploying via Cloudflare, run `pnpm cf-typegen` after adding.
+
+Optional: override the base URL with
+`PLAYWRIGHT_BASE_URL=https://<tunnel>.ngrok.app pnpm e2e:waffo` to walk the
+tunnel directly instead of localhost.
+
+### Known gaps
+
+The Playwright suite does not yet cover:
+- Hosted consumer portal navigation
+- Subscription upgrade / downgrade
+- Refund revoking access
+- Past-due flows (renewal success is covered; failed-renewal state remains
+  unit-level via `tests/unit/payment/waffo-provider.test.ts`)

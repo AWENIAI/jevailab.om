@@ -4,7 +4,7 @@ This file provides guidance to Code Agents (Codex, Cursor, etc.) when working wi
 
 ## Project Overview
 
-**TanStarter** (mkfast-template) — a full-stack SaaS boilerplate built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem), email (Resend / Cloudflare Email), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
+**TanStarter** (mkfast-template) — a full-stack SaaS boilerplate built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem / Waffo), email (Resend / Cloudflare Email), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
 
 ## Commands
 
@@ -71,7 +71,7 @@ Incoming request → Cloudflare Worker (`src/server.ts`) → TanStack Start hand
 | `src/api/` | Server functions (payment, users, contact, newsletter, files) |
 | `src/auth/` | Better Auth config (`auth.ts` server, `client.ts` client) |
 | `src/db/` | Drizzle schemas (`auth.schema.ts` auto-generated, `app.schema.ts` app tables), migrations, types |
-| `src/payment/` | Stripe / Creem integration (checkout, portal, webhooks) |
+| `src/payment/` | Stripe / Creem / Waffo integration (checkout, portal, webhooks) |
 | `src/mail/` | Resend / Cloudflare Email — provider, templates (React components), rendering |
 | `src/storage/` | Cloudflare R2 file storage |
 | `src/newsletter/` | Resend and Beehiiv newsletter via API |

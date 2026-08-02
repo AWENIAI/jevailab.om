@@ -71,3 +71,87 @@ export async function loginByForm(page: Page, user: E2EUser) {
   await signInButton.click();
   await expect(page).toHaveURL(/\/dashboard\/?$/);
 }
+
+/**
+ * Poll until a paid payment row for the given E2E user exists, or the
+ * timeout expires. Used by hosted-checkout E2E specs to wait for the
+ * asynchronous provider webhook to land before test teardown removes
+ * the user.
+ */
+export async function waitForPaidPayment(
+  request: APIRequestContext,
+  email: string,
+  {
+    timeoutMs = 30_000,
+    intervalMs = 1_000,
+  }: {
+    timeoutMs?: number;
+    intervalMs?: number;
+  } = {}
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const response = await request.get(
+      `/api/e2e/users?email=${encodeURIComponent(email)}&paid=true`,
+      { headers: e2eHeaders }
+    );
+    if (response.ok()) {
+      const body = (await response.json()) as { paymentCount?: number };
+      if ((body.paymentCount ?? 0) > 0) return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+}
+
+export interface E2ESubscriptionRow {
+  status: string;
+  interval: string | null;
+  periodStart: number | null;
+  periodEnd: number | null;
+  cancelAtPeriodEnd: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Poll until a paid payment row for the given E2E user exists, returning the
+ * payment count and the latest subscription row exposed by the E2E API.
+ * Used by the Waffo renewal journey to assert webhook lifecycle state.
+ */
+export async function waitForSubscription(
+  request: APIRequestContext,
+  email: string,
+  {
+    timeoutMs = 30_000,
+    intervalMs = 1_000,
+  }: {
+    timeoutMs?: number;
+    intervalMs?: number;
+  } = {}
+): Promise<{
+  paymentCount: number;
+  subscription: E2ESubscriptionRow | null;
+} | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const response = await request.get(
+      `/api/e2e/users?email=${encodeURIComponent(email)}&paid=true`,
+      { headers: e2eHeaders }
+    );
+    if (response.ok()) {
+      const body = (await response.json()) as {
+        paymentCount?: number;
+        subscription?: E2ESubscriptionRow | null;
+      };
+      if ((body.paymentCount ?? 0) > 0) {
+        return {
+          paymentCount: body.paymentCount ?? 0,
+          subscription: body.subscription ?? null,
+        };
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return null;
+}
