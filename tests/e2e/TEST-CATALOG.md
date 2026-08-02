@@ -163,11 +163,14 @@ Stripe payment tests use two layers. Creem is intentionally excluded.
 
 ### Fast webhook layer
 
-**File:** `tests/unit/payment/stripe-webhook.test.ts`
+**Files:** `tests/unit/payment/stripe-webhook.test.ts` and
+`tests/unit/payment/stripe-provider.test.ts`
 
-Runs inside `pnpm check` with a Stripe SDK-generated test signature. It verifies
-invalid signature rejection, a signed one-time Checkout event, and D1 duplicate
-invoice idempotency without making network requests.
+Runs inside `pnpm check` with Stripe SDK-generated test signatures. It verifies
+invalid signatures, checkout creation for subscription and Lifetime prices,
+Customer Portal parameters, subscription and one-time `invoice.paid` handling,
+renewal lookup by subscription ID, cancellation/deletion, refund access
+revocation, and duplicate payment idempotency without making network requests.
 
 ### Sandbox E2E layer
 
@@ -175,16 +178,24 @@ invoice idempotency without making network requests.
 
 Run explicitly with `pnpm e2e:stripe`. The runner refuses live keys, starts a
 Stripe CLI listener, forwards real sandbox events to the local Worker, and uses
-Playwright to complete hosted Checkout with Stripe's success test card.
+Playwright to complete hosted Checkout with Stripe's success and decline test
+cards. Successful flows also poll the local E2E API and assert the D1 payment
+row, rather than relying on rendered Billing text alone.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Monthly subscription and portal | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, receive real webhooks through Stripe CLI, verify the Pro plan and Stripe subscription price, then open Customer Portal. |
-| 2 | Yearly subscription | Register and sign in, select yearly pricing, complete sandbox Checkout, verify the Pro plan and yearly Stripe price. |
-| 3 | Lifetime payment | Register and sign in, complete a one-time sandbox Checkout, verify the Lifetime plan and Stripe line-item price. |
+| 1 | Monthly subscription and portal | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, verify the Pro plan, D1 subscription row, Stripe subscription price, then open Customer Portal. |
+| 2 | Yearly subscription | Register and sign in, select yearly pricing, complete sandbox Checkout, verify the Pro plan, D1 interval/status, and yearly Stripe price. |
+| 3 | Lifetime payment | Register and sign in, complete a one-time sandbox Checkout, verify the Lifetime plan, paid Lifetime D1 row, and Stripe line-item price. |
+| 4 | Declined card | Submit Stripe's decline test card and verify the checkout remains unsuccessful with no paid D1 row. |
+| 5 | Cancellation and deletion | Cancel at period end, then cancel immediately through the Stripe API and verify both subscription webhook states in D1. |
+| 6 | Full refund | Refund the Lifetime PaymentIntent and verify the `charge.refunded` webhook revokes access. |
 
-The sandbox suite does not cover failed cards, cancellation, refunds, renewals,
-or Test Clocks.
+Renewal lookup and period updates are covered in the fast provider tests with
+signed `invoice.paid` events. The sandbox suite does not cover failed
+renewals/past-due recovery, time-based Test Clock advancement, or interactive
+Customer Portal changes such as upgrade, downgrade, and payment method
+replacement.
 
 ## Waffo Payment Coverage
 

@@ -9,7 +9,8 @@ import {
  * Stripe webhook endpoint
  * Configure in Stripe Dashboard: Webhooks -> Add endpoint
  * Endpoint URL: https://your-domain.com/api/webhooks/stripe
- * Events: checkout.session.completed, customer.subscription.*, invoice.paid
+ * Events: checkout.session.completed, customer.subscription.*, invoice.paid,
+ * charge.refunded
  */
 export const Route = createFileRoute('/api/webhooks/stripe')({
   server: {

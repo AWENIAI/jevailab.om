@@ -8,7 +8,7 @@ import {
 } from '@/payment/constants';
 import { findPlanByPlanId, findPriceInPlan } from '@/lib/price-plan';
 import { sendPaymentNotification } from '@/notification';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { Stripe } from 'stripe';
 import type {
   CheckoutResult,
@@ -381,6 +381,9 @@ export class StripeProvider implements PaymentProvider {
           const session = event.data.object as Stripe.Checkout.Session;
           await this.onCheckoutCompleted(session);
         }
+      } else if (eventType === 'charge.refunded') {
+        const charge = event.data.object as Stripe.Charge;
+        await this.onChargeRefunded(charge);
       }
     } catch (error) {
       const errorMessage =
@@ -688,6 +691,47 @@ export class StripeProvider implements PaymentProvider {
     }
 
     console.log('<< Update one-time payment record success');
+  }
+
+  /**
+   * Revoke a lifetime payment after a full Stripe refund.
+   *
+   * Partial refunds keep the existing access because the product policy is
+   * to revoke Lifetime only when the whole charge has been refunded.
+   */
+  private async onChargeRefunded(charge: Stripe.Charge): Promise<void> {
+    const customerId =
+      typeof charge.customer === 'string'
+        ? charge.customer
+        : charge.customer?.id;
+
+    if (!customerId || !charge.refunded) {
+      console.warn('<< Ignoring partial or unlinked Stripe refund');
+      return;
+    }
+
+    const db = getDb();
+    const result = await db
+      .update(payment)
+      .set({
+        paid: false,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(payment.customerId, customerId),
+          eq(payment.type, PaymentTypes.ONE_TIME),
+          eq(payment.scene, PaymentScenes.LIFETIME),
+          eq(payment.paid, true)
+        )
+      )
+      .returning({ id: payment.id });
+
+    if (result.length > 0) {
+      console.log('<< Revoked lifetime access after Stripe refund');
+    } else {
+      console.warn('<< No lifetime payment found for Stripe refund');
+    }
   }
 
   /**

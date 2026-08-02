@@ -89,29 +89,93 @@ export async function waitForPaidPayment(
     intervalMs?: number;
   } = {}
 ): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const response = await request.get(
-      `/api/e2e/users?email=${encodeURIComponent(email)}&paid=true`,
-      { headers: e2eHeaders }
-    );
-    if (response.ok()) {
-      const body = (await response.json()) as { paymentCount?: number };
-      if ((body.paymentCount ?? 0) > 0) return true;
-    }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  return false;
+  const state = await waitForE2EPayment(request, email, {
+    paidOnly: true,
+    timeoutMs,
+    intervalMs,
+  });
+  return (state?.paymentCount ?? 0) > 0;
+}
+
+export interface E2EPaymentRow {
+  id: string;
+  priceId: string;
+  subscriptionId: string | null;
+  sessionId: string | null;
+  invoiceId: string | null;
+  type: string;
+  scene: string | null;
+  status: string;
+  paid: boolean;
+  interval: string | null;
+  periodStart: string | number | null;
+  periodEnd: string | number | null;
+  cancelAtPeriodEnd: boolean | null;
+  trialStart: string | number | null;
+  trialEnd: string | number | null;
+  createdAt: string | number;
+  updatedAt: string | number;
 }
 
 export interface E2ESubscriptionRow {
   status: string;
   interval: string | null;
-  periodStart: number | null;
-  periodEnd: number | null;
+  periodStart: string | number | null;
+  periodEnd: string | number | null;
   cancelAtPeriodEnd: boolean;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: string | number;
+  updatedAt: string | number;
+  priceId?: string;
+  subscriptionId?: string | null;
+  sessionId?: string | null;
+  invoiceId?: string | null;
+  paid?: boolean;
+}
+
+export interface E2EPaymentState {
+  paymentCount: number;
+  latestPayment: E2EPaymentRow | null;
+  subscription: E2ESubscriptionRow | null;
+}
+
+export async function waitForE2EPayment(
+  request: APIRequestContext,
+  email: string,
+  {
+    paidOnly = false,
+    timeoutMs = 30_000,
+    intervalMs = 1_000,
+    predicate,
+  }: {
+    paidOnly?: boolean;
+    timeoutMs?: number;
+    intervalMs?: number;
+    predicate?: (state: E2EPaymentState) => boolean;
+  } = {}
+): Promise<E2EPaymentState | null> {
+  const deadline = Date.now() + timeoutMs;
+  const query = new URLSearchParams({ email });
+  if (paidOnly) query.set('paid', 'true');
+
+  while (Date.now() < deadline) {
+    const response = await request.get(`/api/e2e/users?${query}`, {
+      headers: e2eHeaders,
+    });
+    if (response.ok()) {
+      const body = (await response.json()) as Partial<E2EPaymentState>;
+      const state: E2EPaymentState = {
+        paymentCount: body.paymentCount ?? 0,
+        latestPayment: body.latestPayment ?? null,
+        subscription: body.subscription ?? null,
+      };
+      const hasPayment = paidOnly
+        ? state.paymentCount > 0
+        : state.latestPayment !== null;
+      if (hasPayment && (!predicate || predicate(state))) return state;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return null;
 }
 
 /**
@@ -133,25 +197,14 @@ export async function waitForSubscription(
   paymentCount: number;
   subscription: E2ESubscriptionRow | null;
 } | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const response = await request.get(
-      `/api/e2e/users?email=${encodeURIComponent(email)}&paid=true`,
-      { headers: e2eHeaders }
-    );
-    if (response.ok()) {
-      const body = (await response.json()) as {
-        paymentCount?: number;
-        subscription?: E2ESubscriptionRow | null;
-      };
-      if ((body.paymentCount ?? 0) > 0) {
-        return {
-          paymentCount: body.paymentCount ?? 0,
-          subscription: body.subscription ?? null,
-        };
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  return null;
+  const state = await waitForE2EPayment(request, email, {
+    paidOnly: true,
+    timeoutMs,
+    intervalMs,
+  });
+  if (!state) return null;
+  return {
+    paymentCount: state.paymentCount,
+    subscription: state.subscription,
+  };
 }

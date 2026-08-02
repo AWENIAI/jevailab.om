@@ -31,8 +31,8 @@ export const Route = createFileRoute('/api/e2e/users')({
         const accessError = assertE2EAccess(request);
         if (accessError) return accessError;
 
-        // Read-only lookup used by E2E specs to poll for webhook delivery.
-        // Returns whether the user has at least one paid payment row.
+        // Read-only lookup used by E2E specs to poll for webhook delivery and
+        // assert the latest payment row without exposing this route publicly.
         const url = new URL(request.url);
         const email = url.searchParams.get('email') ?? '';
         if (!isE2EEmail(email)) {
@@ -55,37 +55,41 @@ export const Route = createFileRoute('/api/e2e/users')({
           ? and(eq(payment.userId, row.id), eq(payment.paid, true))
           : eq(payment.userId, row.id);
         const rows = await db
-          .select({ id: payment.id })
-          .from(payment)
-          .where(filters);
-        if (!paidOnly) {
-          return Response.json({ paymentCount: rows.length });
-        }
-        // Expose the latest subscription row so specs can assert webhook
-        // lifecycle state (activation + renewal updates) from the DB instead
-        // of relying on rendered UI text alone.
-        const [subscriptionRow] = await db
           .select({
+            id: payment.id,
+            priceId: payment.priceId,
+            subscriptionId: payment.subscriptionId,
+            sessionId: payment.sessionId,
+            invoiceId: payment.invoiceId,
+            type: payment.type,
+            scene: payment.scene,
             status: payment.status,
+            paid: payment.paid,
             interval: payment.interval,
             periodStart: payment.periodStart,
             periodEnd: payment.periodEnd,
             cancelAtPeriodEnd: payment.cancelAtPeriodEnd,
+            trialStart: payment.trialStart,
+            trialEnd: payment.trialEnd,
             createdAt: payment.createdAt,
             updatedAt: payment.updatedAt,
           })
           .from(payment)
-          .where(
-            and(
-              eq(payment.userId, row.id),
-              eq(payment.paid, true),
-              eq(payment.type, PaymentTypes.SUBSCRIPTION)
-            )
-          )
+          .where(filters)
           .orderBy(desc(payment.createdAt))
-          .limit(1);
+          .limit(100);
+
+        // Expose the latest payment and subscription rows so specs can assert
+        // webhook lifecycle state from D1 instead of relying on UI text alone.
+        const latestPayment = rows[0] ?? null;
+        const subscriptionRow = paidOnly
+          ? (rows.find((item) => item.type === PaymentTypes.SUBSCRIPTION) ??
+            null)
+          : null;
+
         return Response.json({
           paymentCount: rows.length,
+          latestPayment,
           subscription: subscriptionRow
             ? {
                 ...subscriptionRow,
@@ -128,7 +132,6 @@ export const Route = createFileRoute('/api/e2e/users')({
         ) {
           updates.role = body.role === 'user' ? null : body.role;
         }
-
         const [updatedUser] = await getDb()
           .update(user)
           .set(updates)

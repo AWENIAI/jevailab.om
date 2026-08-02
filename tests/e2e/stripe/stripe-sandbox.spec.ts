@@ -1,9 +1,17 @@
-import { expect, test, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Locator,
+  type Page,
+} from '@playwright/test';
 import Stripe from 'stripe';
 import {
   cleanupE2EUsers,
   loginByForm,
   registerE2EUser,
+  waitForE2EPayment,
+  waitForPaidPayment,
 } from '../fixtures/auth';
 import type { E2EUser } from '../fixtures/test-data';
 
@@ -13,26 +21,25 @@ if (!stripeSecretKey?.startsWith('sk_test_')) {
 }
 
 const stripe = new Stripe(stripeSecretKey);
-const activeEmails = new Set<string>();
 
 type CheckoutScenario = {
   expectedPlan: 'Lifetime' | 'Pro';
   expectedPriceId: string;
   interval?: 'month' | 'year';
   portalButton?: RegExp;
+  cardNumber?: string;
+};
+
+type CheckoutArtifacts = {
+  subscriptionId?: string;
+  sessionId?: string;
+  paymentIntentId?: string;
 };
 
 async function fillStripeField(page: Page, label: RegExp, value: string) {
   const field = page.getByRole('textbox', { name: label }).first();
   await field.waitFor({ state: 'visible', timeout: 60_000 });
   await field.fill(value);
-}
-
-async function cleanupStripeCustomers(email: string) {
-  const customers = await stripe.customers.list({ email, limit: 100 });
-  for (const customer of customers.data) {
-    if (!customer.deleted) await stripe.customers.del(customer.id);
-  }
 }
 
 async function cleanupStripeE2ECustomers() {
@@ -44,11 +51,11 @@ async function cleanupStripeE2ECustomers() {
   }
 }
 
-async function completeStripeCheckout(
+async function fillStripeCheckout(
   page: Page,
   user: E2EUser,
   scenario: CheckoutScenario
-) {
+): Promise<Locator> {
   await loginByForm(page, user);
   await page.goto('/pricing');
   await page.waitForLoadState('networkidle');
@@ -84,7 +91,11 @@ async function completeStripeCheckout(
   if ((await emailField.count()) > 0 && (await emailField.isEditable())) {
     await emailField.fill(user.email);
   }
-  await fillStripeField(page, /card number/i, '4242424242424242');
+  await fillStripeField(
+    page,
+    /card number/i,
+    scenario.cardNumber ?? '4242424242424242'
+  );
   await fillStripeField(page, /expiration|expiry/i, '1230');
   await fillStripeField(page, /security code|cvc/i, '123');
 
@@ -101,9 +112,18 @@ async function completeStripeCheckout(
     await postalField.fill('94107');
   }
 
-  await page
+  return page
     .getByRole('button', { name: /subscribe|pay|complete order/i })
-    .click();
+    .first();
+}
+
+async function completeStripeCheckout(
+  page: Page,
+  user: E2EUser,
+  scenario: CheckoutScenario
+): Promise<CheckoutArtifacts> {
+  const payButton = await fillStripeCheckout(page, user, scenario);
+  await payButton.click();
   await page.waitForURL(/\/settings\/billing/, { timeout: 120_000 });
 
   const billingCard = page
@@ -120,6 +140,11 @@ async function completeStripeCheckout(
   });
   expect(customers.data).toHaveLength(1);
   const customer = customers.data[0];
+  if (!customer || ('deleted' in customer && customer.deleted)) {
+    throw new Error(`Stripe customer was not found for ${user.email}`);
+  }
+
+  const artifacts: CheckoutArtifacts = {};
 
   if (scenario.interval) {
     const subscriptions = await stripe.subscriptions.list({
@@ -131,6 +156,7 @@ async function completeStripeCheckout(
     expect(subscriptions.data[0].items.data[0]?.price.id).toBe(
       scenario.expectedPriceId
     );
+    artifacts.subscriptionId = subscriptions.data[0]?.id;
   } else {
     const sessions = await stripe.checkout.sessions.list({
       customer: customer.id,
@@ -143,6 +169,11 @@ async function completeStripeCheckout(
       { limit: 10 }
     );
     expect(lineItems.data[0]?.price?.id).toBe(scenario.expectedPriceId);
+    artifacts.sessionId = sessions.data[0]?.id;
+    const paymentIntent = sessions.data[0]?.payment_intent;
+    if (typeof paymentIntent === 'string') {
+      artifacts.paymentIntentId = paymentIntent;
+    }
   }
 
   if (scenario.portalButton) {
@@ -153,18 +184,35 @@ async function completeStripeCheckout(
       timeout: 60_000,
     });
   }
+
+  return artifacts;
+}
+
+async function waitForPaidSnapshot(request: APIRequestContext, email: string) {
+  const state = await waitForE2EPayment(request, email, {
+    paidOnly: true,
+    predicate: (current) => current.latestPayment?.paid === true,
+  });
+  if (!state?.latestPayment) {
+    throw new Error(`No paid Stripe payment row found for ${email}`);
+  }
+  expect(state.paymentCount).toBe(1);
+  return state;
 }
 
 test.describe
   .serial('Stripe sandbox payment flows', () => {
+    const paidEmails = new Set<string>();
     test.beforeAll(async ({ request }) => {
       await cleanupStripeE2ECustomers();
       await cleanupE2EUsers(request);
     });
 
     test.afterEach(async ({ request }) => {
-      for (const email of activeEmails) await cleanupStripeCustomers(email);
-      activeEmails.clear();
+      for (const email of paidEmails) {
+        await waitForPaidPayment(request, email, { timeoutMs: 30_000 });
+      }
+      paidEmails.clear();
       await cleanupE2EUsers(request);
     });
 
@@ -179,7 +227,7 @@ test.describe
       const user = await registerE2EUser(request, {
         email: `e2e-stripe-month-${Date.now()}@example.test`,
       });
-      activeEmails.add(user.email);
+      paidEmails.add(user.email);
 
       await completeStripeCheckout(page, user, {
         expectedPlan: 'Pro',
@@ -187,30 +235,165 @@ test.describe
         interval: 'month',
         portalButton: /manage subscription/i,
       });
+      const state = await waitForPaidSnapshot(request, user.email);
+      expect(state.latestPayment).toMatchObject({
+        interval: 'month',
+        paid: true,
+        priceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY,
+        scene: 'subscription',
+        status: 'active',
+        type: 'subscription',
+      });
+      expect(state.latestPayment?.periodEnd).not.toBeNull();
     });
 
     test('completes a yearly subscription', async ({ page, request }) => {
       const user = await registerE2EUser(request, {
         email: `e2e-stripe-year-${Date.now()}@example.test`,
       });
-      activeEmails.add(user.email);
+      paidEmails.add(user.email);
 
       await completeStripeCheckout(page, user, {
         expectedPlan: 'Pro',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_YEARLY ?? '',
         interval: 'year',
       });
+      const state = await waitForPaidSnapshot(request, user.email);
+      expect(state.latestPayment).toMatchObject({
+        interval: 'year',
+        paid: true,
+        priceId: process.env.VITE_STRIPE_PRICE_PRO_YEARLY,
+        scene: 'subscription',
+        status: 'active',
+        type: 'subscription',
+      });
+      expect(state.latestPayment?.periodEnd).not.toBeNull();
     });
 
     test('completes a one-time lifetime payment', async ({ page, request }) => {
       const user = await registerE2EUser(request, {
         email: `e2e-stripe-lifetime-${Date.now()}@example.test`,
       });
-      activeEmails.add(user.email);
+      paidEmails.add(user.email);
 
-      await completeStripeCheckout(page, user, {
+      const artifacts = await completeStripeCheckout(page, user, {
         expectedPlan: 'Lifetime',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_LIFETIME ?? '',
+      });
+      const state = await waitForPaidSnapshot(request, user.email);
+      expect(state.latestPayment).toMatchObject({
+        paid: true,
+        priceId: process.env.VITE_STRIPE_PRICE_LIFETIME,
+        scene: 'lifetime',
+        status: 'completed',
+        type: 'one_time',
+      });
+      expect(state.latestPayment?.sessionId).toBe(artifacts.sessionId);
+    });
+
+    test('rejects a declined card without creating a paid payment row', async ({
+      page,
+      request,
+    }) => {
+      const user = await registerE2EUser(request, {
+        email: `e2e-stripe-declined-${Date.now()}@example.test`,
+      });
+
+      const payButton = await fillStripeCheckout(page, user, {
+        expectedPlan: 'Pro',
+        expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
+        interval: 'month',
+        cardNumber: '4000000000009995',
+      });
+      await payButton.click();
+      await expect(page.getByText(/declined/i).first()).toBeVisible({
+        timeout: 60_000,
+      });
+
+      const state = await waitForE2EPayment(request, user.email, {
+        timeoutMs: 10_000,
+      });
+      expect(state?.paymentCount ?? 0).toBe(0);
+    });
+
+    test('persists subscription cancellation and deletion webhook state', async ({
+      page,
+      request,
+    }) => {
+      const user = await registerE2EUser(request, {
+        email: `e2e-stripe-cancel-${Date.now()}@example.test`,
+      });
+      paidEmails.add(user.email);
+
+      const artifacts = await completeStripeCheckout(page, user, {
+        expectedPlan: 'Pro',
+        expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
+        interval: 'month',
+      });
+      if (!artifacts.subscriptionId) {
+        throw new Error('Stripe subscription id was not returned');
+      }
+
+      await stripe.subscriptions.update(artifacts.subscriptionId, {
+        cancel_at_period_end: true,
+      });
+      const scheduled = await waitForE2EPayment(request, user.email, {
+        paidOnly: true,
+        predicate: (state) => state.subscription?.cancelAtPeriodEnd === true,
+      });
+      expect(scheduled?.subscription).toMatchObject({
+        cancelAtPeriodEnd: true,
+        status: 'active',
+      });
+
+      await stripe.subscriptions.cancel(artifacts.subscriptionId);
+      const canceled = await waitForE2EPayment(request, user.email, {
+        paidOnly: true,
+        predicate: (state) => state.subscription?.status === 'canceled',
+      });
+      expect(canceled?.subscription?.status).toBe('canceled');
+    });
+
+    test('revokes lifetime access after a full Stripe refund', async ({
+      page,
+      request,
+    }) => {
+      const user = await registerE2EUser(request, {
+        email: `e2e-stripe-refund-${Date.now()}@example.test`,
+      });
+      paidEmails.add(user.email);
+
+      const artifacts = await completeStripeCheckout(page, user, {
+        expectedPlan: 'Lifetime',
+        expectedPriceId: process.env.VITE_STRIPE_PRICE_LIFETIME ?? '',
+      });
+      if (!artifacts.sessionId) {
+        throw new Error('Stripe lifetime session id was not returned');
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(
+        artifacts.sessionId
+      );
+      const paymentIntentId =
+        artifacts.paymentIntentId ??
+        (typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : undefined);
+      if (!paymentIntentId) {
+        throw new Error('Stripe payment intent id was not returned');
+      }
+
+      await stripe.refunds.create({ payment_intent: paymentIntentId });
+      paidEmails.delete(user.email);
+      const refunded = await waitForE2EPayment(request, user.email, {
+        predicate: (state) => state.latestPayment?.paid === false,
+      });
+      expect(refunded?.paymentCount).toBe(1);
+      expect(refunded?.latestPayment).toMatchObject({
+        paid: false,
+        scene: 'lifetime',
+        status: 'completed',
+        type: 'one_time',
       });
     });
   });

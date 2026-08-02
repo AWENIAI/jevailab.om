@@ -54,11 +54,14 @@ The checkout is always hosted by the payment provider, so language and theme fol
 3. **Stripe Dashboard**:
    - Create Products/Prices for Pro (monthly/yearly) and Lifetime.
    - Webhook: `https://your-domain.com/api/webhooks/stripe`
-     Events: `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`.
+     Events: `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`, `charge.refunded`.
 
 ### Billing portal
 
 Stripe provides a built-in **Customer Portal** for managing subscriptions (upgrade, cancel, update payment method). Accessed via the "Manage subscription" button on `/settings/billing`.
+
+Full refunds for Lifetime purchases are handled through `charge.refunded` and
+revoke access. Partial refunds do not revoke access.
 
 ---
 
