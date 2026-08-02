@@ -1,10 +1,16 @@
 import { Markdown } from '@/components/markdown/markdown';
 import { Card, CardContent } from '@/components/ui/card';
 import type { PageDoc } from '@/lib/pages';
-import { formatDate } from '@/lib/formatter';
+import type { MarkdownResult } from '@/lib/markdown';
 
-export function MarkdownPage({ page }: { page: PageDoc }) {
-  const { title, description, date, content } = page;
+export function MarkdownPage({
+  page,
+  markdown,
+}: {
+  page: PageDoc;
+  markdown: MarkdownResult;
+}) {
+  const { title, description } = page;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -17,19 +23,11 @@ export function MarkdownPage({ page }: { page: PageDoc }) {
             {description}
           </p>
         )}
-        {date && (
-          <time
-            dateTime={date}
-            className="text-center text-sm text-muted-foreground"
-          >
-            {formatDate(new Date(date))}
-          </time>
-        )}
       </div>
       <Card>
         <CardContent>
           <Markdown
-            content={content}
+            markup={markdown.markup}
             className="prose prose-neutral dark:prose-invert max-w-none"
           />
         </CardContent>

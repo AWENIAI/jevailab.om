@@ -5,6 +5,7 @@ import { Markdown } from '@/components/markdown/markdown';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getPostBySlug } from '@/lib/blog';
+import { renderMarkdown } from '@/lib/markdown';
 import { websiteConfig } from '@/config/website';
 import { getCanonicalUrl, getImageUrl } from '@/lib/urls';
 import { getLocale, localeConfig } from '@/lib/locale';
@@ -16,7 +17,8 @@ export const Route = createFileRoute('/blog/$slug')({
   loader: async ({ params }) => {
     const post = getPostBySlug(params.slug);
     if (!post) throw notFound();
-    return post;
+    const markdown = await renderMarkdown(post.content);
+    return { ...post, markdown };
   },
   head: ({ loaderData, params }) => {
     const post = loaderData;
@@ -113,7 +115,7 @@ function BlogPostPage() {
 
             <div className="mt-6 pt-10 border-t border-border">
               <Markdown
-                content={post.content}
+                markup={post.markdown.markup}
                 className="prose prose-neutral dark:prose-invert max-w-none"
               />
             </div>

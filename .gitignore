@@ -36,6 +36,9 @@ src/locale/paraglide
 # kiro
 .kiro
 
+# issues
+issues/
+
 # Auto Claude data directory
 .auto-claude/
 

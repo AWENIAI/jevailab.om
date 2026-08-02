@@ -4,13 +4,15 @@ import { Separator } from '@/components/ui/separator';
 import { Markdown } from '@/components/markdown/markdown';
 import { formatDate } from '@/lib/formatter';
 import type { ChangelogRelease } from '@/lib/changelog';
+import type { MarkdownResult } from '@/lib/markdown';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 
 interface ReleaseCardProps {
   release: ChangelogRelease;
+  markdown: MarkdownResult;
 }
 
-export function ReleaseCard({ release }: ReleaseCardProps) {
+export function ReleaseCard({ release, markdown }: ReleaseCardProps) {
   const formattedDate = formatDate(new Date(release.date));
 
   return (
@@ -40,7 +42,7 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
       </CardHeader>
       <CardContent>
         <Markdown
-          content={release.content}
+          markup={markdown.markup}
           className="prose prose-neutral dark:prose-invert max-w-none"
         />
       </CardContent>

@@ -3,6 +3,7 @@ import { ReleaseCard } from '@/components/changelog/release-card';
 import Container from '@/components/layout/container';
 import { websiteConfig } from '@/config/website';
 import { getChangelogReleases } from '@/lib/changelog';
+import { renderMarkdown } from '@/lib/markdown';
 import { seo } from '@/lib/seo';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
@@ -10,7 +11,12 @@ export const Route = createFileRoute('/(pages)/changelog')({
   loader: () => {
     const releases = getChangelogReleases();
     if (!releases?.length) throw notFound();
-    return releases;
+    return Promise.all(
+      releases.map(async (release) => ({
+        release,
+        markdown: await renderMarkdown(release.content),
+      }))
+    );
   },
   head: () =>
     seo('/changelog', {
@@ -35,8 +41,12 @@ function ChangelogPage() {
         </div>
 
         <div className="mt-8 space-y-8">
-          {releases?.map((release) => (
-            <ReleaseCard key={release.slug} release={release} />
+          {releases?.map(({ release, markdown }) => (
+            <ReleaseCard
+              key={release.slug}
+              release={release}
+              markdown={markdown}
+            />
           ))}
         </div>
       </div>
