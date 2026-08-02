@@ -1,6 +1,7 @@
 import { websiteConfig } from '@/config/website';
 import { CreemProvider } from './provider/creem';
 import { StripeProvider } from './provider/stripe';
+import { WaffoProvider } from './provider/waffo';
 import type {
   CheckoutResult,
   CreateCheckoutParams,
@@ -17,6 +18,7 @@ type ProviderFactory = () => PaymentProvider;
 const providerRegistry: Record<PaymentProviderName, ProviderFactory> = {
   stripe: () => new StripeProvider(),
   creem: () => new CreemProvider(),
+  waffo: () => new WaffoProvider(),
 };
 
 function createProvider(): PaymentProvider {
@@ -36,6 +38,11 @@ function createProvider(): PaymentProvider {
 /** Whether payment (checkout/billing) is enabled */
 export function isPaymentEnabled(): boolean {
   return !!websiteConfig.payment?.enable;
+}
+
+/** The configured payment provider name, or '' when payment is disabled */
+export function getPaymentProviderName(): PaymentProviderName | '' {
+  return websiteConfig.payment?.provider ?? '';
 }
 
 /**

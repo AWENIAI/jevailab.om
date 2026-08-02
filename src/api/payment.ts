@@ -6,7 +6,11 @@ import { findPlanByPriceId, getAllPricePlans } from '@/lib/price-plan';
 import { Routes } from '@/lib/routes';
 import { getCanonicalUrl } from '@/lib/urls';
 import { authApiMiddleware } from '@/middlewares/auth-middleware';
-import { createCheckout, createCustomerPortal } from '@/payment';
+import {
+  createCheckout,
+  createCustomerPortal,
+  getPaymentProvider,
+} from '@/payment';
 import type {
   PaymentStatus,
   PlanInterval,
@@ -14,7 +18,6 @@ import type {
   Subscription,
 } from '@/payment/types';
 import { PaymentScenes, PaymentTypes } from '@/payment/types';
-import { websiteConfig } from '@/config/website';
 import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
@@ -25,6 +28,7 @@ const checkoutSchema = z.object({
   successUrl: z.url().optional(),
   cancelUrl: z.url().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
+  theme: z.enum(['dark', 'light']).optional(),
 });
 
 export const createCheckoutSession = createServerFn({ method: 'POST' })
@@ -39,18 +43,27 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .where(eq(user.id, userId))
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
-    const { planId, priceId, successUrl, cancelUrl, metadata } = data;
+    const { planId, priceId, successUrl, cancelUrl, metadata, theme } = data;
     const locale = getLocale();
-    const isCreem = websiteConfig.payment?.provider === 'creem';
+    const provider = getPaymentProvider();
+    const hostsPostCheckoutPage = provider.hostsPostCheckoutPage === true;
     const billingUrl = getCanonicalUrl(Routes.SettingsBilling);
     const cancel = cancelUrl ?? billingUrl;
 
     // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
     // then the Payment page polls by sessionId until the webhook writes the DB record.
-    // For Creem: Creem does NOT replace URL placeholders and has its own
-    // payment confirmation page, so redirect straight to billing.
-    const success = isCreem
-      ? (successUrl ?? billingUrl)
+    // For providers that host their own post-checkout page (Creem, Waffo):
+    // neither replaces URL placeholders and both have their own payment
+    // confirmation page, so the payment page polls the current plan instead.
+    // Routing the return through that page keeps Billing from rendering a
+    // stale plan while the webhook is still in flight. The payment page
+    // treats "callback without session_id" as hosted mode, so only
+    // `callback` is passed here.
+    const success = hostsPostCheckoutPage
+      ? (successUrl ??
+        getCanonicalUrl(
+          `${Routes.Payment}?callback=${encodeURIComponent(Routes.SettingsBilling)}`
+        ))
       : (successUrl ??
         getCanonicalUrl(
           `${Routes.Payment}?session_id={CHECKOUT_SESSION_ID}&callback=${Routes.SettingsBilling}`
@@ -69,6 +82,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       cancelUrl: cancel,
       metadata: checkoutMetadata,
       locale,
+      theme,
     });
     return { url: result.url, id: result.id };
   });
@@ -83,19 +97,20 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const provider = getPaymentProvider();
     const db = getDb();
     const [row] = await db
       .select({ customerId: user.customerId })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
-    if (!row?.customerId) {
+    if (provider.requiresCustomerId !== false && !row?.customerId) {
       throw new Error('No customer found for user');
     }
     const locale = getLocale();
     const returnUrl = data.returnUrl ?? getCanonicalUrl(Routes.SettingsBilling);
     const result = await createCustomerPortal({
-      customerId: row.customerId,
+      customerId: row?.customerId ?? '',
       returnUrl,
       locale: data.locale ?? locale,
     });

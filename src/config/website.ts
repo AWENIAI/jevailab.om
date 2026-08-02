@@ -8,24 +8,38 @@ import {
   DEFAULT_USER_FILES_FOLDER,
 } from '@/storage/constants';
 
-// Payment provider controlled by env var: 'stripe' | 'creem' | '' (empty means disabled)
+// Payment provider controlled by env var: 'stripe' | 'creem' | 'waffo' | '' (empty means disabled)
 const paymentProvider = clientEnv.VITE_PAYMENT_PROVIDER;
 const isPaymentEnabled = paymentProvider !== '';
-const isCreemPayment = paymentProvider === 'creem';
-// Resolve price/product IDs based on the active payment provider
-const priceIds = isPaymentEnabled
-  ? {
-      proMonthly: isCreemPayment
-        ? (clientEnv.VITE_CREEM_PRODUCT_PRO_MONTHLY ?? '')
-        : (clientEnv.VITE_STRIPE_PRICE_PRO_MONTHLY ?? ''),
-      proYearly: isCreemPayment
-        ? (clientEnv.VITE_CREEM_PRODUCT_PRO_YEARLY ?? '')
-        : (clientEnv.VITE_STRIPE_PRICE_PRO_YEARLY ?? ''),
-      lifetime: isCreemPayment
-        ? (clientEnv.VITE_CREEM_PRODUCT_LIFETIME ?? '')
-        : (clientEnv.VITE_STRIPE_PRICE_LIFETIME ?? ''),
-    }
-  : { proMonthly: '', proYearly: '', lifetime: '' };
+// Price/product IDs per provider; add a new row when adding a provider
+const providerPriceIds = {
+  stripe: {
+    proMonthly: clientEnv.VITE_STRIPE_PRICE_PRO_MONTHLY,
+    proYearly: clientEnv.VITE_STRIPE_PRICE_PRO_YEARLY,
+    lifetime: clientEnv.VITE_STRIPE_PRICE_LIFETIME,
+  },
+  creem: {
+    proMonthly: clientEnv.VITE_CREEM_PRODUCT_PRO_MONTHLY,
+    proYearly: clientEnv.VITE_CREEM_PRODUCT_PRO_YEARLY,
+    lifetime: clientEnv.VITE_CREEM_PRODUCT_LIFETIME,
+  },
+  waffo: {
+    proMonthly: clientEnv.VITE_WAFFO_PRODUCT_PRO_MONTHLY,
+    proYearly: clientEnv.VITE_WAFFO_PRODUCT_PRO_YEARLY,
+    lifetime: clientEnv.VITE_WAFFO_PRODUCT_LIFETIME,
+  },
+} satisfies Record<
+  Exclude<typeof paymentProvider, ''>,
+  Record<'proMonthly' | 'proYearly' | 'lifetime', string | undefined>
+>;
+const activePriceIds = isPaymentEnabled
+  ? providerPriceIds[paymentProvider]
+  : undefined;
+const priceIds = {
+  proMonthly: activePriceIds?.proMonthly ?? '',
+  proYearly: activePriceIds?.proYearly ?? '',
+  lifetime: activePriceIds?.lifetime ?? '',
+};
 
 /**
  * Website config

@@ -38,6 +38,11 @@ export const serverEnv = createEnv({
     CREEM_API_KEY: z.string().optional(),
     CREEM_WEBHOOK_SECRET: z.string().optional(),
 
+    // Payment (Waffo Pancake)
+    WAFFO_DEBUG: z.string().optional(),
+    WAFFO_MERCHANT_ID: z.string().optional(),
+    WAFFO_PRIVATE_KEY: z.string().optional(),
+
     // AI image generation (fal.ai)
     FAL_KEY: z.string().optional(),
   },

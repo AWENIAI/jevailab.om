@@ -110,6 +110,9 @@ type CreemSubscriptionUpdateEvent =
  * Creem API docs: https://docs.creem.io
  */
 export class CreemProvider implements PaymentProvider {
+  /** Creem hosts its own post-checkout confirmation page. */
+  readonly hostsPostCheckoutPage = true;
+
   private client: Creem;
   private webhookSecret: string;
 
@@ -161,8 +164,22 @@ export class CreemProvider implements PaymentProvider {
         ...(customerEmail ? { customer: { email: customerEmail } } : {}),
       });
 
+      // Creem's hosted checkout follows the store's default theme unless the
+      // session URL carries a theme override (`?theme=dark|light`). The SDK
+      // has no theme field, so append the caller's resolved site theme here.
+      let url = checkout.checkoutUrl ?? '';
+      if (params.theme && url) {
+        try {
+          const parsedUrl = new URL(url);
+          parsedUrl.searchParams.set('theme', params.theme);
+          url = parsedUrl.toString();
+        } catch {
+          // Leave the provider URL untouched if it is not absolute.
+        }
+      }
+
       return {
-        url: checkout.checkoutUrl ?? '',
+        url,
         id: checkout.id,
       };
     } catch (error) {
@@ -800,7 +817,7 @@ export class CreemProvider implements PaymentProvider {
     } catch (error) {
       if (
         error instanceof Error &&
-        error.message.includes('unique constraint')
+        error.message.toLowerCase().includes('unique constraint')
       ) {
         console.log('<< One-time payment record already exists, skipping');
         return;
@@ -859,7 +876,7 @@ export class CreemProvider implements PaymentProvider {
     } catch (error) {
       if (
         error instanceof Error &&
-        error.message.includes('unique constraint')
+        error.message.toLowerCase().includes('unique constraint')
       ) {
         console.log('<< Subscription payment record already exists, skipping');
         return;

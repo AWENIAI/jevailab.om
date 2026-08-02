@@ -53,6 +53,7 @@ import { Route as ApiE2eUsersRouteImport } from './routes/api/e2e/users'
 import { Route as ApiStorageFileRouteImport } from './routes/api/storage/file'
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
+import { Route as ApiWebhooksWaffoRouteImport } from './routes/api/webhooks/waffo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -274,6 +275,11 @@ const ApiWebhooksStripeRoute = ApiWebhooksStripeRouteImport.update({
   path: '/api/webhooks/stripe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksWaffoRoute = ApiWebhooksWaffoRouteImport.update({
+  id: '/api/webhooks/waffo',
+  path: '/api/webhooks/waffo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -410,6 +418,7 @@ export interface FileRoutesById {
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
+    | '/api/webhooks/waffo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
+    | '/api/webhooks/waffo'
   id:
     | '__root__'
     | '/'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
+    | '/api/webhooks/waffo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -578,6 +590,7 @@ export interface RootRouteChildren {
   ApiStorageFileRoute: typeof ApiStorageFileRoute
   ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
+  ApiWebhooksWaffoRoute: typeof ApiWebhooksWaffoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -890,6 +903,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksStripeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/waffo': {
+      id: '/api/webhooks/waffo'
+      path: '/api/webhooks/waffo'
+      fullPath: '/api/webhooks/waffo'
+      preLoaderRoute: typeof ApiWebhooksWaffoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStorageFileRoute: ApiStorageFileRoute,
   ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
+  ApiWebhooksWaffoRoute: ApiWebhooksWaffoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

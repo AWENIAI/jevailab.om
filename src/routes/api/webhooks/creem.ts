@@ -1,5 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { handleWebhookEvent, isPaymentEnabled } from '@/payment';
+import {
+  getPaymentProviderName,
+  handleWebhookEvent,
+  isPaymentEnabled,
+} from '@/payment';
 
 /**
  * Creem webhook endpoint
@@ -14,6 +18,14 @@ export const Route = createFileRoute('/api/webhooks/creem')({
       POST: async ({ request }) => {
         if (!isPaymentEnabled()) {
           return Response.json({ received: true }, { status: 200 });
+        }
+        // handleWebhookEvent dispatches to the configured provider, so a
+        // stale endpoint must not be handed to a different provider's parser.
+        if (getPaymentProviderName() !== 'creem') {
+          return Response.json(
+            { error: 'Creem is not the active payment provider' },
+            { status: 404 }
+          );
         }
         const payload = await request.text();
         const signature = request.headers.get('creem-signature') ?? '';

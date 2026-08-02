@@ -1,5 +1,5 @@
 import { m } from '@/locale/paraglide/messages';
-import { checkPaymentCompletion } from '@/api/payment';
+import { checkPaymentCompletion, getCurrentPlan } from '@/api/payment';
 import {
   Card,
   CardDescription,
@@ -90,6 +90,7 @@ function StatusIcon({ status }: { status: PaymentStatus }) {
 }
 type PaymentCardProps = {
   sessionId: string | undefined;
+  hostedPostCheckout?: boolean;
   callback?: string;
 };
 /**
@@ -97,18 +98,21 @@ type PaymentCardProps = {
  */
 export function PaymentCard({
   sessionId,
+  hostedPostCheckout = false,
   callback = '/settings/billing',
 }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<PaymentStatus>(() =>
-    sessionId ? 'processing' : 'failed'
+    sessionId || hostedPostCheckout ? 'processing' : 'failed'
   );
   const pollEndRef = useRef(false);
   const startRef = useRef<number>(0);
-  // Poll for payment completion
+  // Poll for payment completion: Stripe polls the payment record by
+  // sessionId, providers with a hosted post-checkout page (Creem, Waffo)
+  // poll the current plan because their webhooks carry no checkout session id.
   useEffect(() => {
-    if (!sessionId || status !== 'processing') return;
+    if (status !== 'processing') return;
     pollEndRef.current = false;
     startRef.current = Date.now();
     const poll = async () => {
@@ -117,11 +121,22 @@ export function PaymentCard({
         Date.now() - startRef.current < PAYMENT_MAX_POLL_TIME
       ) {
         try {
-          const result = await checkPaymentCompletion({ data: { sessionId } });
-          if (result?.isPaid) {
-            setStatus('success');
-            pollEndRef.current = true;
-            return;
+          if (sessionId) {
+            const result = await checkPaymentCompletion({
+              data: { sessionId },
+            });
+            if (result?.isPaid) {
+              setStatus('success');
+              pollEndRef.current = true;
+              return;
+            }
+          } else if (hostedPostCheckout) {
+            const result = await getCurrentPlan();
+            if (result?.currentPlan && !result.currentPlan.isFree) {
+              setStatus('success');
+              pollEndRef.current = true;
+              return;
+            }
           }
         } catch {
           // continue polling
@@ -131,7 +146,7 @@ export function PaymentCard({
       if (!pollEndRef.current) setStatus('timeout');
     };
     poll();
-  }, [sessionId, status]);
+  }, [sessionId, hostedPostCheckout, status]);
   // On success: invalidate currentPlan then redirect to callback
   useEffect(() => {
     if (status !== 'success' || !callback) return;

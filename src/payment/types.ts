@@ -123,6 +123,13 @@ export interface CreateCheckoutParams {
   cancelUrl?: string;
   metadata?: Record<string, string>;
   locale?: string;
+  /**
+   * Optional UI theme hint for hosted checkout pages. Providers that host
+   * their own checkout page (Waffo via `darkMode`, Creem via a `?theme=`
+   * URL override) honor this to match the caller's site theme; Stripe's
+   * hosted checkout ignores it.
+   */
+  theme?: 'dark' | 'light';
 }
 
 /**
@@ -158,6 +165,24 @@ export type PaymentProviderName = Exclude<NonNullable<PaymentConfig['provider']>
  * Payment provider interface
  */
 export interface PaymentProvider {
+  /**
+   * Whether createCustomerPortal needs a stored user.customerId.
+   * Providers with a shared hosted portal (no per-merchant customer record)
+   * set this to false. Defaults to true when omitted.
+   */
+  readonly requiresCustomerId?: boolean;
+
+  /**
+   * Whether the provider hosts its own post-checkout page.
+   *
+   * Stripe replaces `{CHECKOUT_SESSION_ID}` in the return URL, so we route
+   * the buyer through an in-app confirmation page that polls by sessionId.
+   * Providers that host their own confirmation page (Creem, Waffo) do not
+   * replace placeholders and should redirect straight to Billing instead.
+   * Defaults to false when omitted (behaves like Stripe).
+   */
+  readonly hostsPostCheckoutPage?: boolean;
+
   /**
    * Get the provider's name
    */

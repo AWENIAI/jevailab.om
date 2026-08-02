@@ -1,6 +1,7 @@
 import { m } from '@/locale/paraglide/messages';
 import { createCheckoutSession } from '@/api/payment';
 import { Button } from '@/components/ui/button';
+import { useResolvedTheme } from '@/components/theme/theme-provider';
 import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
@@ -31,6 +32,7 @@ export function CheckoutButton({
   children,
 }: CheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const resolvedTheme = useResolvedTheme();
   const handleClick = async () => {
     try {
       setIsLoading(true);
@@ -40,6 +42,7 @@ export function CheckoutButton({
         data: {
           planId,
           priceId,
+          theme: resolvedTheme,
           metadata:
             Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
         },
