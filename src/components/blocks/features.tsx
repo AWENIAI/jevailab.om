@@ -33,26 +33,26 @@ const images: Record<
   }
 > = {
   'item-1': {
-    image: '/blocks/charts-light.webp',
-    darkImage: '/blocks/charts.webp',
+    image: '/images/charts-light.webp',
+    darkImage: '/images/charts.webp',
     width: 2572,
     height: 868,
   },
   'item-2': {
-    image: '/blocks/music-light.webp',
-    darkImage: '/blocks/music.webp',
+    image: '/images/music-light.webp',
+    darkImage: '/images/music.webp',
     width: 2796,
     height: 2008,
   },
   'item-3': {
-    image: '/blocks/mail2-light.webp',
-    darkImage: '/blocks/mail2.webp',
+    image: '/images/mail2-light.webp',
+    darkImage: '/images/mail2.webp',
     width: 2700,
     height: 1440,
   },
   'item-4': {
-    image: '/blocks/payments-light.webp',
-    darkImage: '/blocks/payments.webp',
+    image: '/images/payments-light.webp',
+    darkImage: '/images/payments.webp',
     width: 1207,
     height: 929,
   },

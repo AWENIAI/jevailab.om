@@ -57,7 +57,7 @@ export default function Features2Section() {
             <div className="relative rounded-3xl border border-border/50 p-3 lg:col-span-3">
               <div className="relative aspect-76/59 rounded-2xl bg-linear-to-b from-border to-transparent p-px">
                 <img
-                  src={isDark ? '/blocks/dark-card.webp' : '/blocks/card.webp'}
+                  src={isDark ? '/images/dark-card.webp' : '/images/card.webp'}
                   alt={m.block_features2_card_alt({
                     mode: isDark ? 'dark' : 'light',
                   })}

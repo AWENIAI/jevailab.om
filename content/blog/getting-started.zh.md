@@ -3,7 +3,7 @@ title: 快速开始
 description: 设置并运行 TanStarter 模板的快速指南。
 date: 2026-02-12
 category: 指南
-image: /blocks/blog-get-started.webp
+image: /images/blog-get-started.webp
 ---
 
 这篇文章会带你了解如何运行和定制 TanStarter 模板。
@@ -24,7 +24,7 @@ pnpm dev
 
 在浏览器中打开 [http://localhost:3000](http://localhost:3000)。
 
-![img](/blocks/blog-get-started.webp)
+![img](/images/blog-get-started.webp)
 
 博客文章以 Markdown 文件形式存放在 `content/blog/`。集合定义在 `content-collections.ts`，字段包括 `title`、`description`、`date`、`category`、`content` 和 `image`。slug 会从文件路径派生，例如 `getting-started.md` 会变成 `getting-started`。
 

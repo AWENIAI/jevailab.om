@@ -87,7 +87,7 @@ export default function HeroSection() {
             <div className="inset-shadow-2xs ring-muted/50 dark:inset-shadow-white/20 bg-muted/50 relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-black/15 ring-1">
               <img
                 className="bg-muted/50 relative rounded-2xl w-full"
-                src={isDark ? '/blocks/music.webp' : '/blocks/music-light.webp'}
+                src={isDark ? '/images/music.webp' : '/images/music-light.webp'}
                 alt={m.block_hero_image_alt({
                   mode: isDark ? 'dark' : 'light',
                 })}
