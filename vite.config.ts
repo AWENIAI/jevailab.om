@@ -23,6 +23,21 @@ const stripeE2EConfig =
       }
     : undefined;
 
+const creemE2EConfig =
+  process.env.CREEM_E2E_RUN === 'true'
+    ? {
+        vars: {
+          CREEM_API_KEY: process.env.CREEM_API_KEY ?? '',
+          CREEM_WEBHOOK_SECRET: process.env.CREEM_WEBHOOK_SECRET ?? '',
+          CREEM_DEBUG: process.env.CREEM_DEBUG ?? 'true',
+          VITE_BASE_URL: process.env.VITE_BASE_URL ?? '',
+          BETTER_AUTH_SECRET:
+            process.env.BETTER_AUTH_SECRET ??
+            'e2e-better-auth-secret-at-least-32-characters',
+        },
+      }
+    : undefined;
+
 /**
  * Vite configuration
  * https://vite.dev/config/
@@ -71,7 +86,7 @@ const config = defineConfig({
     viteReact(),
     // https://developers.cloudflare.com/workers/vite-plugin/
     cloudflare({
-      config: stripeE2EConfig,
+      config: stripeE2EConfig ?? creemE2EConfig,
       persistState: process.env.E2E_PERSIST_PATH
         ? { path: process.env.E2E_PERSIST_PATH }
         : undefined,

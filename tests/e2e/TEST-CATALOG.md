@@ -159,7 +159,9 @@ These flows should be added after their dependencies are made deterministic:
 
 ## Stripe Payment Coverage
 
-Stripe payment tests use two layers. Creem is intentionally excluded.
+Stripe payment tests use two layers. Creem has a separate hosted-checkout
+sandbox suite below because its webhook forwarding and hosted UI differ from
+Stripe.
 
 ### Fast webhook layer
 
@@ -196,6 +198,49 @@ signed `invoice.paid` events. The sandbox suite does not cover failed
 renewals/past-due recovery, time-based Test Clock advancement, or interactive
 Customer Portal changes such as upgrade, downgrade, and payment method
 replacement.
+
+## Creem Payment Coverage
+
+**File:** `tests/e2e/creem/creem-sandbox.spec.ts` | **Priority:** P1
+
+Run the focused suite with `pnpm e2e:creem`. The suite uses Creem Test Mode
+products and test cards, then verifies both the hosted browser journey and the
+asynchronous webhook-backed D1 payment row.
+
+| # | Test name | Flow |
+|---|---|---|
+| 1 | Monthly subscription | Register and sign in, complete the Creem hosted monthly checkout, return through the app payment-processing route, and verify Pro + Active plus the monthly product in D1. |
+| 2 | Yearly subscription | Select yearly pricing, complete the hosted checkout, and verify Pro + Active plus the yearly product and interval in D1. |
+| 3 | Lifetime payment | Complete the hosted one-time checkout and verify Lifetime plus a completed one-time D1 payment row. |
+| 4 | Declined card | Submit Creem's declined test card and verify the checkout stays unsuccessful with no paid D1 row. |
+| 5 | Scheduled cancellation | Cancel the created test subscription through Creem's official SDK/API and verify the `subscription.scheduled_cancel` webhook sets `cancelAtPeriodEnd` while the subscription remains active. |
+
+### Prerequisites
+
+`pnpm e2e:creem` starts the local Worker and isolated D1 state automatically.
+Before running it, configure the following in Creem Test Mode:
+
+1. Expose `http://localhost:3021` through an HTTPS tunnel. Creem's webhook
+   documentation recommends a public HTTPS endpoint for local testing; for
+   example, use `cloudflared --config /dev/null tunnel --url
+   http://localhost:3021 --no-autoupdate --protocol quic`.
+2. Register `<tunnel>/api/webhooks/creem` under the Creem Test Mode Developers
+   → Webhooks page, with the events used by the suite:
+   `checkout.completed`, `subscription.active`, `subscription.paid`,
+   `subscription.scheduled_cancel`, `subscription.canceled`,
+   `subscription.expired`, `subscription.past_due`, `subscription.trialing`,
+   and `subscription.paused`.
+3. Set `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_DEBUG=true`, and the
+   three `VITE_CREEM_PRODUCT_*` test product IDs.
+
+Creem's test cards accept any future expiry, CVV, and billing details. The
+successful card is `4242 4242 4242 4242`; the declined card is
+`4000 0000 0000 0002`. Webhook delivery is asynchronous, so the tests wait
+for the local E2E API before deleting each test user.
+
+The suite does not cover test-mode renewal time travel, refunds, or interactive
+customer portal changes. Those should remain separate because Creem's portal
+uses an email magic-link flow and its renewal lifecycle is time-dependent.
 
 ## Waffo Payment Coverage
 
