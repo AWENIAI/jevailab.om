@@ -2,6 +2,7 @@
 // This file is a good smoke test to make sure the custom server entry is working
 import handler from '@tanstack/react-start/server-entry';
 import { localeMiddleware } from '@/locale/middleware';
+import { serverEnv } from '@/env/server';
 
 /**
  * TanStack Start server entry
@@ -15,8 +16,16 @@ console.log("[server-entry]: using custom server entry in 'src/server.ts'");
  * CORS headers for that origin so normal web/SSR traffic is completely unaffected.
  * Bearer-token auth is used (not cookies), so credentials are not required.
  */
+const trustedExtensionOrigins = serverEnv.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
+  .map((origin) => origin.trim())
+  .filter(
+    (origin) =>
+      origin.startsWith('chrome-extension://') ||
+      origin.startsWith('moz-extension://')
+  );
+
 function isExtensionOrigin(origin: string | null): origin is string {
-  return !!origin && origin.startsWith('chrome-extension://');
+  return !!origin && trustedExtensionOrigins.includes(origin);
 }
 
 function corsHeaders(origin: string): Record<string, string> {

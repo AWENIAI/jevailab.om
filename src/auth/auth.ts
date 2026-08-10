@@ -12,6 +12,10 @@ import { emailHarmony } from 'better-auth-harmony';
 import { apiKey } from '@better-auth/api-key';
 import { admin, bearer } from 'better-auth/plugins';
 
+const trustedOrigins = serverEnv.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 /**
  * Better Auth Configuration
  * https://www.better-auth.com/docs/reference/options
@@ -20,10 +24,11 @@ import { admin, bearer } from 'better-auth/plugins';
 export const auth = betterAuth({
   baseURL: getBaseUrl(),
   appName: websiteConfig.metadata?.name,
-  // Allow the browser extension to authenticate cross-origin. The id is fixed
-  // via the extension's manifest `key` (see mkext-template/wxt.config.ts).
+  // Allow explicitly configured clients, such as the browser extension, to
+  // authenticate cross-origin. Keep this list in server-side environment
+  // configuration so each deployment can use its own extension IDs.
   // https://www.better-auth.com/docs/reference/options#trustedorigins
-  trustedOrigins: ['chrome-extension://khlfglankbegadpognhkkgpgkamanfhi'],
+  trustedOrigins,
   database: drizzleAdapter(getDb(), {
     provider: 'sqlite',
   }),
