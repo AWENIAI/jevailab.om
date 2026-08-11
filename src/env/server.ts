@@ -15,6 +15,9 @@ export const serverEnv = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+    // Browser extension (Google OAuth)
+    GOOGLE_EXTENSION_CLIENT_ID: z.string().optional(),
+
     // Mail and Newsletter (Resend)
     RESEND_API_KEY: z.string().optional(),
 

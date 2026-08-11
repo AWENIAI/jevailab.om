@@ -11,10 +11,69 @@ import { websiteConfig } from '@/config/website';
 import { emailHarmony } from 'better-auth-harmony';
 import { apiKey } from '@better-auth/api-key';
 import { admin, bearer } from 'better-auth/plugins';
+import * as z from 'zod';
 
 const trustedOrigins = serverEnv.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// Better Auth uses the first client ID for the website authorization URL, while
+// accepting every item here as an ID-token audience. Keep the website client
+// first so browser-extension tokens can be verified without changing web OAuth.
+const googleIdTokenAudiences = [
+  serverEnv.GOOGLE_CLIENT_ID,
+  serverEnv.GOOGLE_EXTENSION_CLIENT_ID,
+].filter((clientId): clientId is string => Boolean(clientId));
+
+const googleUserInfoSchema = z.object({
+  sub: z.string(),
+  email: z.email(),
+  email_verified: z.boolean().optional(),
+  name: z.string().optional(),
+  picture: z.string().optional(),
+});
+
+const verifyGoogleExtensionAccessToken = async (accessToken: string) => {
+  if (!serverEnv.GOOGLE_EXTENSION_CLIENT_ID) return false;
+
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+  );
+  if (!response.ok) return false;
+
+  const payload = await response.json();
+  const audience = z
+    .object({ aud: z.string().optional(), audience: z.string().optional() })
+    .safeParse(payload);
+  return (
+    audience.success &&
+    (audience.data.aud ?? audience.data.audience) ===
+      serverEnv.GOOGLE_EXTENSION_CLIENT_ID
+  );
+};
+
+const getGoogleUserInfo = async (accessToken: string) => {
+  const response = await fetch(
+    'https://openidconnect.googleapis.com/v1/userinfo',
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+  if (!response.ok) return null;
+
+  const profile = googleUserInfoSchema.safeParse(await response.json());
+  if (!profile.success) return null;
+  return {
+    user: {
+      id: profile.data.sub,
+      name: profile.data.name ?? '',
+      email: profile.data.email,
+      image: profile.data.picture,
+      emailVerified: profile.data.email_verified ?? false,
+    },
+    data: profile.data,
+  };
+};
 
 /**
  * Better Auth Configuration
@@ -80,8 +139,13 @@ export const auth = betterAuth({
     serverEnv.GOOGLE_CLIENT_SECRET
       ? {
           google: {
-            clientId: serverEnv.GOOGLE_CLIENT_ID,
+            clientId: googleIdTokenAudiences,
             clientSecret: serverEnv.GOOGLE_CLIENT_SECRET,
+            verifyIdToken: verifyGoogleExtensionAccessToken,
+            getUserInfo: async (tokens) => {
+              const accessToken = tokens.accessToken ?? tokens.idToken;
+              return accessToken ? getGoogleUserInfo(accessToken) : null;
+            },
           },
         }
       : {}),
