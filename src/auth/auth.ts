@@ -8,9 +8,88 @@ import { subscribe } from '@/newsletter';
 import { getBaseUrl } from '@/lib/urls';
 import { serverEnv } from '@/env/server';
 import { websiteConfig } from '@/config/website';
+import { createGoogleTokenHandlers } from '@/auth/google-token-handlers';
+import { getTrustedOrigins } from '@/auth/trusted-origins';
 import { emailHarmony } from 'better-auth-harmony';
 import { apiKey } from '@better-auth/api-key';
-import { admin } from 'better-auth/plugins';
+import { admin, bearer } from 'better-auth/plugins';
+import { google, verifyGoogleIdToken } from 'better-auth/social-providers';
+import * as z from 'zod';
+
+const trustedOrigins = getTrustedOrigins(serverEnv.BETTER_AUTH_TRUSTED_ORIGINS);
+
+// Better Auth uses the first client ID for the website authorization URL, while
+// accepting every item here as an ID-token audience. Keep the website client
+// first so browser-extension tokens can be verified without changing web OAuth.
+const googleIdTokenAudiences = [
+  serverEnv.GOOGLE_CLIENT_ID,
+  serverEnv.GOOGLE_EXTENSION_CLIENT_ID,
+].filter((clientId): clientId is string => Boolean(clientId));
+
+const googleUserInfoSchema = z.object({
+  sub: z.string(),
+  email: z.email(),
+  email_verified: z.boolean().optional(),
+  name: z.string().optional(),
+  picture: z.string().optional(),
+});
+
+const verifyGoogleExtensionAccessToken = async (accessToken: string) => {
+  if (!serverEnv.GOOGLE_EXTENSION_CLIENT_ID) return false;
+
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+  );
+  if (!response.ok) return false;
+
+  const payload = await response.json();
+  const audience = z
+    .object({ aud: z.string().optional(), audience: z.string().optional() })
+    .safeParse(payload);
+  return (
+    audience.success &&
+    (audience.data.aud ?? audience.data.audience) ===
+      serverEnv.GOOGLE_EXTENSION_CLIENT_ID
+  );
+};
+
+const getGoogleUserInfo = async (accessToken: string) => {
+  const response = await fetch(
+    'https://openidconnect.googleapis.com/v1/userinfo',
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+  if (!response.ok) return null;
+
+  const profile = googleUserInfoSchema.safeParse(await response.json());
+  if (!profile.success) return null;
+  return {
+    user: {
+      id: profile.data.sub,
+      name: profile.data.name ?? '',
+      email: profile.data.email,
+      image: profile.data.picture,
+      emailVerified: profile.data.email_verified ?? false,
+    },
+    data: profile.data,
+  };
+};
+
+const getGoogleTokenHandlers = () => {
+  const defaultGoogleProvider = google({
+    clientId: googleIdTokenAudiences,
+    clientSecret: serverEnv.GOOGLE_CLIENT_SECRET ?? '',
+  });
+
+  return createGoogleTokenHandlers({
+    audiences: googleIdTokenAudiences,
+    verifyGoogleIdToken,
+    verifyExtensionAccessToken: verifyGoogleExtensionAccessToken,
+    getDefaultUserInfo: defaultGoogleProvider.getUserInfo,
+    getExtensionUserInfo: getGoogleUserInfo,
+  });
+};
 
 /**
  * Better Auth Configuration
@@ -20,6 +99,11 @@ import { admin } from 'better-auth/plugins';
 export const auth = betterAuth({
   baseURL: getBaseUrl(),
   appName: websiteConfig.metadata?.name,
+  // Allow explicitly configured clients, such as the browser extension, to
+  // authenticate cross-origin. Keep this list in server-side environment
+  // configuration so each deployment can use its own extension IDs.
+  // https://www.better-auth.com/docs/reference/options#trustedorigins
+  trustedOrigins,
   database: drizzleAdapter(getDb(), {
     provider: 'sqlite',
   }),
@@ -71,8 +155,9 @@ export const auth = betterAuth({
     serverEnv.GOOGLE_CLIENT_SECRET
       ? {
           google: {
-            clientId: serverEnv.GOOGLE_CLIENT_ID,
+            clientId: googleIdTokenAudiences,
             clientSecret: serverEnv.GOOGLE_CLIENT_SECRET,
+            ...getGoogleTokenHandlers(),
           },
         }
       : {}),
@@ -108,6 +193,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // https://www.better-auth.com/docs/plugins/bearer
+    // Let the browser extension authenticate via `Authorization: Bearer
+    // <token>`; the token is returned in the `set-auth-token` header.
+    bearer(),
     // https://www.better-auth.com/docs/plugins/admin
     // support user management, ban/unban user, manage user roles, etc.
     admin({

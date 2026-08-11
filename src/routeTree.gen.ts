@@ -54,6 +54,7 @@ import { Route as ApiStorageFileRouteImport } from './routes/api/storage/file'
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
 import { Route as ApiWebhooksWaffoRouteImport } from './routes/api/webhooks/waffo'
+import { Route as ApiAuthExtensionGoogleRouteImport } from './routes/api/auth/extension/google'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -280,6 +281,11 @@ const ApiWebhooksWaffoRoute = ApiWebhooksWaffoRouteImport.update({
   path: '/api/webhooks/waffo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthExtensionGoogleRoute = ApiAuthExtensionGoogleRouteImport.update({
+  id: '/api/auth/extension/google',
+  path: '/api/auth/extension/google',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByTo {
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -419,6 +427,7 @@ export interface FileRoutesById {
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/api/auth/extension/google'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/api/auth/extension/google'
   id:
     | '__root__'
     | '/'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/api/auth/extension/google'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -591,6 +603,7 @@ export interface RootRouteChildren {
   ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
   ApiWebhooksWaffoRoute: typeof ApiWebhooksWaffoRoute
+  ApiAuthExtensionGoogleRoute: typeof ApiAuthExtensionGoogleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -910,6 +923,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksWaffoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/extension/google': {
+      id: '/api/auth/extension/google'
+      path: '/api/auth/extension/google'
+      fullPath: '/api/auth/extension/google'
+      preLoaderRoute: typeof ApiAuthExtensionGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1011,6 +1031,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
   ApiWebhooksWaffoRoute: ApiWebhooksWaffoRoute,
+  ApiAuthExtensionGoogleRoute: ApiAuthExtensionGoogleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

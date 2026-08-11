@@ -64,8 +64,10 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | `VITE_BASE_URL` | URL (schema validation at runtime) | No | Default: `http://localhost:3000`; same value as build |
 | **Auth** | | | |
 | `BETTER_AUTH_SECRET` | Better Auth session signing | Yes (prod) | Auth; default only for CLI; [Mail](./mail.md) for verification/reset |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | Better Auth / extension CORS origins | No | Comma-separated origins such as `chrome-extension://<extension-id>` |
 | `GOOGLE_CLIENT_ID` | Google OAuth | No | Auth when Google login enabled |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth | No | Auth when Google login enabled |
+| `GOOGLE_EXTENSION_CLIENT_ID` | Browser extension Google OAuth | No | Chrome Extension OAuth client ID; added as a Google ID-token audience |
 | **Mail & newsletter (Resend)** | | | |
 | `RESEND_API_KEY` | Resend API | No | [Mail](./mail.md), [Newsletter](./newsletter.md) (when using Resend) |
 | **Mail (Cloudflare Email)** | | | |

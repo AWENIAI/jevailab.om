@@ -86,6 +86,15 @@ Server functions that need a session (e.g. `listUsers` in `src/api/users.ts`) us
 - **D1**: Configure `d1_databases` in `wrangler.jsonc` with binding name **`DB`**; `getDb()` uses `env.DB`.
 - **Mail**: Verification and password reset depend on the Mail module. (see [Mail](./mail.md)).
 - **Google OAuth**: Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in server env. Full list: [Env](./env.md).
+- **Browser-native extension OAuth**: `mkext-template` uses the Chrome
+  manifest `oauth2` configuration and `browser.identity.getAuthToken()`, then
+  posts the Google access token to `/api/auth/extension/google`. Configure
+  `GOOGLE_EXTENSION_CLIENT_ID`; the backend verifies the token audience before
+  Better Auth creates the product session.
+- **Browser extension OAuth**: The `bearer()` plugin is enabled for
+  `mkext-template`. Add the extension origin to
+  `BETTER_AUTH_TRUSTED_ORIGINS`; the Worker CORS layer exposes
+  `set-auth-token` to that origin.
 
 ---
 
