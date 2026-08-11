@@ -8,14 +8,15 @@ import { subscribe } from '@/newsletter';
 import { getBaseUrl } from '@/lib/urls';
 import { serverEnv } from '@/env/server';
 import { websiteConfig } from '@/config/website';
+import { createGoogleTokenHandlers } from '@/auth/google-token-handlers';
+import { getTrustedOrigins } from '@/auth/trusted-origins';
 import { emailHarmony } from 'better-auth-harmony';
 import { apiKey } from '@better-auth/api-key';
 import { admin, bearer } from 'better-auth/plugins';
+import { google, verifyGoogleIdToken } from 'better-auth/social-providers';
 import * as z from 'zod';
 
-const trustedOrigins = serverEnv.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const trustedOrigins = getTrustedOrigins(serverEnv.BETTER_AUTH_TRUSTED_ORIGINS);
 
 // Better Auth uses the first client ID for the website authorization URL, while
 // accepting every item here as an ID-token audience. Keep the website client
@@ -73,6 +74,21 @@ const getGoogleUserInfo = async (accessToken: string) => {
     },
     data: profile.data,
   };
+};
+
+const getGoogleTokenHandlers = () => {
+  const defaultGoogleProvider = google({
+    clientId: googleIdTokenAudiences,
+    clientSecret: serverEnv.GOOGLE_CLIENT_SECRET ?? '',
+  });
+
+  return createGoogleTokenHandlers({
+    audiences: googleIdTokenAudiences,
+    verifyGoogleIdToken,
+    verifyExtensionAccessToken: verifyGoogleExtensionAccessToken,
+    getDefaultUserInfo: defaultGoogleProvider.getUserInfo,
+    getExtensionUserInfo: getGoogleUserInfo,
+  });
 };
 
 /**
@@ -141,11 +157,7 @@ export const auth = betterAuth({
           google: {
             clientId: googleIdTokenAudiences,
             clientSecret: serverEnv.GOOGLE_CLIENT_SECRET,
-            verifyIdToken: verifyGoogleExtensionAccessToken,
-            getUserInfo: async (tokens) => {
-              const accessToken = tokens.accessToken ?? tokens.idToken;
-              return accessToken ? getGoogleUserInfo(accessToken) : null;
-            },
+            ...getGoogleTokenHandlers(),
           },
         }
       : {}),

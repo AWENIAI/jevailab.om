@@ -2,22 +2,30 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { auth } from '@/auth/auth';
 import { serverEnv } from '@/env/server';
+import {
+  getTrustedExtensionOrigins,
+  getTrustedOrigins,
+  isTrustedExtensionOrigin,
+} from '@/auth/trusted-origins';
 
 const requestSchema = z.object({
   accessToken: z.string().min(1),
 });
 
-const isTrustedExtensionOrigin = (origin: string | null) =>
-  origin !== null &&
-  serverEnv.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
-    .map((value) => value.trim())
-    .includes(origin);
+const trustedExtensionOrigins = getTrustedExtensionOrigins(
+  getTrustedOrigins(serverEnv.BETTER_AUTH_TRUSTED_ORIGINS)
+);
 
 export const Route = createFileRoute('/api/auth/extension/google')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isTrustedExtensionOrigin(request.headers.get('Origin'))) {
+        if (
+          !isTrustedExtensionOrigin(
+            request.headers.get('Origin'),
+            trustedExtensionOrigins
+          )
+        ) {
           return new Response('Forbidden', { status: 403 });
         }
 
