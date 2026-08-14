@@ -195,6 +195,7 @@ export function Navbar({ scroll = true }: NavbarProps) {
                   <>
                     <LoginWrapper mode="modal" asChild>
                       <button
+                        data-testid="navbar-login-trigger"
                         type="button"
                         className={cn(
                           buttonVariants({
@@ -208,6 +209,7 @@ export function Navbar({ scroll = true }: NavbarProps) {
                       </button>
                     </LoginWrapper>
                     <Link
+                      data-testid="navbar-signup-link"
                       to={Routes.Register}
                       className={buttonVariants({ size: 'sm' })}
                     >

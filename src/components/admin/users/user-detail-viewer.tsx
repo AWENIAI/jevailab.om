@@ -100,6 +100,7 @@ export function UserDetailViewer({ user }: UserDetailViewerProps) {
         <DrawerTrigger
           render={
             <Button
+              data-testid="admin-user-detail-trigger"
               variant="link"
               className="w-fit px-0 text-left text-foreground"
             />

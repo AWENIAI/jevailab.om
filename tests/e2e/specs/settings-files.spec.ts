@@ -39,21 +39,18 @@ test.describe('file settings', () => {
       }
     });
 
-    await page.getByRole('button', { name: 'Upload file' }).click();
-    const uploadDialog = page.getByRole('dialog', { name: 'Upload file' });
-    await uploadDialog.getByLabel('File').setInputFiles({
+    await page.getByTestId('file-upload-trigger').click();
+    const uploadDialog = page.getByTestId('file-upload-dialog');
+    await uploadDialog.locator('#file-input').setInputFiles({
       name: fileName,
       mimeType: 'text/plain',
       buffer: Buffer.from(fileBody),
     });
     await uploadDialog
-      .getByLabel('Description')
+      .locator('#description')
       .fill('Dependency upgrade regression fixture');
-    await uploadDialog
-      .getByRole('button', { name: 'Upload', exact: true })
-      .click();
+    await uploadDialog.getByTestId('file-upload-submit').click();
 
-    await expect(page.getByText('File uploaded successfully')).toBeVisible();
     const fileRow = page.getByRole('row').filter({ hasText: fileName });
     await expect(fileRow).toBeVisible();
 
@@ -77,7 +74,7 @@ test.describe('file settings', () => {
     expect(crossSiteResponse.status()).toBe(403);
 
     const fileUrl = await fileRow
-      .getByRole('link', { name: 'Open' })
+      .locator('a[target="_blank"]')
       .getAttribute('href');
     expect(fileUrl).toBeTruthy();
     const download = await page.evaluate(async (url) => {
@@ -96,9 +93,8 @@ test.describe('file settings', () => {
       status: 200,
     });
 
-    await fileRow.getByRole('button', { name: 'Actions' }).click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
-    await expect(page.getByText('File deleted successfully')).toBeVisible();
+    await fileRow.locator('[data-testid^="file-actions-"]').click();
+    await page.locator('[data-testid^="file-delete-"]').click();
     await expect(fileRow).toHaveCount(0);
   });
 });

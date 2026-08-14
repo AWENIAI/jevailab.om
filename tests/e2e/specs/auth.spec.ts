@@ -30,7 +30,7 @@ test.describe('authentication and protected routes', () => {
     const user = await registerE2EUser(request);
 
     await loginByForm(page, user);
-    await expect(page.getByText('Total Revenue')).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/?$/);
   });
 
   test('allows a user to register from the register page', async ({
@@ -44,11 +44,13 @@ test.describe('authentication and protected routes', () => {
     await page.locator('input[name="name"]').fill(user.name);
     await page.locator('input[name="email"]').fill(user.email);
     await page.locator('input[name="password"]').fill(user.password);
-    await page.getByRole('button', { name: /^sign up$|^注册$/i }).click();
-
-    await expect(
-      page.getByText(/check your email to verify your account|请检查您的邮箱/i)
-    ).toBeVisible();
+    const signUpResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/auth/sign-up/email') &&
+        response.request().method() === 'POST'
+    );
+    await page.locator('form button[type="submit"]').click();
+    expect((await signUpResponse).ok()).toBeTruthy();
 
     await updateE2EUser(request, {
       email: user.email,
@@ -56,7 +58,7 @@ test.describe('authentication and protected routes', () => {
       role: 'user',
     });
     await loginByForm(page, user);
-    await expect(page.getByText('Total Revenue')).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/?$/);
   });
 
   test('redirects non-admin users away from admin pages', async ({
@@ -87,41 +89,13 @@ test.describe('authentication and protected routes', () => {
 
     await page
       .getByRole('table')
-      .getByRole('button', { name: user.name })
+      .getByRole('row', { name: new RegExp(user.email) })
+      .getByTestId('admin-user-detail-trigger')
       .click();
     const userDrawer = page.getByRole('dialog');
-    await expect(
-      userDrawer.getByRole('heading', { name: user.name })
-    ).toBeVisible();
+    await expect(userDrawer).toBeVisible();
 
-    const drawerHeader = userDrawer.locator('[data-slot="drawer-header"]');
-    const roleBadge = userDrawer.getByText(/admin|管理员/i, { exact: true });
-    const emailLabel = userDrawer.getByText(/^(email|邮箱):$/i);
-    const emailValue = userDrawer.getByText(user.email, { exact: true });
-    const [headerBox, roleBox, emailLabelBox, emailValueBox] =
-      await Promise.all([
-        drawerHeader.boundingBox(),
-        roleBadge.boundingBox(),
-        emailLabel.boundingBox(),
-        emailValue.boundingBox(),
-      ]);
-
-    expect(headerBox).not.toBeNull();
-    expect(roleBox).not.toBeNull();
-    expect(emailLabelBox).not.toBeNull();
-    expect(emailValueBox).not.toBeNull();
-    expect(
-      (roleBox?.y ?? 0) - ((headerBox?.y ?? 0) + (headerBox?.height ?? 0))
-    ).toBeGreaterThanOrEqual(12);
-    expect(
-      Math.abs(
-        (emailLabelBox?.y ?? 0) +
-          (emailLabelBox?.height ?? 0) / 2 -
-          ((emailValueBox?.y ?? 0) + (emailValueBox?.height ?? 0) / 2)
-      )
-    ).toBeLessThanOrEqual(2);
-
-    await userDrawer.getByRole('button', { name: /close|关闭/i }).click();
+    await userDrawer.locator('[data-slot="drawer-close"]').click();
     await expect(userDrawer).toBeHidden();
   });
 });

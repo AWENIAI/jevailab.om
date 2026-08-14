@@ -32,22 +32,28 @@ test.describe('security settings', () => {
       .locator('input[name="currentPassword"]')
       .fill(user.password);
     await passwordForm.locator('input[name="newPassword"]').fill(newPassword);
-    await passwordForm.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Password updated successfully')).toBeVisible();
+    await passwordForm.locator('button[type="submit"]').click();
+    await expect(
+      passwordForm.locator('input[name="currentPassword"]')
+    ).toHaveValue('');
 
-    await page.getByText(user.email).first().click();
-    await page.getByRole('menuitem', { name: 'Log out' }).click();
+    await page.getByTestId('sidebar-user-menu-trigger').click();
+    await page.getByTestId('sidebar-sign-out').click();
     await expect(page).toHaveURL(/\/$/);
 
     await page.goto('/auth/login');
     await page.waitForLoadState('networkidle');
     await page.locator('input[name="email"]').fill(user.email);
     await page.locator('input[name="password"]').fill(user.password);
-    await page.getByRole('button', { name: /^sign in$/i }).click();
-    await expect(page.getByText('Invalid email or password.')).toBeVisible();
+    const rejectedSignIn = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/auth/sign-in/email') &&
+        response.request().method() === 'POST'
+    );
+    await page.locator('form button[type="submit"]').click();
+    expect((await rejectedSignIn).status()).toBeGreaterThanOrEqual(400);
 
     await page.locator('input[name="password"]').fill(newPassword);
-    await page.getByRole('button', { name: /^sign in$/i }).click();
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await loginByForm(page, { ...user, password: newPassword });
   });
 });

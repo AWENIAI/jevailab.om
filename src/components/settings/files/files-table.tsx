@@ -187,6 +187,7 @@ export function FilesTable({
           return (
             <DropdownMenu>
               <DropdownMenuTrigger
+                data-testid={`file-actions-${id}`}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'icon' })
                 )}
@@ -197,7 +198,10 @@ export function FilesTable({
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onDelete(id)}>
+                <DropdownMenuItem
+                  data-testid={`file-delete-${id}`}
+                  onClick={() => onDelete(id)}
+                >
                   <IconTrash className="mr-2 size-4" />
                   {m.settings_files_delete()}
                 </DropdownMenuItem>
@@ -261,6 +265,7 @@ export function FilesTable({
       <div className="flex items-center justify-between">
         <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
           <DialogTrigger
+            data-testid="file-upload-trigger"
             className={cn(
               buttonVariants({ variant: 'default', size: 'default' })
             )}
@@ -268,7 +273,7 @@ export function FilesTable({
             <IconPlus className="size-4" />
             {m.settings_files_upload_button()}
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent data-testid="file-upload-dialog">
             <DialogHeader>
               <DialogTitle>
                 {m.settings_files_upload_dialog_title()}
@@ -326,6 +331,7 @@ export function FilesTable({
                 {m.settings_files_cancel()}
               </Button>
               <Button
+                data-testid="file-upload-submit"
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading}
               >

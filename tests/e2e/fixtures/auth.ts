@@ -64,9 +64,10 @@ export async function loginByForm(page: Page, user: E2EUser) {
   await page.waitForLoadState('networkidle');
   await page.locator('input[name="email"]').fill(user.email);
   await page.locator('input[name="password"]').fill(user.password);
-  const signInButton = page.getByRole('button', {
-    name: /^sign in$|^登录$/i,
-  });
+  const signInButton = page
+    .locator('form')
+    .filter({ has: page.locator('input[name="email"]') })
+    .locator('button[type="submit"]');
   await expect(signInButton).toBeEnabled();
   await signInButton.click();
   await expect(page).toHaveURL(/\/dashboard\/?$/);

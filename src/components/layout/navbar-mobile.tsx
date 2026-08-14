@@ -62,6 +62,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
               <UserButtonMobile user={user} />
             ) : null)}
           <Button
+            data-testid="mobile-nav-toggle"
             type="button"
             variant="ghost"
             size="icon"
@@ -81,6 +82,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
 
       {open && (
         <div
+          data-testid="mobile-navigation"
           role="dialog"
           aria-modal="true"
           aria-label={m.common_mobile_navigation()}
@@ -122,6 +124,11 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
                         <CollapsibleTrigger
                           render={
                             <Button
+                              data-testid={
+                                item.items[0]?.href === Routes.About
+                                  ? 'mobile-nav-group-pages'
+                                  : undefined
+                              }
                               type="button"
                               variant="ghost"
                               className={cn(

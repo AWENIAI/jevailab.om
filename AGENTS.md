@@ -36,13 +36,35 @@ Playwright E2E is configured under `tests/e2e/`. E2E is local-first: use it for 
 
 ### E2E Workflow
 
-Follow `Spec → Code → Verify → Test → Green` for user-facing changes:
+Follow `Spec → Code → Verify → Test → Green` when a user flow, route,
+interaction, or behavioral contract changes:
 
 1. **Spec**: update `tests/e2e/TEST-CATALOG.md` with the acceptance journey.
 2. **Code**: implement the feature.
 3. **Verify**: run the app and walk the real UI in a browser.
 4. **Test**: add/update the relevant Playwright spec in `tests/e2e/specs/`.
 5. **Green**: run the related spec locally; run full `pnpm e2e` before releases or large refactors.
+
+### E2E Test Intent And Maintenance
+
+E2E tests protect user journeys, not marketing or UI copy. Assert observable
+behavior such as route transitions, request status, form submission, persisted
+data, permission boundaries, visible/interactive controls, and error-free
+rendering. Prefer API or database-backed state where it establishes the result
+more directly than rendered text.
+
+- Do **not** add or update Playwright assertions for pure wording, translation,
+  heading, toast, or descriptive-copy changes. Such changes should not require
+  E2E-file churn.
+- Use stable locators: `data-testid` for app-owned interaction targets, then
+  durable attributes such as form/input names, IDs, hrefs, and ARIA state.
+  Avoid locators and assertions coupled to translated visible text unless the
+  text itself is the product contract (for example, a generated file name or a
+  user-provided value).
+- Update the catalog/spec only when the journey, state transition, route,
+  permission rule, integration contract, or required interaction target
+  changes. Keep visual geometry and accessible naming checks narrowly scoped to
+  an explicit UI/accessibility requirement.
 
 The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally with `import.meta.env.DEV === true`, `MODE=e2e`, and a matching `x-e2e-secret`. Keep E2E test accounts scoped to `e2e-*@example.test`.
 

@@ -60,7 +60,10 @@ export function LoginWrapper({
             )
           }
         />
-        <DialogContent className="sm:max-w-100 p-0 border-0 overflow-hidden">
+        <DialogContent
+          data-testid="auth-login-dialog"
+          className="sm:max-w-100 p-0 border-0 overflow-hidden"
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>{m.auth_login_sign_in()}</DialogTitle>
           </DialogHeader>

@@ -60,9 +60,9 @@ test.describe('public page smoke coverage', () => {
 
     await expectHealthyPage(page, monitor, '/', { theme: 'dark' });
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /^log in$/i }).click();
+    await page.getByTestId('navbar-login-trigger').click();
 
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByTestId('auth-login-dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('input[name="email"]')).toBeVisible();
     await expect(dialog.locator('input[name="password"]')).toBeVisible();
@@ -81,10 +81,7 @@ test.describe('public page smoke coverage', () => {
 
       const heroImage = page.locator('#hero img');
       await expect(heroImage).toHaveCount(1);
-      await expect(heroImage).toHaveAttribute(
-        'alt',
-        new RegExp(`${theme} mode`)
-      );
+      await expect(heroImage).toHaveAttribute('alt', /.+/);
       await expect(heroImage).toHaveAttribute('width', '2796');
       await expect(heroImage).toHaveAttribute('height', '2008');
 
@@ -114,15 +111,13 @@ test.describe('public page smoke coverage', () => {
 
     const placeholder = page.locator('[data-slot="auth-actions-placeholder"]');
     await expect(placeholder).toBeVisible();
-    await expect(placeholder).toContainText('Log in');
-    await expect(placeholder).toContainText('Sign up');
     const placeholderBox = await placeholder.boundingBox();
     expect(placeholderBox).not.toBeNull();
 
     releaseSession();
 
-    const loginButton = page.getByRole('button', { name: 'Log in' });
-    const signupLink = page.getByRole('link', { name: 'Sign up' });
+    const loginButton = page.getByTestId('navbar-login-trigger');
+    const signupLink = page.getByTestId('navbar-signup-link');
     await expect(loginButton).toBeVisible();
     await expect(signupLink).toBeVisible();
     await expect(placeholder).toHaveCount(0);
@@ -146,11 +141,9 @@ test.describe('public page smoke coverage', () => {
 
     await page.goto('/');
     await expect(page.locator('html')).toHaveClass(/\blight\b/);
-    await page.getByRole('button', { name: 'Toggle menu' }).click();
+    await page.getByTestId('mobile-nav-toggle').click();
 
-    const mobileNavigation = page.getByRole('dialog', {
-      name: 'Mobile navigation',
-    });
+    const mobileNavigation = page.getByTestId('mobile-navigation');
     await expect(mobileNavigation).toBeVisible();
 
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -164,10 +157,8 @@ test.describe('public page smoke coverage', () => {
     await setTheme(page, 'light');
 
     const openMobileNavigation = async () => {
-      await page.getByRole('button', { name: 'Toggle menu' }).click();
-      const navigation = page.getByRole('dialog', {
-        name: 'Mobile navigation',
-      });
+      await page.getByTestId('mobile-nav-toggle').click();
+      const navigation = page.getByTestId('mobile-navigation');
       await expect(navigation).toBeVisible();
       return navigation;
     };
@@ -176,10 +167,7 @@ test.describe('public page smoke coverage', () => {
 
     await page.goto('/');
     let mobileNavigation = await openMobileNavigation();
-    const featuresLink = mobileNavigation.getByRole('link', {
-      name: 'Features',
-      exact: true,
-    });
+    const featuresLink = mobileNavigation.locator('a[href="/#features"]');
     const idleBackground = await backgroundColor(featuresLink);
     await featuresLink.hover();
     await expect
@@ -188,41 +176,25 @@ test.describe('public page smoke coverage', () => {
 
     await page.goto('/pricing');
     mobileNavigation = await openMobileNavigation();
-    const pricingLink = mobileNavigation.getByRole('link', {
-      name: 'Pricing',
-      exact: true,
-    });
+    const pricingLink = mobileNavigation.locator('a[href="/pricing"]');
     expect(await backgroundColor(pricingLink)).not.toBe(
-      await backgroundColor(
-        mobileNavigation.getByRole('link', {
-          name: 'Features',
-          exact: true,
-        })
-      )
+      await backgroundColor(mobileNavigation.locator('a[href="/#features"]'))
     );
 
     await page.goto('/contact');
     mobileNavigation = await openMobileNavigation();
-    const pagesTrigger = mobileNavigation.getByRole('button', {
-      name: 'Pages',
-      exact: true,
-    });
+    const pagesTrigger = mobileNavigation.getByTestId('mobile-nav-group-pages');
     expect(await backgroundColor(pagesTrigger)).not.toBe(
       await backgroundColor(
-        mobileNavigation.getByRole('button', { name: 'AI', exact: true })
+        mobileNavigation.locator('button[aria-expanded]').first()
       )
     );
 
     await pagesTrigger.click();
-    const contactLink = mobileNavigation.getByRole('link', {
-      name: 'Contact',
-      exact: true,
-    });
+    const contactLink = mobileNavigation.locator('a[href="/contact"]');
     await expect(contactLink).toBeVisible();
     expect(await backgroundColor(contactLink)).not.toBe(
-      await backgroundColor(
-        mobileNavigation.getByRole('link', { name: 'About', exact: true })
-      )
+      await backgroundColor(mobileNavigation.locator('a[href="/about"]'))
     );
   });
 

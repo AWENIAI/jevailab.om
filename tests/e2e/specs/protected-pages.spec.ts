@@ -73,7 +73,7 @@ test.describe('protected page smoke coverage', () => {
     await loginByForm(page, user);
 
     const sidebar = page.locator('[data-slot="sidebar"]');
-    await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+    await page.locator('[data-sidebar="trigger"]').click();
     await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
     await sidebar.locator('a[href$="/settings/profile"]').click();

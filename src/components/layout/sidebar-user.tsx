@@ -75,6 +75,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
+                data-testid="sidebar-user-menu-trigger"
                 size="lg"
                 className="bg-sidebar-accent/60 text-sidebar-accent-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
@@ -174,6 +175,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
 
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                data-testid="sidebar-sign-out"
                 onClick={async (event) => {
                   event.preventDefault();
                   setOpen(false);

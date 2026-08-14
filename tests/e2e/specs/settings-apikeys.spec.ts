@@ -22,26 +22,21 @@ test.describe('API key settings', () => {
     await loginByForm(page, user);
     await page.goto('/settings/apikeys');
 
-    await page.getByRole('button', { name: 'Create API Key' }).click();
-    const createDialog = page.getByRole('dialog', {
-      name: 'Create API Key',
-    });
-    await createDialog.getByLabel('Name').fill(keyName);
-    await createDialog.getByRole('button', { name: 'Create' }).click();
+    await page.getByTestId('api-key-create-trigger').click();
+    const createDialog = page.getByTestId('api-key-create-dialog');
+    await createDialog.locator('#key-name').fill(keyName);
+    await createDialog.getByTestId('api-key-create-submit').click();
 
-    const secretDialog = page.getByRole('dialog', {
-      name: 'Your new API key',
-    });
+    const secretDialog = page.getByTestId('api-key-secret-dialog');
     await expect(secretDialog).toBeVisible();
     await expect(secretDialog.locator('input[readonly]')).not.toHaveValue('');
-    await secretDialog.getByRole('button', { name: 'Done' }).click();
+    await secretDialog.getByTestId('api-key-secret-done').click();
 
     const keyRow = page.getByRole('row').filter({ hasText: keyName });
     await expect(keyRow).toBeVisible();
-    await keyRow.getByRole('button', { name: 'Actions' }).click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await keyRow.locator('[data-testid^="api-key-actions-"]').click();
+    await page.locator('[data-testid^="api-key-delete-"]').click();
 
-    await expect(page.getByText('API key deleted successfully')).toBeVisible();
     await expect(keyRow).toHaveCount(0);
   });
 });

@@ -1,8 +1,9 @@
 # E2E Test Catalog
 
 This catalog is the acceptance checklist for Playwright E2E coverage. Update it
-before or alongside feature work, then use the implemented spec files to lock in
-the verified behavior.
+before or alongside changes to a user journey or behavioral contract, then use
+the implemented spec files to lock in the verified behavior. Do not update it
+for copy-only or translation-only changes.
 
 ## Workflow
 
@@ -18,6 +19,15 @@ Spec -> Code -> Verify -> Test -> Green
 4. Test: add or update the matching Playwright spec.
 5. Green: run the related spec locally; run full E2E before releases or large
    refactors.
+
+## Test Intent
+
+E2E coverage validates journeys and state transitions, not exact page wording.
+Use stable `data-testid` values for app-owned controls and durable structural
+attributes for forms, routes, and generated data. Assert navigation, HTTP/API
+results, persistence, permissions, and visible/interactable states. Do not add
+or revise specs merely because marketing copy, labels, headings, descriptions,
+or localized toast text changed.
 
 E2E tests are intentionally local-first. CI should continue to prefer fast
 checks such as `pnpm check` and `pnpm build` unless a separate E2E environment is

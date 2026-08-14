@@ -24,11 +24,8 @@ test.describe('settings profile', () => {
     const nameInput = page.locator('input[name="name"]');
     await expect(nameInput).toBeVisible();
     await nameInput.fill(newName);
-    await page.getByRole('button', { name: /save|保存/i }).click();
+    await page.locator('form button[type="submit"]').click();
 
-    await expect(
-      page.getByText(/name updated successfully|名字更新成功/i)
-    ).toBeVisible();
     await expect(nameInput).toHaveValue(newName);
 
     await page.reload();

@@ -153,6 +153,7 @@ export function ApiKeysTable({
           return (
             <DropdownMenu>
               <DropdownMenuTrigger
+                data-testid={`api-key-actions-${keyId}`}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'icon' })
                 )}
@@ -163,7 +164,10 @@ export function ApiKeysTable({
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onDelete(keyId)}>
+                <DropdownMenuItem
+                  data-testid={`api-key-delete-${keyId}`}
+                  onClick={() => onDelete(keyId)}
+                >
                   <IconTrash className="mr-2 size-4" />
                   {m.settings_api_keys_delete()}
                 </DropdownMenuItem>
@@ -231,6 +235,7 @@ export function ApiKeysTable({
       <div className="flex items-center justify-between">
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger
+            data-testid="api-key-create-trigger"
             className={cn(
               buttonVariants({ variant: 'default', size: 'default' })
             )}
@@ -238,7 +243,7 @@ export function ApiKeysTable({
             <IconPlus className="size-4" />
             {m.settings_api_keys_create_button()}
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent data-testid="api-key-create-dialog">
             <DialogHeader>
               <DialogTitle>
                 {m.settings_api_keys_create_dialog_title()}
@@ -272,7 +277,11 @@ export function ApiKeysTable({
               >
                 {m.settings_api_keys_cancel()}
               </Button>
-              <Button onClick={handleCreate} disabled={creating}>
+              <Button
+                data-testid="api-key-create-submit"
+                onClick={handleCreate}
+                disabled={creating}
+              >
                 {creating
                   ? m.settings_api_keys_creating()
                   : m.settings_api_keys_create()}
@@ -283,7 +292,7 @@ export function ApiKeysTable({
       </div>
 
       <Dialog open={newKeyDialogOpen} onOpenChange={handleCloseNewKeyDialog}>
-        <DialogContent>
+        <DialogContent data-testid="api-key-secret-dialog">
           <DialogHeader>
             <DialogTitle>
               {m.settings_api_keys_new_key_dialog_title()}
@@ -310,7 +319,10 @@ export function ApiKeysTable({
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleCloseNewKeyDialog}>
+            <Button
+              data-testid="api-key-secret-done"
+              onClick={handleCloseNewKeyDialog}
+            >
               {m.settings_api_keys_done()}
             </Button>
           </DialogFooter>
