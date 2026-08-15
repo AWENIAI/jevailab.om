@@ -93,6 +93,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
               <div className="flex w-full flex-col gap-4">
                 <LoginWrapper mode="redirect" asChild>
                   <Button
+                    data-testid="mobile-nav-login-trigger"
                     type="button"
                     variant="outline"
                     size="lg"
@@ -103,6 +104,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
                   </Button>
                 </LoginWrapper>
                 <Link
+                  data-testid="mobile-nav-signup-link"
                   to={Routes.Register}
                   onClick={() => setOpen(false)}
                   className={cn(buttonVariants({ size: 'lg' }), 'w-full')}

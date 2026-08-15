@@ -66,7 +66,8 @@ browser console errors or page errors.
 | 3 | Desktop auth actions keep stable width while loading | Delay the session request, verify inert Login and Sign up placeholders are visible, then release the request and confirm the resolved actions occupy the same width. |
 | 4 | Open mobile navigation hides at desktop breakpoint | Open the mobile navigation at a narrow viewport, resize to desktop width, and verify the mobile dialog no longer covers the desktop navigation. |
 | 5 | Mobile navigation uses consistent interactive backgrounds | At a narrow viewport, verify standalone links gain the muted background on hover and active standalone, group, and nested links retain the same background treatment. |
-| 6 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
+| 6 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
+| 7 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
 
 ## 2. Authentication And Protected Routes
 
@@ -80,8 +81,9 @@ verified users.
 | 1 | Guests are redirected from dashboard | Open `/dashboard` while signed out, expect redirect to `/auth/login`, and verify the email input is visible. |
 | 2 | Verified user can sign in | Create an E2E user, mark it verified, sign in through `/auth/login`, and verify dashboard content. |
 | 3 | User can register from UI | Fill `/auth/register`, verify the registration success message, mark the test account verified, sign in through `/auth/login`, and verify dashboard content. |
-| 4 | Non-admin cannot view admin pages | Sign in as a non-admin user, open `/admin/users`, and expect redirect to `/dashboard`. |
-| 5 | Admin can view users dashboard | Sign in as an admin E2E user, open `/admin/users`, verify the users dashboard shows the admin email, then open and close the user's detail drawer. |
+| 4 | Short registration password is rejected locally | Fill a seven-character password and verify the browser blocks submission before it requests `/api/auth/sign-up/email`. |
+| 5 | Non-admin cannot view admin pages | Sign in as a non-admin user, open `/admin/users`, and expect redirect to `/dashboard`. |
+| 6 | Admin can view users dashboard | Sign in as an admin E2E user, open `/admin/users`, verify the users dashboard shows the admin email, then open and close the user's detail drawer. |
 
 ## 3. Protected Page Smoke Test
 

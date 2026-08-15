@@ -196,6 +196,7 @@
   "auth_register_name": "Name",
   "auth_register_name_required": "Please enter your name",
   "auth_register_password": "Password",
+  "auth_register_password_min_length": "Password must be at least 8 characters",
   "auth_register_password_required": "Please enter your password",
   "auth_register_placeholder_email": "name@example.com",
   "auth_register_placeholder_name": "name",

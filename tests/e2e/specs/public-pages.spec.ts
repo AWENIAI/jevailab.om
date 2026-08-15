@@ -150,6 +150,37 @@ test.describe('public page smoke coverage', () => {
     await expect(mobileNavigation).toBeHidden();
   });
 
+  test('renders mobile auth actions without nested buttons', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const nestedButtonErrors: string[] = [];
+    page.on('console', (message) => {
+      if (
+        message.type() === 'error' &&
+        message.text().includes('cannot be a descendant')
+      ) {
+        nestedButtonErrors.push(message.text());
+      }
+    });
+
+    await page.goto('/');
+    await page.getByTestId('mobile-nav-toggle').click();
+
+    const mobileNavigation = page.getByTestId('mobile-navigation');
+    await expect(mobileNavigation).toBeVisible();
+    await expect(
+      mobileNavigation.getByTestId('mobile-nav-login-trigger')
+    ).toBeVisible();
+    await expect(
+      mobileNavigation.getByTestId('mobile-nav-signup-link')
+    ).toHaveAttribute('href', '/auth/register');
+    expect(nestedButtonErrors).toEqual([]);
+
+    await mobileNavigation.getByTestId('mobile-nav-login-trigger').click();
+    await expect(page).toHaveURL(/\/auth\/login\/?$/);
+  });
+
   test('uses consistent mobile navigation interaction backgrounds', async ({
     page,
   }) => {

@@ -76,6 +76,19 @@ export function LoginWrapper({
       </Dialog>
     );
   }
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<{
+      onClick?: React.MouseEventHandler<HTMLElement>;
+    }>;
+    return React.cloneElement(child, {
+      onClick: (event) => {
+        child.props.onClick?.(event);
+        if (!event.defaultPrevented) {
+          handleRedirect();
+        }
+      },
+    });
+  }
   return (
     <button type="button" onClick={handleRedirect} className="inline">
       {children}

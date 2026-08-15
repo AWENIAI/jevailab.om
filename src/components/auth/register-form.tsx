@@ -47,7 +47,7 @@ export function RegisterForm({
     email: z.email({ message: m.auth_register_email_required() }),
     password: z
       .string()
-      .min(1, { message: m.auth_register_password_required() }),
+      .min(8, { message: m.auth_register_password_min_length() }),
     name: z.string().min(1, { message: m.auth_register_name_required() }),
   });
   const form = useForm<z.infer<typeof RegisterSchema>>({

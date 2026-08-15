@@ -61,6 +61,33 @@ test.describe('authentication and protected routes', () => {
     await expect(page).toHaveURL(/\/dashboard\/?$/);
   });
 
+  test('validates the registration password before requesting an account', async ({
+    page,
+  }) => {
+    let signUpRequestCount = 0;
+    page.on('request', (request) => {
+      if (
+        request.url().includes('/api/auth/sign-up/email') &&
+        request.method() === 'POST'
+      ) {
+        signUpRequestCount += 1;
+      }
+    });
+
+    await page.goto('/auth/register');
+    await page.waitForLoadState('networkidle');
+    await page.locator('input[name="name"]').fill('E2E User');
+    await page.locator('input[name="email"]').fill('e2e-short@example.test');
+    await page.locator('input[name="password"]').fill('1234567');
+    await page.locator('form button[type="submit"]').click();
+
+    await expect(page.locator('input[name="password"]')).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(signUpRequestCount).toBe(0);
+  });
+
   test('redirects non-admin users away from admin pages', async ({
     page,
     request,
