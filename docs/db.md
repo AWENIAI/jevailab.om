@@ -53,6 +53,21 @@ src/db/
   - Remote: `drizzle.config.ts` (D1 HTTP + account credentials).
   - Local: `drizzle.config.local.ts` (local SQLite path, e.g. for Studio).
 
+## Admin role
+
+Promote an existing user by email without using the admin dashboard:
+
+```bash
+pnpm db:admin:local user@example.com
+pnpm db:admin:remote user@example.com
+```
+
+Both commands read the D1 database name from `wrangler.jsonc`, match the email
+case-insensitively, and verify the stored role after updating it. They exit
+without writing if the email does not exist and are safe to repeat for a user
+who is already an admin. The user should sign out and sign in again afterward
+to refresh Better Auth's cached session.
+
 ## Consumers
 
 - **Auth** (`src/auth/auth.ts`): `drizzleAdapter(getDb(), { provider: 'sqlite' })`; Better Auth reads/writes user, session, account, verification, apikey.
