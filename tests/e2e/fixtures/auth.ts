@@ -49,6 +49,7 @@ export async function updateE2EUser(
     email: string;
     emailVerified?: boolean;
     role?: 'admin' | 'user' | null;
+    customerId?: string | null;
   }
 ) {
   const response = await request.patch('/api/e2e/users', {

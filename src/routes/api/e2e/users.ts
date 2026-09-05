@@ -45,11 +45,15 @@ export const Route = createFileRoute('/api/e2e/users')({
 
         const db = getDb();
         const [row] = await db
-          .select({ id: user.id })
+          .select({
+            id: user.id,
+            name: user.name,
+            customerId: user.customerId,
+          })
           .from(user)
           .where(eq(user.email, email))
           .limit(1);
-        if (!row) return Response.json({ paymentCount: 0 });
+        if (!row) return Response.json({ user: null, paymentCount: 0 });
 
         const filters = paidOnly
           ? and(eq(payment.userId, row.id), eq(payment.paid, true))
@@ -88,6 +92,7 @@ export const Route = createFileRoute('/api/e2e/users')({
           : null;
 
         return Response.json({
+          user: row,
           paymentCount: rows.length,
           latestPayment,
           subscription: subscriptionRow
@@ -106,6 +111,7 @@ export const Route = createFileRoute('/api/e2e/users')({
           email?: unknown;
           emailVerified?: unknown;
           role?: unknown;
+          customerId?: unknown;
         };
         const email = typeof body.email === 'string' ? body.email : '';
 
@@ -119,11 +125,16 @@ export const Route = createFileRoute('/api/e2e/users')({
         const updates: {
           emailVerified?: boolean;
           role?: string | null;
+          customerId?: string | null;
           updatedAt: Date;
         } = { updatedAt: new Date() };
 
         if (typeof body.emailVerified === 'boolean') {
           updates.emailVerified = body.emailVerified;
+        }
+        // Seed provider-owned mappings only behind the existing local E2E gate.
+        if (body.customerId === null || typeof body.customerId === 'string') {
+          updates.customerId = body.customerId;
         }
         if (
           body.role === null ||

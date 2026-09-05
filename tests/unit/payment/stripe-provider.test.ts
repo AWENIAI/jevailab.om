@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const dbMocks = vi.hoisted(() => ({
@@ -28,6 +29,7 @@ vi.mock('@/notification', () => ({
 }));
 
 import { StripeProvider } from '@/payment/provider/stripe';
+import { user } from '@/db/auth.schema';
 
 const WEBHOOK_SECRET = 'whsec_stripe_provider_test_secret';
 const monthlyPrice = {
@@ -283,7 +285,7 @@ describe('Stripe provider lifecycle', () => {
     const provider = new StripeProvider();
     const stripe = configureStripeClient(provider);
     configureSelect([]);
-    configureUpdate([{ id: 'user_test' }]);
+    const update = configureUpdate([{ id: 'user_test' }]);
     stripe.customers.create.mockResolvedValue({ id: 'cus_new' });
     stripe.checkout.sessions.create.mockResolvedValue({
       id: 'cs_lifetime',
@@ -301,6 +303,19 @@ describe('Stripe provider lifecycle', () => {
       email: 'buyer@example.com',
       name: undefined,
     });
+    expect(dbMocks.update).toHaveBeenCalledExactlyOnceWith(user);
+    expect(update.set).toHaveBeenCalledExactlyOnceWith({
+      customerId: 'cus_new',
+      updatedAt: expect.any(Date),
+    });
+    expect(update.where).toHaveBeenCalledOnce();
+    expect(
+      new SQLiteSyncDialect().sqlToQuery(update.where.mock.calls[0][0])
+    ).toMatchObject({
+      sql: '"user"."email" = ?',
+      params: ['buyer@example.com'],
+    });
+    expect(update.returning).toHaveBeenCalledExactlyOnceWith({ id: user.id });
     expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
       expect.objectContaining({
         customer: 'cus_new',

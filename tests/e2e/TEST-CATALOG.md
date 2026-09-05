@@ -85,6 +85,20 @@ verified users.
 | 5 | Non-admin cannot view admin pages | Sign in as a non-admin user, open `/admin/users`, and expect redirect to `/dashboard`. |
 | 6 | Admin can view users dashboard | Sign in as an admin E2E user, open `/admin/users`, verify the users dashboard shows the admin email, then open and close the user's detail drawer. |
 
+### Customer Mapping Protection
+
+**File:** `specs/auth-customer-id.spec.ts` | **Priority:** P0
+
+| # | Test name | Flow |
+|---|---|---|
+| 1 | Registration cannot inject a customer ID | Submit another customer's ID to the real signup endpoint, verify rejection and no persisted account, then register normally with the same email. |
+| 2 | Profile updates cannot replace a customer ID | Seed distinct server-owned customer IDs for two users, sign in, attempt to replace the current user's ID through cookie and bearer authentication, and verify both D1 mappings remain unchanged. |
+| 3 | Empty values cannot clear a customer ID | Submit null and empty-string customer IDs alongside valid name updates; verify the names persist while the original D1 customer mapping remains intact. |
+
+Normal registration, login, and profile editing remain covered by `auth.spec.ts`
+and `settings-profile.spec.ts`. Provider and portal unit tests use mocked payment
+services; these journeys do not require a hosted checkout or real customer IDs.
+
 ## 3. Protected Page Smoke Test
 
 **File:** `specs/protected-pages.spec.ts` | **Priority:** P0

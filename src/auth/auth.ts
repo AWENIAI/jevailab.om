@@ -175,6 +175,8 @@ export const auth = betterAuth({
       customerId: {
         type: 'string',
         required: false,
+        // Payment providers own this mapping; public auth inputs must not set it.
+        input: false,
       },
     },
     // https://www.better-auth.com/docs/concepts/users-accounts#delete-user
