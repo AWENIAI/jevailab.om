@@ -439,8 +439,8 @@ verifyWebhook(body, sig, { environment: "prod" });
 // Disable replay protection (not recommended for production)
 verifyWebhook(body, sig, { toleranceMs: 0 });
 
-// Custom tolerance (default: 5 minutes)
-verifyWebhook(body, sig, { toleranceMs: 600000 });
+// Custom past-facing tolerance (default: 45 minutes for webhook retries)
+verifyWebhook(body, sig, { toleranceMs: 2700000 });
 ```
 
 ### Webhook Event Types
@@ -449,10 +449,12 @@ verifyWebhook(body, sig, { toleranceMs: 600000 });
 |-------|---------|
 | `order.completed` | One-time payment succeeded |
 | `subscription.activated` | First subscription payment succeeded |
-| `subscription.payment_succeeded` | Renewal payment succeeded |
+| `subscription.payment_succeeded` | Payment succeeded; no subscription status or period fields |
+| `subscription.renewed` | Current billing period rolled forward |
+| `subscription.recovered` | Successful retry restored a past-due subscription |
+| `subscription.plan_changed` | Plan change took effect |
 | `subscription.canceling` | Buyer initiated cancel (active until period end) |
 | `subscription.uncanceled` | Buyer withdrew cancellation |
-| `subscription.updated` | Plan changed (upgrade/downgrade) |
 | `subscription.canceled` | Subscription fully terminated |
 | `subscription.past_due` | Renewal payment failed |
 | `refund.succeeded` | Refund completed |

@@ -1,4 +1,4 @@
-import { WaffoPancake } from '@waffo/pancake-ts';
+import { WaffoPancake, WebhookEventType } from '@waffo/pancake-ts';
 import { loadEnv } from 'vite';
 
 /**
@@ -19,17 +19,18 @@ import { loadEnv } from 'vite';
  * .env.e2e. See docs/waffo/SKILL.md → Configuring Webhook URLs.
  */
 
-const DEFAULT_EVENTS = [
-  'order.completed',
-  'subscription.activated',
-  'subscription.payment_succeeded',
-  'subscription.updated',
-  'subscription.canceling',
-  'subscription.uncanceled',
-  'subscription.canceled',
-  'subscription.past_due',
-  'refund.succeeded',
-  'refund.failed',
+const DEFAULT_EVENTS: `${WebhookEventType}`[] = [
+  WebhookEventType.OrderCompleted,
+  WebhookEventType.SubscriptionActivated,
+  WebhookEventType.SubscriptionRenewed,
+  WebhookEventType.SubscriptionRecovered,
+  WebhookEventType.SubscriptionPlanChanged,
+  WebhookEventType.SubscriptionCanceling,
+  WebhookEventType.SubscriptionUncanceled,
+  WebhookEventType.SubscriptionCanceled,
+  WebhookEventType.SubscriptionPastDue,
+  WebhookEventType.RefundSucceeded,
+  WebhookEventType.RefundFailed,
 ];
 
 function readArg(name: string): string | undefined {
@@ -64,28 +65,11 @@ if (!merchantId) throw new Error('WAFFO_MERCHANT_ID is not set');
 if (!privateKey) throw new Error('WAFFO_PRIVATE_KEY is not set');
 
 const events = eventsArg
-  ? eventsArg.split(',').map((s) => s.trim())
+  ? (eventsArg.split(',').map((s) => s.trim()) as `${WebhookEventType}`[])
   : DEFAULT_EVENTS;
 const client = new WaffoPancake({ merchantId, privateKey });
 
-// The webhooks namespace was introduced alongside the store settings API in
-// the SDK; TypeScript may not know about it in older releases, so cast to
-// unknown before calling into it. See SKILL.md for the current signature.
-const webhooks = (
-  client as unknown as {
-    webhooks: {
-      add: (params: {
-        storeId: string;
-        channel: 'http';
-        url: string;
-        events: string[];
-        testMode: boolean;
-      }) => Promise<{ webhook: { id: string } }>;
-    };
-  }
-).webhooks;
-
-const result = await webhooks.add({
+const result = await client.webhooks.add({
   storeId,
   channel: 'http',
   url,
@@ -94,7 +78,7 @@ const result = await webhooks.add({
 });
 
 console.log(
-  `Registered Waffo ${isProd ? 'production' : 'test'} webhook ${result.webhook?.id ?? result.id}`
+  `Registered Waffo ${isProd ? 'production' : 'test'} webhook ${result.webhook.id}`
 );
 console.log(`  store:  ${storeId}`);
 console.log(`  url:    ${url}`);

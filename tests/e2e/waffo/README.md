@@ -3,8 +3,10 @@
 This directory contains the real Waffo sandbox browser flow in
 `waffo-sandbox.spec.ts`. It covers monthly and yearly hosted subscriptions,
 the Lifetime checkout, the Waffo hosted confirmation page, webhook-backed D1
-payment persistence, the sandbox renewal event, and Billing updates without a
-manual reload.
+payment persistence, the accompanying pure payment event, and Billing updates
+without a manual reload. Real period renewal remains unit-level because the
+sandbox checkout journey creates a new subscription rather than advancing its
+clock.
 
 Waffo does not provide a local webhook-forwarding CLI for this workflow. The
 local Worker must be exposed through an HTTPS tunnel, and the tunnel must
@@ -89,6 +91,10 @@ subscription, and refund events used by the provider. It is safe to rerun for
 the same store, URL, channel, and mode. Use `--prod` only when intentionally
 registering a production webhook.
 
+For an endpoint created before `subscription.renewed` became available, open
+it in the Waffo dashboard and explicitly enable that event. Registering code
+changes alone cannot alter an already saved dashboard subscription list.
+
 If the Waffo credentials exist only in `.dev.vars`, make them available to
 the setup helper through `.env.local` or the shell as well; the helper reads
 Vite's development env files and `process.env`, not the Worker binding file
@@ -126,10 +132,10 @@ Verify that:
 4. The subscription interval is monthly or yearly as selected.
 5. The local D1 payment row is eventually marked paid.
 
-Waffo Test Mode emits `subscription.payment_succeeded` immediately after
-`subscription.activated`. Keep the Worker and tunnel running for a few
-seconds and verify that this renewal event does not create a duplicate payment
-row or set a scheduled cancellation.
+Waffo Test Mode also emits the pure payment event
+`subscription.payment_succeeded` after `subscription.activated`. Keep the
+Worker and tunnel running for a few seconds and verify that it does not create
+a duplicate payment row or overwrite subscription lifecycle state.
 
 ## Automated sandbox test
 
@@ -178,8 +184,8 @@ pnpm e2e:waffo
 ```
 
 The suite covers monthly and yearly trial subscriptions, Lifetime checkout,
-webhook-backed Billing state, and the immediate sandbox renewal event. To run
-one scenario:
+webhook-backed Billing state, and the accompanying payment event. To run one
+scenario:
 
 ```bash
 pnpm e2e:waffo -- --grep "monthly subscription"

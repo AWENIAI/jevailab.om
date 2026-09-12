@@ -274,13 +274,14 @@ uses an email magic-link flow and its renewal lifecycle is time-dependent.
 
 Run the focused suite with `pnpm e2e:waffo`. The unit boundary
 (`tests/unit/payment/waffo-provider.test.ts`) already runs in `pnpm check` and
-covers checkout mapping, order completion, subscription cancellation/renewal
-state, and refund handling.
+covers checkout mapping, order completion, subscription lifecycle changes,
+renewal period advancement, and refund handling.
 
 The Playwright journey registers and signs in, completes Waffo test checkout
 for the monthly, yearly and lifetime products, asserts the Billing page
 reflects the corresponding plan (Pro + Active, Pro + Active, Lifetime), and
-covers the sandbox renewal event (`subscription.payment_succeeded`).
+verifies the pure payment event (`subscription.payment_succeeded`) does not
+overwrite subscription lifecycle state or create duplicate rows.
 
 Hosted checkouts return through the payment processing page
 (`/settings/payment?callback=...`, detected by "callback present and no
@@ -289,11 +290,11 @@ navigates to Billing. The specs assert Billing settles into the paid plan
 **without a manual reload** — regression coverage for a stale-plan bug where
 returning from Waffo rendered the old plan until a hard refresh.
 
-Waffo test mode delivers `subscription.payment_succeeded` immediately after
-`subscription.activated`, so the monthly/yearly journeys exercise the renewal
-handler on every run. The dedicated renewal test additionally asserts from the
-E2E API that the renewal leaves the subscription row `active` with no
-scheduled cancellation and no duplicate payment rows.
+Waffo test mode delivers `subscription.payment_succeeded` alongside the first
+payment's `subscription.activated` event. The dedicated state test asserts
+that this payment-only event leaves the activated subscription row unchanged
+and creates no duplicate payment rows. Actual period advancement is carried
+by `subscription.renewed` and covered at the provider boundary.
 
 ### Prerequisites
 
@@ -326,5 +327,5 @@ The Playwright suite does not yet cover:
 - Hosted consumer portal navigation
 - Subscription upgrade / downgrade
 - Refund revoking access
-- Past-due flows (renewal success is covered; failed-renewal state remains
-  unit-level via `tests/unit/payment/waffo-provider.test.ts`)
+- Real-time renewal and past-due recovery flows (their webhook contracts are
+  unit-covered via `tests/unit/payment/waffo-provider.test.ts`)

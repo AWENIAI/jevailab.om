@@ -151,11 +151,12 @@ export class WaffoProvider implements PaymentProvider {
       const expectedMode = this.getExpectedMode();
       // Verify against the environment we expect to be running in. Passing
       // an explicit `environment` avoids letting the SDK guess based on
-      // headers, and the 5-minute `toleranceMs` matches the SDK default but
-      // is set explicitly so time-skew symptoms are traceable later.
+      // headers. Waffo retries reuse the original signature timestamp, so the
+      // 45-minute past-facing window matches the SDK retry schedule. Future
+      // timestamps retain the SDK's stricter one-minute default.
       const event = verifyWebhook<WebhookEventData>(payload, signature, {
         environment: expectedMode,
-        toleranceMs: 300_000,
+        toleranceMs: 2_700_000,
       });
       if (event.mode !== expectedMode) {
         console.warn(
@@ -171,9 +172,15 @@ export class WaffoProvider implements PaymentProvider {
           await this.createSubscriptionPayment(event);
           break;
         case WebhookEventType.SubscriptionPaymentSucceeded:
+          // Pure payment event: it deliberately carries no subscription
+          // status or period. Lifecycle state is handled by activated,
+          // renewed and recovered instead.
+          break;
+        case WebhookEventType.SubscriptionRenewed:
+        case WebhookEventType.SubscriptionRecovered:
           await this.updateSubscription(event, { status: 'active' });
           break;
-        case WebhookEventType.SubscriptionUpdated:
+        case WebhookEventType.SubscriptionPlanChanged:
           await this.updateSubscription(event, { syncPlan: true });
           break;
         case WebhookEventType.SubscriptionCanceling:
@@ -362,24 +369,31 @@ export class WaffoProvider implements PaymentProvider {
   ): Promise<void> {
     const { data } = event;
     const values: Partial<typeof payment.$inferInsert> = {
-      status: this.mapSubscriptionStatus(data.orderStatus, options.status),
       paid: options.paid ?? true,
-      // Only clear a scheduled cancellation when the event actually reports
-      // one; otherwise a renewal or plan change would silently un-cancel.
-      cancelAtPeriodEnd:
-        options.cancelAtPeriodEnd ?? data.orderStatus === 'canceling',
       updatedAt: new Date(),
     };
+    if (data.orderStatus || options.status) {
+      values.status = this.mapSubscriptionStatus(
+        data.orderStatus,
+        options.status
+      );
+    }
+    const cancelAtPeriodEnd =
+      options.cancelAtPeriodEnd ??
+      (data.orderStatus ? data.orderStatus === 'canceling' : undefined);
+    if (cancelAtPeriodEnd !== undefined) {
+      values.cancelAtPeriodEnd = cancelAtPeriodEnd;
+    }
     const periodStart = this.parseDate(data.currentPeriodStart);
     const periodEnd = this.parseDate(data.currentPeriodEnd);
     if (periodStart) values.periodStart = periodStart;
     if (periodEnd) values.periodEnd = periodEnd;
+    if (data.billingPeriod) {
+      values.interval = this.mapBillingPeriod(data.billingPeriod);
+    }
     if (options.syncPlan) {
       const priceId = this.getPriceId(data);
       if (priceId) values.priceId = priceId;
-      if (data.billingPeriod) {
-        values.interval = this.mapBillingPeriod(data.billingPeriod);
-      }
     }
     await getDb()
       .update(payment)

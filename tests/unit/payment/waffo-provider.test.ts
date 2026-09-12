@@ -24,9 +24,11 @@ vi.mock('@waffo/pancake-ts', () => ({
     OrderCompleted: 'order.completed',
     SubscriptionActivated: 'subscription.activated',
     SubscriptionPaymentSucceeded: 'subscription.payment_succeeded',
+    SubscriptionRenewed: 'subscription.renewed',
+    SubscriptionRecovered: 'subscription.recovered',
+    SubscriptionPlanChanged: 'subscription.plan_changed',
     SubscriptionCanceling: 'subscription.canceling',
     SubscriptionUncanceled: 'subscription.uncanceled',
-    SubscriptionUpdated: 'subscription.updated',
     SubscriptionCanceled: 'subscription.canceled',
     SubscriptionPastDue: 'subscription.past_due',
     RefundSucceeded: 'refund.succeeded',
@@ -245,7 +247,7 @@ describe('Waffo provider boundary', () => {
     );
   });
 
-  test('clears scheduled cancellation after a successful renewal', async () => {
+  test('does not mutate subscription lifecycle state for a payment event', async () => {
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_paid',
       eventId: 'EVT_paid',
@@ -258,7 +260,6 @@ describe('Waffo provider boundary', () => {
         amount: '9.90',
         taxAmount: '0.00',
         productName: 'Pro Monthly',
-        orderStatus: 'active',
       },
     });
 
@@ -267,10 +268,77 @@ describe('Waffo provider boundary', () => {
       'signed'
     );
 
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  test('advances the subscription period on subscription.renewed', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_renewed',
+      eventId: 'ORD_subscription-renewed-2026-10-08',
+      eventType: 'subscription.renewed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_subscription',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '9.90',
+        taxAmount: '0.00',
+        productName: 'Pro Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-10-08',
+        currentPeriodEnd: '2026-11-08',
+      },
+    });
+
+    await new WaffoProvider().handleWebhookEvent(
+      '{"eventType":"subscription.renewed"}',
+      'signed'
+    );
+
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cancelAtPeriodEnd: false,
+        interval: 'month',
+        paid: true,
+        periodStart: new Date('2026-10-08'),
+        periodEnd: new Date('2026-11-08'),
+        status: 'active',
+      })
+    );
+  });
+
+  test('restores lifecycle state on subscription.recovered', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_recovered',
+      eventId: 'EVT_recovered',
+      eventType: 'subscription.recovered',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_subscription',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '9.90',
+        taxAmount: '0.00',
+        productName: 'Pro Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-10-08',
+        currentPeriodEnd: '2026-11-08',
+      },
+    });
+
+    await new WaffoProvider().handleWebhookEvent(
+      '{"eventType":"subscription.recovered"}',
+      'signed'
+    );
+
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
         cancelAtPeriodEnd: false,
         paid: true,
+        periodStart: new Date('2026-10-08'),
+        periodEnd: new Date('2026-11-08'),
         status: 'active',
       })
     );
@@ -349,11 +417,11 @@ describe('Waffo provider boundary', () => {
     );
   });
 
-  test('syncs priceId and interval on subscription.updated (plan change)', async () => {
+  test('syncs priceId and interval on subscription.plan_changed', async () => {
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_updated',
       eventId: 'EVT_updated',
-      eventType: 'subscription.updated',
+      eventType: 'subscription.plan_changed',
       mode: 'test',
       data: {
         orderId: 'ORD_sub_1',
@@ -369,7 +437,7 @@ describe('Waffo provider boundary', () => {
     });
 
     await new WaffoProvider().handleWebhookEvent(
-      '{"eventType":"subscription.updated"}',
+      '{"eventType":"subscription.plan_changed"}',
       'signed'
     );
 

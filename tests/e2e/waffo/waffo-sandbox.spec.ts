@@ -166,7 +166,7 @@ test.describe('Waffo sandbox payment', () => {
     });
   });
 
-  test('renewal keeps the subscription active after sandbox payment_succeeded', async ({
+  test('payment callback does not duplicate initial subscription state', async ({
     page,
     request,
     baseURL,
@@ -190,10 +190,9 @@ test.describe('Waffo sandbox payment', () => {
       billingAssertion: /Pro[\s\S]*Active/,
     });
 
-    // Waffo test mode delivers `subscription.payment_succeeded` (the renewal
-    // event) immediately after `subscription.activated`. The renewal handler
-    // must keep the subscription active, leave cancellation unset, and must
-    // not create duplicate payment rows.
+    // Waffo also delivers the pure `subscription.payment_succeeded` payment
+    // event. It must not overwrite the lifecycle state written by
+    // `subscription.activated` or create a duplicate payment row.
     const first = await waitForSubscription(request, user.email, {
       timeoutMs: 30_000,
     });
@@ -206,7 +205,7 @@ test.describe('Waffo sandbox payment', () => {
     });
     expect(first!.subscription!.periodEnd).not.toBeNull();
 
-    // Give a late renewal event time to land, then re-verify no regression.
+    // Give a late payment event time to land, then re-verify no regression.
     await page.waitForTimeout(5_000);
     const settled = await waitForSubscription(request, user.email, {
       timeoutMs: 10_000,
