@@ -28,6 +28,22 @@ pnpm deploy
 
 This runs `pnpm build` and then `wrangler deploy`. Configure your account and bindings in `wrangler.jsonc`, and set any required environment variables or secrets with `wrangler secret`.
 
+## Check the Worker bundle size
+
+Cloudflare Workers Free and Paid plans both allow an uncompressed Worker
+bundle of up to 64 MiB. There is no compressed-size limit; the gzip size in
+Wrangler's output is only provided for reference.
+
+Check the bundle before deploying:
+
+```bash
+pnpm exec wrangler deploy --outdir bundled/ --dry-run
+```
+
+The `Total Upload` value is the uncompressed size that counts toward the 64 MiB
+limit. See Cloudflare's [Worker size limits](https://developers.cloudflare.com/workers/platform/limits/#worker-size)
+for the current details.
+
 ![img](/images/blog-deployment.webp)
 
 Good luck with your launch.
