@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { user } from '@/db/auth.schema';
 import { sendPaymentNotification } from '@/notification';
+import { InvalidWebhookSignatureError } from '@/payment/errors';
 import { Creem } from 'creem';
 import type {
   CheckoutEntity,
@@ -307,6 +308,9 @@ export class CreemProvider implements PaymentProvider {
           console.warn(`Unhandled Creem webhook event: ${eventType}`);
       }
     } catch (error) {
+      // Signature failures must reach the route unwrapped so it can answer
+      // 400 instead of acknowledging a forged request with 200.
+      if (error instanceof InvalidWebhookSignatureError) throw error;
       console.error('Creem webhook handling error:', error);
       throw new Error('Failed to handle Creem webhook event');
     }
@@ -358,7 +362,7 @@ export class CreemProvider implements PaymentProvider {
     signature: string
   ): Promise<void> {
     if (!signature) {
-      throw new Error('Missing Creem webhook signature');
+      throw new InvalidWebhookSignatureError('Creem');
     }
 
     const encoder = new TextEncoder();
@@ -381,7 +385,7 @@ export class CreemProvider implements PaymentProvider {
       .join('');
 
     if (computed !== signature) {
-      throw new Error('Invalid Creem webhook signature');
+      throw new InvalidWebhookSignatureError('Creem');
     }
   }
 

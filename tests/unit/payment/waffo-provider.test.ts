@@ -583,6 +583,22 @@ describe('Waffo provider boundary', () => {
     expect(provider.requiresCustomerId).toBe(false);
   });
 
+  test('rejects a failed signature verification with a typed error', async () => {
+    mocks.verifyWebhook.mockImplementation(() => {
+      throw new Error('invalid signature');
+    });
+
+    await expect(
+      new WaffoProvider().handleWebhookEvent(
+        '{"eventType":"order.completed"}',
+        'bad-signature'
+      )
+    ).rejects.toMatchObject({
+      name: 'InvalidWebhookSignatureError',
+      message: 'Invalid Waffo webhook signature',
+    });
+  });
+
   test('constructor throws when required env vars are missing', () => {
     const previousMerchant = process.env.WAFFO_MERCHANT_ID;
     const previousKey = process.env.WAFFO_PRIVATE_KEY;

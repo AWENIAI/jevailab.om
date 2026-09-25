@@ -173,4 +173,20 @@ describe('Creem provider boundary', () => {
       })
     );
   });
+
+  test('rejects an invalid signature with a typed error', async () => {
+    const payload = JSON.stringify({
+      id: 'evt_bad_signature',
+      eventType: 'checkout.completed',
+      created_at: 1_757_000_000,
+      object: {},
+    });
+
+    await expect(
+      new CreemProvider().handleWebhookEvent(payload, 'invalid-signature')
+    ).rejects.toMatchObject({
+      name: 'InvalidWebhookSignatureError',
+      message: 'Invalid Creem webhook signature',
+    });
+  });
 });

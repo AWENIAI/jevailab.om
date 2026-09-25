@@ -12,6 +12,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { findPlanByPlanId, findPriceInPlan } from '@/lib/price-plan';
 import { sendPaymentNotification } from '@/notification';
+import { InvalidWebhookSignatureError } from '@/payment/errors';
 import type {
   CheckoutResult,
   CreateCheckoutParams,
@@ -154,10 +155,19 @@ export class WaffoProvider implements PaymentProvider {
       // headers. Waffo retries reuse the original signature timestamp, so the
       // 45-minute past-facing window matches the SDK retry schedule. Future
       // timestamps retain the SDK's stricter one-minute default.
-      const event = verifyWebhook<WebhookEventData>(payload, signature, {
-        environment: expectedMode,
-        toleranceMs: 2_700_000,
-      });
+      let event: WaffoEvent;
+      try {
+        event = verifyWebhook<WebhookEventData>(payload, signature, {
+          environment: expectedMode,
+          toleranceMs: 2_700_000,
+        });
+      } catch (error) {
+        // Surface verification failures (bad signature, malformed header,
+        // stale timestamp) as a typed error so the route can answer 400
+        // instead of acknowledging a forged request with 200.
+        this.logError('webhook signature verification', error);
+        throw new InvalidWebhookSignatureError('Waffo');
+      }
       if (event.mode !== expectedMode) {
         console.warn(
           `Skipping Waffo ${event.mode} event in ${expectedMode} runtime: ${event.eventType}`
@@ -215,6 +225,9 @@ export class WaffoProvider implements PaymentProvider {
           console.warn(`Unhandled Waffo webhook event: ${event.eventType}`);
       }
     } catch (error) {
+      // Signature failures must reach the route unwrapped so it can answer
+      // 400 instead of acknowledging a forged request with 200.
+      if (error instanceof InvalidWebhookSignatureError) throw error;
       this.logError('webhook handling', error);
       throw new Error('Failed to handle Waffo webhook event');
     }
