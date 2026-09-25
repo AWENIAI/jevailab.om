@@ -604,7 +604,7 @@ test.describe
       expect(refunded?.latestPayment).toMatchObject({
         paid: false,
         scene: 'lifetime',
-        status: 'completed',
+        status: 'canceled',
         type: 'one_time',
       });
     });

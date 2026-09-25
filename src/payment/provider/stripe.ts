@@ -828,7 +828,13 @@ export class StripeProvider implements PaymentProvider {
           paid: true, // Mark as paid
           updatedAt: new Date(),
         })
-        .where(and(eq(payment.id, paymentRecord.id), eq(payment.paid, false)))
+        .where(
+          and(
+            eq(payment.id, paymentRecord.id),
+            eq(payment.paid, false),
+            eq(payment.status, 'completed')
+          )
+        )
         .returning({ id: payment.id });
 
       // Apply lifetime-plan benefits only on the first paid transition.
@@ -851,7 +857,7 @@ export class StripeProvider implements PaymentProvider {
   }
 
   /**
-   * Revoke a lifetime payment after a full Stripe refund.
+   * Revoke the matching lifetime payment after a full Stripe refund.
    *
    * Partial refunds keep the existing access because the product policy is
    * to revoke Lifetime only when the whole charge has been refunded.
@@ -867,11 +873,31 @@ export class StripeProvider implements PaymentProvider {
       return;
     }
 
+    const invoiceId =
+      typeof charge.invoice === 'string' ? charge.invoice : charge.invoice?.id;
+    const paymentIntentId =
+      typeof charge.payment_intent === 'string'
+        ? charge.payment_intent
+        : charge.payment_intent?.id;
+    let sessionId: string | undefined;
+    if (!invoiceId && paymentIntentId) {
+      const sessions = await this.stripe.checkout.sessions.list({
+        payment_intent: paymentIntentId,
+        limit: 1,
+      });
+      sessionId = sessions.data[0]?.id;
+    }
+    if (!invoiceId && !sessionId) {
+      console.warn('<< Refund has no matching invoice or checkout session');
+      return;
+    }
+
     const db = getDb();
     const result = await db
       .update(payment)
       .set({
         paid: false,
+        status: 'canceled',
         updatedAt: new Date(),
       })
       .where(
@@ -879,13 +905,16 @@ export class StripeProvider implements PaymentProvider {
           eq(payment.customerId, customerId),
           eq(payment.type, PaymentTypes.ONE_TIME),
           eq(payment.scene, PaymentScenes.LIFETIME),
+          invoiceId
+            ? eq(payment.invoiceId, invoiceId)
+            : eq(payment.sessionId, sessionId!),
           eq(payment.paid, true)
         )
       )
       .returning({ id: payment.id });
 
     if (result.length > 0) {
-      console.log('<< Revoked lifetime access after Stripe refund');
+      console.log('<< Revoked matching lifetime access after Stripe refund');
     } else {
       console.warn('<< No lifetime payment found for Stripe refund');
     }

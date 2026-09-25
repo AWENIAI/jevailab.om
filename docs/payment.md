@@ -133,7 +133,9 @@ and browser verification.
 Stripe provides a built-in **Customer Portal** for managing subscriptions (upgrade, cancel, update payment method). Accessed via the "Manage subscription" button on `/settings/billing`.
 
 Full refunds for Lifetime purchases are handled through `charge.refunded` and
-revoke access. Partial refunds do not revoke access.
+revoke only the payment matched by its Invoice or Checkout Session. The row is
+marked `canceled`, so a delayed `invoice.paid` replay cannot restore access.
+Partial refunds do not revoke access.
 
 ---
 

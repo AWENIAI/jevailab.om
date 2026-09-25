@@ -987,12 +987,46 @@ describe('Stripe provider lifecycle', () => {
       id: 'ch_test',
       object: 'charge',
       customer: 'cus_test',
+      invoice: 'in_refunded',
       refunded: true,
     });
 
     expect(update.set).toHaveBeenCalledWith(
-      expect.objectContaining({ paid: false })
+      expect.objectContaining({ paid: false, status: 'canceled' })
     );
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."invoice_id" = ?');
+    expect(query.params).toContain('in_refunded');
+  });
+
+  test('resolves the matching checkout when a refund has no invoice', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    const update = configureUpdate();
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [{ id: 'cs_refunded' }],
+    });
+
+    await dispatch(provider, 'charge.refunded', {
+      id: 'ch_test',
+      object: 'charge',
+      customer: 'cus_test',
+      invoice: null,
+      payment_intent: 'pi_refunded',
+      refunded: true,
+    });
+
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      payment_intent: 'pi_refunded',
+      limit: 1,
+    });
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."session_id" = ?');
+    expect(query.params).toContain('cs_refunded');
   });
 
   test('keeps lifetime access for a partial charge refund', async () => {
@@ -1003,9 +1037,40 @@ describe('Stripe provider lifecycle', () => {
       id: 'ch_test',
       object: 'charge',
       customer: 'cus_test',
+      invoice: 'in_test',
       refunded: false,
     });
 
     expect(dbMocks.update).not.toHaveBeenCalled();
+  });
+
+  test('does not reactivate a refunded lifetime payment on invoice replay', async () => {
+    const provider = new StripeProvider();
+    configureStripeClient(provider);
+    configureSelect([
+      paymentRecord({
+        type: 'one_time',
+        scene: 'lifetime',
+        subscriptionId: null,
+        status: 'canceled',
+        paid: false,
+      }),
+    ]);
+    const update = configureUpdate([]);
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_test',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      subscription: null,
+    });
+
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."status" = ?');
+    expect(query.params).toContain('completed');
+    expect(providerMocks.sendPaymentNotification).not.toHaveBeenCalled();
   });
 });
