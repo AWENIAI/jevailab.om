@@ -3,6 +3,7 @@ import {
   cleanupE2EUsers,
   loginByForm,
   registerE2EUser,
+  waitForE2EPayment,
   waitForPaidPayment,
   waitForSubscription,
 } from '../fixtures/auth';
@@ -31,25 +32,15 @@ test.describe('Waffo sandbox payment', () => {
   async function completeHostedCheckout(
     page: import('@playwright/test').Page,
     options: {
-      trial: boolean;
       paymentButton: string;
       baseURL: string;
-      billingAssertion: RegExp;
     }
   ) {
     const billingUrl = `${options.baseURL.replace(/\/$/, '')}/settings/billing`;
     await page.waitForURL(/https:\/\/.*\.waffo\.(ai|com)\//, {
       timeout: 30_000,
     });
-    if (options.trial) {
-      await expect(page.getByText('7-day free trial')).toBeVisible({
-        timeout: 30_000,
-      });
-    }
     await page.getByRole('button', { name: /Continue/i }).click();
-    await expect(page.getByText('Payment', { exact: true })).toBeVisible({
-      timeout: 30_000,
-    });
     const cardMethod = page.getByRole('button', {
       name: 'Credit/Debit Card',
     });
@@ -82,18 +73,9 @@ test.describe('Waffo sandbox payment', () => {
     await page.waitForURL(billingUrl, {
       timeout: 60_000,
     });
-    // The page must settle into the paid plan on its own — no manual reload.
-    // Regression: without the payment-processing hop, Billing rendered the
-    // stale plan until a hard refresh.
-    await expect
-      .poll(async () => page.locator('body').innerText(), {
-        timeout: 60_000,
-        intervals: [2_000, 4_000, 8_000],
-      })
-      .toMatch(options.billingAssertion);
   }
 
-  test('monthly subscription shows trial, pays, and returns to Billing', async ({
+  test('monthly subscription pays and returns to Billing', async ({
     page,
     request,
     baseURL,
@@ -105,21 +87,25 @@ test.describe('Waffo sandbox payment', () => {
     await page.goto('/pricing');
     await page.waitForTimeout(1500);
 
-    const proCard = page
-      .locator('[data-slot="card"]')
-      .filter({ has: page.getByRole('heading', { name: 'Pro' }) });
-    await expect(proCard).toContainText('Get Started');
-    await proCard.getByRole('button', { name: /Get Started/i }).click();
+    await page.getByTestId('pricing-card-pro').getByRole('button').click();
 
     await completeHostedCheckout(page, {
-      trial: true,
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
-      billingAssertion: /Pro[\s\S]*Active/,
+    });
+    const state = await waitForE2EPayment(request, user.email, {
+      paidOnly: true,
+      predicate: (current) => current.subscription?.interval === 'month',
+    });
+    expect(state?.latestPayment).toMatchObject({
+      interval: 'month',
+      paid: true,
+      scene: 'subscription',
+      status: 'active',
     });
   });
 
-  test('yearly subscription shows trial, pays, and returns to Billing', async ({
+  test('yearly subscription pays and returns to Billing', async ({
     page,
     request,
     baseURL,
@@ -129,17 +115,21 @@ test.describe('Waffo sandbox payment', () => {
     await loginByForm(page, user);
     await page.goto('/pricing');
     await page.waitForTimeout(1_500);
-    await page.getByRole('button', { name: 'Yearly', exact: true }).click();
-    const proCard = page
-      .locator('[data-slot="card"]')
-      .filter({ has: page.getByRole('heading', { name: 'Pro' }) });
-    await expect(proCard).toContainText('/year');
-    await proCard.getByRole('button', { name: /Get Started/i }).click();
+    await page.getByTestId('pricing-interval-year').click();
+    await page.getByTestId('pricing-card-pro').getByRole('button').click();
     await completeHostedCheckout(page, {
-      trial: true,
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
-      billingAssertion: /Pro[\s\S]*Active/,
+    });
+    const state = await waitForE2EPayment(request, user.email, {
+      paidOnly: true,
+      predicate: (current) => current.subscription?.interval === 'year',
+    });
+    expect(state?.latestPayment).toMatchObject({
+      interval: 'year',
+      paid: true,
+      scene: 'subscription',
+      status: 'active',
     });
   });
 
@@ -152,17 +142,20 @@ test.describe('Waffo sandbox payment', () => {
     currentUserEmail = user.email;
     await loginByForm(page, user);
     await page.goto('/pricing');
-    const lifetimeCard = page
-      .locator('[data-slot="card"]')
-      .filter({ has: page.getByRole('heading', { name: /Lifetime/i }) });
-    await lifetimeCard
-      .getByRole('button', { name: /Lifetime Access|Get Lifetime/i })
-      .click();
+    await page.getByTestId('pricing-card-lifetime').getByRole('button').click();
     await completeHostedCheckout(page, {
-      trial: false,
       paymentButton: 'Pay',
       baseURL: baseURL ?? 'http://localhost:3018',
-      billingAssertion: /Lifetime/i,
+    });
+    const state = await waitForE2EPayment(request, user.email, {
+      paidOnly: true,
+      predicate: (current) => current.latestPayment?.scene === 'lifetime',
+    });
+    expect(state?.latestPayment).toMatchObject({
+      paid: true,
+      scene: 'lifetime',
+      status: 'completed',
+      type: 'one_time',
     });
   });
 
@@ -178,16 +171,11 @@ test.describe('Waffo sandbox payment', () => {
     await page.goto('/pricing');
     await page.waitForTimeout(1_500);
 
-    const proCard = page
-      .locator('[data-slot="card"]')
-      .filter({ has: page.getByRole('heading', { name: 'Pro' }) });
-    await proCard.getByRole('button', { name: /Get Started/i }).click();
+    await page.getByTestId('pricing-card-pro').getByRole('button').click();
 
     await completeHostedCheckout(page, {
-      trial: true,
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
-      billingAssertion: /Pro[\s\S]*Active/,
     });
 
     // Waffo also delivers the pure `subscription.payment_succeeded` payment

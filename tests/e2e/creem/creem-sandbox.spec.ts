@@ -25,7 +25,7 @@ if (!creemApiKey || process.env.CREEM_DEBUG !== 'true') {
 const creem = new Creem({ apiKey: creemApiKey, serverIdx: 1 });
 
 type CheckoutScenario = {
-  expectedPlan: 'Lifetime' | 'Pro';
+  planId: 'lifetime' | 'pro';
   expectedProductId: string;
   interval?: 'month' | 'year';
   cardNumber?: string;
@@ -163,25 +163,11 @@ async function startCreemCheckout(
   await page.waitForLoadState('networkidle');
 
   if (scenario.interval === 'year') {
-    await page.getByText('Yearly', { exact: true }).click();
+    await page.getByTestId('pricing-interval-year').click();
   }
 
-  const planCard = page
-    .locator('[data-slot="card"]')
-    .filter({
-      has: page.getByRole('heading', {
-        name: scenario.expectedPlan,
-        exact: true,
-      }),
-    })
-    .first();
-  const checkoutButtonName =
-    scenario.expectedPlan === 'Lifetime'
-      ? 'Get Lifetime Access'
-      : 'Get Started';
-  await planCard
-    .getByRole('button', { name: checkoutButtonName, exact: true })
-    .click();
+  const planCard = page.getByTestId(`pricing-card-${scenario.planId}`);
+  await planCard.getByRole('button').click();
 
   await page.waitForURL(/https:\/\/(?:www\.)?creem\.io\//, {
     timeout: 60_000,
@@ -220,15 +206,6 @@ async function completeCreemCheckout(
     timeout: 120_000,
   });
   await page.waitForURL(/\/settings\/billing\/?$/, { timeout: 120_000 });
-
-  await expect
-    .poll(async () => page.locator('body').innerText(), {
-      timeout: 60_000,
-      intervals: [2_000, 4_000, 8_000],
-    })
-    .toMatch(
-      scenario.expectedPlan === 'Lifetime' ? /Lifetime/ : /Pro[\s\S]*Active/
-    );
 }
 
 async function waitForCreemPayment(
@@ -291,7 +268,7 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month' as const,
       };
@@ -316,7 +293,7 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_YEARLY'),
         interval: 'year' as const,
       };
@@ -340,7 +317,7 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Lifetime' as const,
+        planId: 'lifetime' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_LIFETIME'),
       };
       await completeCreemCheckout(page, user, scenario);
@@ -365,18 +342,12 @@ test.describe
       currentUserEmail = user.email;
 
       const payButton = await startCreemCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month',
         cardNumber: '4000000000000002',
       });
       await payButton.click();
-      await expect
-        .poll(async () => page.locator('body').innerText(), {
-          timeout: 60_000,
-          intervals: [1_000, 2_000, 4_000],
-        })
-        .toMatch(/declined|failed|unable to process|error/i);
 
       const state = await waitForE2EPayment(request, user.email, {
         timeoutMs: 10_000,
@@ -395,7 +366,7 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month' as const,
       };

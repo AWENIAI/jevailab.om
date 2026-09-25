@@ -23,10 +23,10 @@ if (!stripeSecretKey?.startsWith('sk_test_')) {
 const stripe = new Stripe(stripeSecretKey);
 
 type CheckoutScenario = {
-  expectedPlan: 'Lifetime' | 'Pro';
+  planId: 'lifetime' | 'pro';
   expectedPriceId: string;
   interval?: 'month' | 'year';
-  portalButton?: RegExp;
+  openPortal?: boolean;
   cardNumber?: string;
 };
 
@@ -61,25 +61,11 @@ async function fillStripeCheckout(
   await page.waitForLoadState('networkidle');
 
   if (scenario.interval === 'year') {
-    await page.getByText('Yearly', { exact: true }).click();
+    await page.getByTestId('pricing-interval-year').click();
   }
 
-  const planCard = page
-    .locator('[data-slot="card"]')
-    .filter({
-      has: page.getByRole('heading', {
-        name: scenario.expectedPlan,
-        exact: true,
-      }),
-    })
-    .first();
-  const checkoutButtonName =
-    scenario.expectedPlan === 'Lifetime'
-      ? 'Get Lifetime Access'
-      : 'Get Started';
-  await planCard
-    .getByRole('button', { name: checkoutButtonName, exact: true })
-    .click();
+  const planCard = page.getByTestId(`pricing-card-${scenario.planId}`);
+  await planCard.getByRole('button').click();
 
   await page.waitForURL(/https:\/\/checkout\.stripe\.com\//, {
     timeout: 60_000,
@@ -126,14 +112,6 @@ async function completeStripeCheckout(
   await payButton.click();
   await page.waitForURL(/\/settings\/billing/, { timeout: 120_000 });
 
-  const billingCard = page
-    .locator('[data-slot="card"]')
-    .filter({ hasText: 'Current plan' })
-    .first();
-  await expect(
-    billingCard.getByText(scenario.expectedPlan, { exact: true })
-  ).toBeVisible();
-
   const customers = await stripe.customers.list({
     email: user.email,
     limit: 10,
@@ -176,10 +154,8 @@ async function completeStripeCheckout(
     }
   }
 
-  if (scenario.portalButton) {
-    await billingCard
-      .getByRole('button', { name: scenario.portalButton })
-      .click();
+  if (scenario.openPortal) {
+    await page.getByTestId('customer-portal-button').click();
     await page.waitForURL(/https:\/\/billing\.stripe\.com\//, {
       timeout: 60_000,
     });
@@ -230,10 +206,10 @@ test.describe
       paidEmails.add(user.email);
 
       await completeStripeCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
         interval: 'month',
-        portalButton: /manage subscription/i,
+        openPortal: true,
       });
       const state = await waitForPaidSnapshot(request, user.email);
       expect(state.latestPayment).toMatchObject({
@@ -254,7 +230,7 @@ test.describe
       paidEmails.add(user.email);
 
       await completeStripeCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_YEARLY ?? '',
         interval: 'year',
       });
@@ -277,7 +253,7 @@ test.describe
       paidEmails.add(user.email);
 
       const artifacts = await completeStripeCheckout(page, user, {
-        expectedPlan: 'Lifetime',
+        planId: 'lifetime',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_LIFETIME ?? '',
       });
       const state = await waitForPaidSnapshot(request, user.email);
@@ -300,15 +276,12 @@ test.describe
       });
 
       const payButton = await fillStripeCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
         interval: 'month',
         cardNumber: '4000000000009995',
       });
       await payButton.click();
-      await expect(page.getByText(/declined/i).first()).toBeVisible({
-        timeout: 60_000,
-      });
 
       const state = await waitForE2EPayment(request, user.email, {
         timeoutMs: 10_000,
@@ -326,7 +299,7 @@ test.describe
       paidEmails.add(user.email);
 
       const artifacts = await completeStripeCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
         interval: 'month',
       });
@@ -364,7 +337,7 @@ test.describe
       paidEmails.add(user.email);
 
       const artifacts = await completeStripeCheckout(page, user, {
-        expectedPlan: 'Lifetime',
+        planId: 'lifetime',
         expectedPriceId: process.env.VITE_STRIPE_PRICE_LIFETIME ?? '',
       });
       if (!artifacts.sessionId) {

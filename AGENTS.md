@@ -32,42 +32,6 @@ pnpm email:dev              # React Email preview on port 3333
 pnpm cf-typegen             # Generate Cloudflare Worker types (also runs on postinstall)
 ```
 
-Playwright E2E is configured under `tests/e2e/`. E2E is local-first: use it for feature completion, release checks, and large refactors; keep CI focused on fast checks unless a dedicated E2E environment is provisioned.
-
-### E2E Workflow
-
-Follow `Spec → Code → Verify → Test → Green` when a user flow, route,
-interaction, or behavioral contract changes:
-
-1. **Spec**: update `tests/e2e/TEST-CATALOG.md` with the acceptance journey.
-2. **Code**: implement the feature.
-3. **Verify**: run the app and walk the real UI in a browser.
-4. **Test**: add/update the relevant Playwright spec in `tests/e2e/specs/`.
-5. **Green**: run the related spec locally; run full `pnpm e2e` before releases or large refactors.
-
-### E2E Test Intent And Maintenance
-
-E2E tests protect user journeys, not marketing or UI copy. Assert observable
-behavior such as route transitions, request status, form submission, persisted
-data, permission boundaries, visible/interactive controls, and error-free
-rendering. Prefer API or database-backed state where it establishes the result
-more directly than rendered text.
-
-- Do **not** add or update Playwright assertions for pure wording, translation,
-  heading, toast, or descriptive-copy changes. Such changes should not require
-  E2E-file churn.
-- Use stable locators: `data-testid` for app-owned interaction targets, then
-  durable attributes such as form/input names, IDs, hrefs, and ARIA state.
-  Avoid locators and assertions coupled to translated visible text unless the
-  text itself is the product contract (for example, a generated file name or a
-  user-provided value).
-- Update the catalog/spec only when the journey, state transition, route,
-  permission rule, integration contract, or required interaction target
-  changes. Keep visual geometry and accessible naming checks narrowly scoped to
-  an explicit UI/accessibility requirement.
-
-The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally with `import.meta.env.DEV === true`, `MODE=e2e`, and a matching `x-e2e-secret`. Keep E2E test accounts scoped to `e2e-*@example.test`.
-
 ## Architecture
 
 ### Request Flow
@@ -136,3 +100,43 @@ Enforced by Biome (`biome.json`):
 
 ### Cloudflare Workers Constraint
 Avoid Node.js-specific APIs — this runs on Cloudflare Workers runtime, not Node.js.
+
+## E2E Testing
+
+Playwright E2E is configured under `tests/e2e/`. E2E is local-first: use it for feature completion, release checks, and large refactors; keep CI focused on fast checks unless a dedicated E2E environment is provisioned.
+
+### E2E Workflow
+
+Follow `Spec → Code → Verify → Test → Green` when a user flow, route,
+interaction, or behavioral contract changes:
+
+1. **Spec**: update `tests/e2e/TEST-CATALOG.md` with the acceptance journey.
+2. **Code**: implement the feature.
+3. **Verify**: run the app and walk the real UI in a browser.
+4. **Test**: add/update the relevant Playwright spec in `tests/e2e/specs/`.
+5. **Green**: run the related spec locally; run full `pnpm e2e` before releases or large refactors.
+
+### E2E Test Intent And Maintenance
+
+E2E tests protect functional journeys and outcomes, not presentation contracts.
+Assert behavior such as route transitions, request status, form submission,
+persisted data, permission boundaries, and the availability of controls required
+to complete a journey. Prefer API or database-backed state when it establishes
+the outcome more directly than rendered UI.
+
+- Presentation-only changes must not require E2E catalog or spec changes. Do
+  **not** assert exact wording, translations, headings, toast copy, element
+  placement or order, spacing, dimensions, colors, typography, icons, images,
+  CSS classes, or other visual styling in functional E2E tests.
+- Use stable locators: `data-testid` for app-owned interaction targets, then
+  durable attributes such as form/input names, IDs, hrefs, and ARIA state.
+  Locators identify controls; they are not assertions about how those controls
+  are presented. Use visible text only when the text itself is a functional
+  result, such as a user-provided value or generated file name.
+- Update the catalog/spec only when the journey, state transition, route,
+  permission rule, integration contract, or required interaction target
+  changes. Handle accessibility requirements in dedicated tests when explicitly
+  in scope. Add visual-regression tests only when the user explicitly requests
+  them; do not mix either concern into functional E2E flows.
+
+The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally with `import.meta.env.DEV === true`, `MODE=e2e`, and a matching `x-e2e-secret`. Keep E2E test accounts scoped to `e2e-*@example.test`.

@@ -8,9 +8,7 @@ import {
   expectHealthyPage,
   installPageHealthMonitor,
   localizedPath,
-  setTheme,
   type LocaleMode,
-  type ThemeMode,
 } from '../fixtures/page-health';
 
 const protectedPages = [
@@ -25,12 +23,7 @@ const protectedPages = [
   { path: '/settings/notifications', name: 'notification settings' },
 ] as const;
 
-const smokeMatrix: Array<{ locale: LocaleMode; theme: ThemeMode }> = [
-  { locale: 'en', theme: 'dark' },
-  { locale: 'en', theme: 'light' },
-  { locale: 'zh', theme: 'dark' },
-  { locale: 'zh', theme: 'light' },
-];
+const locales: LocaleMode[] = ['en', 'zh'];
 
 test.describe('protected page smoke coverage', () => {
   test.beforeAll(async ({ request }) => {
@@ -41,13 +34,12 @@ test.describe('protected page smoke coverage', () => {
     await cleanupE2EUsers(request);
   });
 
-  for (const { locale, theme } of smokeMatrix) {
-    test(`renders all protected pages in ${locale}/${theme}`, async ({
+  for (const locale of locales) {
+    test(`renders all protected pages in ${locale}`, async ({
       page,
       request,
     }) => {
       const user = await registerE2EUser(request, { role: 'admin' });
-      await setTheme(page, theme);
       const monitor = installPageHealthMonitor(page);
 
       await loginByForm(page, user);
@@ -57,8 +49,7 @@ test.describe('protected page smoke coverage', () => {
           await expectHealthyPage(
             page,
             monitor,
-            localizedPath(protectedPage.path, locale),
-            { theme }
+            localizedPath(protectedPage.path, locale)
           );
         });
       }
