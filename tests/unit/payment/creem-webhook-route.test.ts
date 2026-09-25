@@ -6,6 +6,7 @@ const dbMocks = vi.hoisted(() => ({
   insert: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
+  returning: vi.fn(),
   values: vi.fn(),
 }));
 
@@ -92,8 +93,51 @@ const checkoutPayload = JSON.stringify({
   },
 });
 
+const subscriptionPaidPayload = JSON.stringify({
+  id: 'evt_subscription_paid',
+  eventType: 'subscription.paid',
+  created_at: Date.parse(timestamp),
+  object: {
+    id: 'sub_creem_buyer',
+    mode: 'test',
+    object: 'subscription',
+    customer: {
+      id: 'cus_creem_buyer',
+      mode: 'test',
+      object: 'customer',
+      email: 'buyer@example.com',
+      country: 'US',
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    product: {
+      id: 'PROD_monthly',
+      mode: 'test',
+      object: 'product',
+      name: 'Pro Monthly',
+      description: 'Monthly plan',
+      price: 990,
+      currency: 'USD',
+      billing_type: 'recurring',
+      billing_period: 'every-month',
+      status: 'active',
+      tax_mode: 'inclusive',
+      tax_category: 'saas',
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    collection_method: 'charge_automatically',
+    status: 'active',
+    current_period_start_date: timestamp,
+    current_period_end_date: '2026-10-05T00:00:00.000Z',
+    created_at: timestamp,
+    updated_at: timestamp,
+  },
+});
+
 describe('Creem webhook HTTP route', () => {
   beforeEach(() => {
+    vi.resetAllMocks();
     process.env.CREEM_API_KEY = 'key_test';
     process.env.CREEM_WEBHOOK_SECRET = WEBHOOK_SECRET;
     process.env.CREEM_DEBUG = 'true';
@@ -182,5 +226,30 @@ describe('Creem webhook HTTP route', () => {
     });
     expect(retryResponse.status).toBe(200);
     await expect(retryResponse.json()).resolves.toEqual({ received: true });
+  });
+
+  test('requests a retry when subscription.paid arrives before checkout.completed', async () => {
+    dbMocks.update.mockReturnValue({ set: dbMocks.set });
+    dbMocks.set.mockReturnValue({ where: dbMocks.where });
+    dbMocks.where.mockReturnValue({ returning: dbMocks.returning });
+    dbMocks.returning
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'payment_creem' }]);
+    const provider = new CreemProvider();
+    const request = () =>
+      creemRequest(subscriptionPaidPayload, sign(subscriptionPaidPayload));
+
+    const failedResponse = await handleCreemWebhookRequest(
+      request(),
+      dependencies(provider)
+    );
+    const retryResponse = await handleCreemWebhookRequest(
+      request(),
+      dependencies(provider)
+    );
+
+    expect(failedResponse.status).toBe(500);
+    expect(retryResponse.status).toBe(200);
+    expect(dbMocks.returning).toHaveBeenCalledTimes(2);
   });
 });

@@ -180,10 +180,12 @@ Partial refunds do not revoke access.
 | Processing failure (e.g. database unavailable) | `500` |
 
 Only successfully processed events are acknowledged with `200`. Temporary
-processing failures return `500` so Creem can retry the delivery. Handlers must
-remain idempotent because a successfully processed event may also be delivered
-again. Signature failures return `400` because retrying the same invalid request
-cannot make it valid. Check the Worker logs for `Creem webhook error`.
+processing failures return `500` so Creem can retry the delivery. This includes
+subscription lifecycle events that arrive before `checkout.completed` has
+created their payment row. Handlers must remain idempotent because a
+successfully processed event may also be delivered again. Signature failures
+return `400` because retrying the same invalid request cannot make it valid.
+Check the Worker logs for `Creem webhook error`.
 
 ## Waffo Pancake
 
@@ -226,10 +228,12 @@ Keep `WAFFO_PRIVATE_KEY` server-only. For a PEM value in a Worker secret or loca
 | Processing failure (e.g. database unavailable) | `500` |
 
 As with Creem, only successfully processed events are acknowledged with `200`.
-Temporary processing failures return `500` so Waffo can retry the delivery;
-handlers must remain idempotent. Signature verification failures return `400`
-because retrying the same invalid request cannot make it valid. Check the Worker
-logs for `Waffo webhook error`.
+Temporary processing failures return `500` so Waffo can retry the delivery.
+Lifecycle events that arrive before `subscription.activated` creates their
+payment row are also retried instead of being acknowledged and lost. Handlers
+must remain idempotent. Signature verification failures return `400` because
+retrying the same invalid request cannot make it valid. Check the Worker logs
+for `Waffo webhook error`.
 
 ### Waffo reference material
 

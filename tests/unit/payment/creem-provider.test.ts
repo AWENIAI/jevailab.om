@@ -271,4 +271,45 @@ describe('Creem provider boundary', () => {
       params: ['sub_creem_buyer'],
     });
   });
+
+  test('retries subscription.paid when checkout.completed has not created its row', async () => {
+    const returning = vi
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'payment_creem' }]);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    dbMocks.update.mockReturnValue({ set });
+
+    await expect(
+      dispatchSubscriptionEvent('subscription.paid')
+    ).rejects.toThrow('Failed to handle Creem webhook event');
+    await expect(
+      dispatchSubscriptionEvent('subscription.paid')
+    ).resolves.toBeUndefined();
+
+    expect(returning).toHaveBeenCalledTimes(2);
+  });
+
+  test.each([
+    'subscription.paid',
+    'subscription.active',
+    'subscription.update',
+    'subscription.canceled',
+    'subscription.scheduled_cancel',
+    'subscription.expired',
+    'subscription.past_due',
+    'subscription.unpaid',
+    'subscription.trialing',
+    'subscription.paused',
+  ])('does not acknowledge %s when its payment row is missing', async (eventType) => {
+    const returning = vi.fn().mockResolvedValue([]);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    dbMocks.update.mockReturnValue({ set });
+
+    await expect(dispatchSubscriptionEvent(eventType)).rejects.toThrow(
+      'Failed to handle Creem webhook event'
+    );
+  });
 });

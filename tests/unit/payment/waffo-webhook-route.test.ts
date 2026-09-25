@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
+  returning: vi.fn(),
 }));
 
 vi.mock('@waffo/pancake-ts', () => ({
@@ -88,6 +89,7 @@ const orderCompletedPayload = '{"eventType":"order.completed"}';
 
 describe('Waffo webhook HTTP route', () => {
   beforeEach(() => {
+    vi.resetAllMocks();
     process.env.WAFFO_MERCHANT_ID = 'MER_test';
     process.env.WAFFO_PRIVATE_KEY =
       '-----BEGIN PRIVATE KEY-----\\ntest\\n-----END PRIVATE KEY-----';
@@ -95,7 +97,8 @@ describe('Waffo webhook HTTP route', () => {
     mocks.values.mockResolvedValue(undefined);
     mocks.update.mockReturnValue({ set: mocks.set });
     mocks.set.mockReturnValue({ where: mocks.where });
-    mocks.where.mockResolvedValue(undefined);
+    mocks.where.mockReturnValue({ returning: mocks.returning });
+    mocks.returning.mockResolvedValue([{ id: 'payment_123' }]);
   });
 
   test('acknowledges a successfully processed verified event', async () => {
@@ -227,5 +230,45 @@ describe('Waffo webhook HTTP route', () => {
     });
     expect(retryResponse.status).toBe(200);
     await expect(retryResponse.json()).resolves.toEqual({ received: true });
+  });
+
+  test('requests a retry when renewal arrives before subscription.activated', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_renewed_early',
+      eventId: 'EVT_renewed_early',
+      eventType: 'subscription.renewed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_subscription',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '9.90',
+        taxAmount: '0.00',
+        productName: 'Pro Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-10-08',
+        currentPeriodEnd: '2026-11-08',
+      },
+    });
+    mocks.returning
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'payment_123' }]);
+    const provider = new WaffoProvider();
+    const request = () =>
+      waffoRequest('{"eventType":"subscription.renewed"}', 'signed');
+
+    const failedResponse = await handleWaffoWebhookRequest(
+      request(),
+      dependencies(provider)
+    );
+    const retryResponse = await handleWaffoWebhookRequest(
+      request(),
+      dependencies(provider)
+    );
+
+    expect(failedResponse.status).toBe(500);
+    expect(retryResponse.status).toBe(200);
+    expect(mocks.returning).toHaveBeenCalledTimes(2);
   });
 });

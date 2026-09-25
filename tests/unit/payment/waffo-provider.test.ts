@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   values: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
+  returning: vi.fn(),
 }));
 
 vi.mock('@waffo/pancake-ts', () => ({
@@ -84,11 +85,13 @@ describe('Waffo provider boundary', () => {
     mocks.values.mockReset();
     mocks.set.mockReset();
     mocks.where.mockReset();
+    mocks.returning.mockReset();
     mocks.insert.mockReturnValue({ values: mocks.values });
     mocks.update.mockReturnValue({ set: mocks.set });
     mocks.set.mockReturnValue({ where: mocks.where });
     mocks.values.mockResolvedValue(undefined);
-    mocks.where.mockResolvedValue(undefined);
+    mocks.where.mockReturnValue({ returning: mocks.returning });
+    mocks.returning.mockResolvedValue([{ id: 'payment_123' }]);
     mocks.createCheckout.mockResolvedValue({
       checkoutUrl: 'https://pancake.waffo.ai/checkout/CHK_test',
       sessionId: 'CHK_test',
@@ -306,6 +309,46 @@ describe('Waffo provider boundary', () => {
         status: 'active',
       })
     );
+  });
+
+  test('retries a renewal that arrives before subscription.activated', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_renewed_early',
+      eventId: 'EVT_renewed_early',
+      eventType: 'subscription.renewed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_subscription',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '9.90',
+        taxAmount: '0.00',
+        productName: 'Pro Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-10-08',
+        currentPeriodEnd: '2026-11-08',
+      },
+    });
+    mocks.returning
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'payment_123' }]);
+    const provider = new WaffoProvider();
+
+    await expect(
+      provider.handleWebhookEvent(
+        '{"eventType":"subscription.renewed"}',
+        'signed'
+      )
+    ).rejects.toThrow('Failed to handle Waffo webhook event');
+    await expect(
+      provider.handleWebhookEvent(
+        '{"eventType":"subscription.renewed"}',
+        'signed'
+      )
+    ).resolves.toBeUndefined();
+
+    expect(mocks.returning).toHaveBeenCalledTimes(2);
   });
 
   test('restores lifecycle state on subscription.recovered', async () => {

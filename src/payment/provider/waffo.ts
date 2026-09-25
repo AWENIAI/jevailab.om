@@ -415,10 +415,17 @@ export class WaffoProvider implements PaymentProvider {
       const priceId = this.getPriceId(data, true);
       if (priceId) values.priceId = priceId;
     }
-    await getDb()
+    const result = await getDb()
       .update(payment)
       .set(values)
-      .where(eq(payment.subscriptionId, data.orderId));
+      .where(eq(payment.subscriptionId, data.orderId))
+      .returning({ id: payment.id });
+
+    if (result.length === 0) {
+      throw new Error(
+        `No payment record found for ${event.eventType}: ${data.orderId}`
+      );
+    }
   }
 
   /**
