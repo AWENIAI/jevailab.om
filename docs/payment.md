@@ -16,8 +16,14 @@ Subscription and one-time payment support via a **provider pattern** — switch 
 - `checkPaymentCompletion` — whether a session is paid (for polling).
 
 Client-supplied Checkout success/cancel URLs and Customer Portal return URLs
-must use the application's configured origin. Payment completion lookups are
-scoped to both the Checkout Session ID and the authenticated user.
+are resolved against `VITE_BASE_URL`; request `Host` and `Origin` headers are
+not trusted. Root-relative and canonical same-origin absolute URLs are
+accepted. Protocol-relative URLs, backslash variants, subdomains, protocol
+changes, and non-equivalent ports are rejected. Explicit default ports are
+treated as the same origin. The payment page reduces an accepted callback to
+an internal path before client navigation and falls back to Billing for an
+unsafe callback. Payment completion lookups are scoped to both the Checkout
+Session ID and the authenticated user.
 
 ### Checkout localization & theme
 

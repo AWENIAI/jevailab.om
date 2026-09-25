@@ -210,9 +210,13 @@ Stripe API failures.
 
 The provider-independent server boundary is covered by
 `tests/unit/payment/payment-security.test.ts`. It rejects external Checkout and
-Customer Portal return URLs, allows same-origin URLs, and verifies that a paid
+Customer Portal return URLs, normalizes root-relative and same-origin absolute
+URLs against the configured application origin, and verifies that a paid
 Checkout Session is visible only to its owner while foreign, forged, and
-missing Session IDs remain unpaid.
+missing Session IDs remain unpaid. Protocol-relative and backslash variants,
+subdomains, protocol changes, and non-equivalent ports are rejected. The
+payment page reduces an accepted callback to an internal path and falls back to
+Billing for an unsafe callback.
 
 ### Sandbox E2E layer
 

@@ -28,6 +28,7 @@ vi.mock('@/payment', () => ({
 }));
 vi.mock('@/lib/locale', () => ({ getLocale: () => 'en' }));
 vi.mock('@/lib/urls', () => ({
+  getBaseUrl: () => 'https://example.test',
   getCanonicalUrl: (path: string) => `https://example.test${path}`,
 }));
 vi.mock('@/lib/price-plan', () => ({
@@ -61,6 +62,7 @@ const db = drizzle(client);
 
 describe('payment security boundaries', () => {
   beforeEach(async () => {
+    vi.clearAllMocks();
     await client.executeMultiple(`
       DROP TABLE IF EXISTS payment;
       DROP TABLE IF EXISTS user;
@@ -108,44 +110,55 @@ describe('payment security boundaries', () => {
 
   afterAll(() => client.close());
 
-  test('rejects external checkout success and cancellation URLs', async () => {
+  test.each([
+    [
+      'success URL',
+      { successUrl: 'https://attacker.example/payment-complete' },
+    ],
+    ['cancel URL', { cancelUrl: '//attacker.example/payment-canceled' }],
+  ])('rejects an external checkout %s', async (_name, urls) => {
     await expect(
       checkout({
         context: { userId: 'user_a' },
         data: {
           planId: 'pro',
           priceId: 'price_monthly',
-          successUrl: 'https://attacker.example/payment-complete',
-          cancelUrl: 'https://attacker.example/payment-canceled',
+          ...urls,
         },
       })
     ).rejects.toThrow('Payment return URL must use the application origin');
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
-  test('rejects an external Customer Portal return URL', async () => {
+  test.each([
+    'https://attacker.example/account',
+    '//attacker.example/account',
+    'https://sub.example.test/account',
+    'http://example.test/account',
+    'https://example.test:444/account',
+  ])('rejects an untrusted Customer Portal return URL: %s', async (returnUrl) => {
     await expect(
       portal({
         context: { userId: 'user_a' },
-        data: { returnUrl: 'https://attacker.example/account' },
+        data: { returnUrl },
       })
     ).rejects.toThrow('Payment return URL must use the application origin');
     expect(mocks.createCustomerPortal).not.toHaveBeenCalled();
   });
 
-  test('allows same-origin payment return URLs', async () => {
+  test('normalizes trusted payment return URLs', async () => {
     await checkout({
       context: { userId: 'user_a' },
       data: {
         planId: 'pro',
         priceId: 'price_monthly',
-        successUrl: 'https://example.test/settings/payment?complete=true',
-        cancelUrl: 'https://example.test/pricing',
+        successUrl: '/settings/payment?complete=true',
+        cancelUrl: 'pricing',
       },
     });
     await portal({
       context: { userId: 'user_a' },
-      data: { returnUrl: 'https://example.test/settings/billing' },
+      data: { returnUrl: 'https://example.test:443/settings/billing' },
     });
 
     expect(mocks.createCheckout).toHaveBeenCalledWith(

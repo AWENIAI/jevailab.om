@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { user } from '@/db/auth.schema';
 import { getLocale } from '@/lib/locale';
+import { normalizePaymentReturnUrl } from '@/lib/payment-return-url';
 import { findPlanByPriceId, getAllPricePlans } from '@/lib/price-plan';
 import { Routes } from '@/lib/routes';
 import { getCanonicalUrl } from '@/lib/urls';
@@ -22,28 +23,11 @@ import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
 
-const PAYMENT_RETURN_URL_ERROR =
-  'Payment return URL must use the application origin';
-
-function assertSameOriginReturnUrl(url: string | undefined): void {
-  if (!url) return;
-
-  try {
-    const applicationOrigin = new URL(getCanonicalUrl('/')).origin;
-    if (new URL(url).origin === applicationOrigin) return;
-  } catch {
-    // The schemas reject malformed URLs; keep this guard safe when called
-    // directly from tests or future internal callers.
-  }
-
-  throw new Error(PAYMENT_RETURN_URL_ERROR);
-}
-
 const checkoutSchema = z.object({
   planId: z.string().min(1),
   priceId: z.string().min(1),
-  successUrl: z.url().optional(),
-  cancelUrl: z.url().optional(),
+  successUrl: z.string().trim().min(1).optional(),
+  cancelUrl: z.string().trim().min(1).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   theme: z.enum(['dark', 'light']).optional(),
 });
@@ -61,13 +45,13 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
     const { planId, priceId, successUrl, cancelUrl, metadata, theme } = data;
-    assertSameOriginReturnUrl(successUrl);
-    assertSameOriginReturnUrl(cancelUrl);
+    const normalizedSuccessUrl = normalizePaymentReturnUrl(successUrl);
+    const normalizedCancelUrl = normalizePaymentReturnUrl(cancelUrl);
     const locale = getLocale();
     const provider = getPaymentProvider();
     const hostsPostCheckoutPage = provider.hostsPostCheckoutPage === true;
     const billingUrl = getCanonicalUrl(Routes.SettingsBilling);
-    const cancel = cancelUrl ?? billingUrl;
+    const cancel = normalizedCancelUrl ?? billingUrl;
 
     // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
     // then the Payment page polls by sessionId until the webhook writes the DB record.
@@ -79,11 +63,11 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     // treats "callback without session_id" as hosted mode, so only
     // `callback` is passed here.
     const success = hostsPostCheckoutPage
-      ? (successUrl ??
+      ? (normalizedSuccessUrl ??
         getCanonicalUrl(
           `${Routes.Payment}?callback=${encodeURIComponent(Routes.SettingsBilling)}`
         ))
-      : (successUrl ??
+      : (normalizedSuccessUrl ??
         getCanonicalUrl(
           `${Routes.Payment}?session_id={CHECKOUT_SESSION_ID}&callback=${Routes.SettingsBilling}`
         ));
@@ -107,7 +91,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
   });
 
 const portalSchema = z.object({
-  returnUrl: z.string().url().optional(),
+  returnUrl: z.string().trim().min(1).optional(),
   locale: z.string().optional(),
 });
 
@@ -116,7 +100,7 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    assertSameOriginReturnUrl(data.returnUrl);
+    const normalizedReturnUrl = normalizePaymentReturnUrl(data.returnUrl);
     const provider = getPaymentProvider();
     const db = getDb();
     const [row] = await db
@@ -128,7 +112,8 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
       throw new Error('No customer found for user');
     }
     const locale = getLocale();
-    const returnUrl = data.returnUrl ?? getCanonicalUrl(Routes.SettingsBilling);
+    const returnUrl =
+      normalizedReturnUrl ?? getCanonicalUrl(Routes.SettingsBilling);
     const result = await createCustomerPortal({
       customerId: row?.customerId ?? '',
       returnUrl,

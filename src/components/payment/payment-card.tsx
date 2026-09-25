@@ -10,6 +10,7 @@ import {
   PAYMENT_MAX_POLL_TIME,
   PAYMENT_POLL_INTERVAL,
 } from '@/payment/constants';
+import { getSafePaymentCallback } from '@/lib/payment-return-url';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -103,6 +104,7 @@ export function PaymentCard({
 }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const safeCallback = getSafePaymentCallback(callback) ?? '/settings/billing';
   const [status, setStatus] = useState<PaymentStatus>(() =>
     sessionId || hostedPostCheckout ? 'processing' : 'failed'
   );
@@ -149,14 +151,14 @@ export function PaymentCard({
   }, [sessionId, hostedPostCheckout, status]);
   // On success: invalidate currentPlan then redirect to callback
   useEffect(() => {
-    if (status !== 'success' || !callback) return;
+    if (status !== 'success') return;
     const run = async () => {
       await queryClient.invalidateQueries({ queryKey: ['currentPlan'] });
       await queryClient.refetchQueries({ queryKey: ['currentPlan'] });
-      navigate({ to: callback });
+      navigate({ to: safeCallback });
     };
     run();
-  }, [status, callback, queryClient, navigate]);
+  }, [status, safeCallback, queryClient, navigate]);
   const { title, description } = getStatusContent(status);
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
