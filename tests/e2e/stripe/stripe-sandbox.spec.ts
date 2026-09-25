@@ -51,6 +51,97 @@ async function cleanupStripeE2ECustomers() {
   }
 }
 
+async function assertPortalPlanChangesEnabled() {
+  const configurations = await stripe.billingPortal.configurations.list({
+    active: true,
+    limit: 100,
+  });
+  const configuration = configurations.data.find((item) => item.is_default);
+  const subscriptionUpdate = configuration?.features.subscription_update;
+
+  if (
+    !subscriptionUpdate?.enabled ||
+    !subscriptionUpdate.default_allowed_updates.includes('price')
+  ) {
+    throw new Error(
+      'Stripe Test Mode Customer Portal must allow subscription price updates'
+    );
+  }
+}
+
+async function waitForStripeSubscriptionPrice(
+  subscriptionId: string,
+  priceId: string
+) {
+  await expect
+    .poll(
+      async () => {
+        const subscription =
+          await stripe.subscriptions.retrieve(subscriptionId);
+        return subscription.items.data[0]?.price.id;
+      },
+      { timeout: 60_000 }
+    )
+    .toBe(priceId);
+
+  return stripe.subscriptions.retrieve(subscriptionId);
+}
+
+async function changeStripePortalInterval(
+  page: Page,
+  interval: 'Monthly' | 'Yearly'
+) {
+  await page.waitForURL(/https:\/\/billing\.stripe\.com\//, {
+    timeout: 60_000,
+  });
+  const intervalOption = page.getByRole('radio', { name: interval });
+  if (!(await intervalOption.isVisible())) {
+    const actionName = /update subscription|update plan|change plan/i;
+    const button = page.getByRole('button', { name: actionName }).first();
+    const link = page.getByRole('link', { name: actionName }).first();
+    if (await button.isVisible()) {
+      await button.click();
+    } else {
+      await link.click();
+    }
+  }
+
+  await intervalOption.waitFor({ state: 'visible', timeout: 60_000 });
+  await intervalOption.click();
+  const selectButton = page.getByRole('button', { name: /^select$/i });
+  if (await selectButton.isVisible()) await selectButton.click();
+
+  const continueButton = page.getByRole('button', { name: /^continue$/i });
+  await expect(continueButton).toBeEnabled();
+  await continueButton.click();
+
+  const confirmButton = page.getByRole('button', {
+    name: /^(confirm|update subscription|apply changes)$/i,
+  });
+  try {
+    await confirmButton.waitFor({ state: 'visible', timeout: 15_000 });
+    await confirmButton.click();
+  } catch {
+    // Some Portal configurations apply the change from Continue directly.
+  }
+}
+
+function expectBillingPeriodMatches(
+  periodStart: string | number | null,
+  periodEnd: string | number | null,
+  subscription: Stripe.Subscription
+) {
+  const item = subscription.items.data[0];
+  expect(item?.current_period_start).toBeTypeOf('number');
+  expect(item?.current_period_end).toBeTypeOf('number');
+  expect(new Date(periodStart ?? 0).getTime()).toBe(
+    (item?.current_period_start ?? 0) * 1000
+  );
+  expect(new Date(periodEnd ?? 0).getTime()).toBe(
+    (item?.current_period_end ?? 0) * 1000
+  );
+}
+
 async function fillStripeCheckout(
   page: Page,
   user: E2EUser,
@@ -196,31 +287,82 @@ test.describe
       await cleanupStripeE2ECustomers();
     });
 
-    test('completes a monthly subscription and opens Customer Portal', async ({
+    test('changes a monthly subscription to yearly and back in Customer Portal', async ({
       page,
       request,
     }) => {
+      await assertPortalPlanChangesEnabled();
       const user = await registerE2EUser(request, {
         email: `e2e-stripe-month-${Date.now()}@example.test`,
       });
       paidEmails.add(user.email);
 
-      await completeStripeCheckout(page, user, {
+      const monthlyPriceId = process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '';
+      const yearlyPriceId = process.env.VITE_STRIPE_PRICE_PRO_YEARLY ?? '';
+      const artifacts = await completeStripeCheckout(page, user, {
         planId: 'pro',
-        expectedPriceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY ?? '',
+        expectedPriceId: monthlyPriceId,
         interval: 'month',
         openPortal: true,
       });
-      const state = await waitForPaidSnapshot(request, user.email);
-      expect(state.latestPayment).toMatchObject({
+      if (!artifacts.subscriptionId) {
+        throw new Error('Stripe subscription id was not returned');
+      }
+
+      const initial = await waitForPaidSnapshot(request, user.email);
+      expect(initial.latestPayment).toMatchObject({
         interval: 'month',
         paid: true,
-        priceId: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY,
+        priceId: monthlyPriceId,
         scene: 'subscription',
         status: 'active',
         type: 'subscription',
       });
-      expect(state.latestPayment?.periodEnd).not.toBeNull();
+      expect(initial.latestPayment?.periodEnd).not.toBeNull();
+
+      await changeStripePortalInterval(page, 'Yearly');
+      const yearlySubscription = await waitForStripeSubscriptionPrice(
+        artifacts.subscriptionId,
+        yearlyPriceId
+      );
+      const yearly = await waitForE2EPayment(request, user.email, {
+        paidOnly: true,
+        predicate: (state) =>
+          state.subscription?.priceId === yearlyPriceId &&
+          state.subscription.interval === 'year',
+      });
+      expect(yearly?.subscription).toMatchObject({
+        priceId: yearlyPriceId,
+        interval: 'year',
+      });
+      expectBillingPeriodMatches(
+        yearly?.subscription?.periodStart ?? null,
+        yearly?.subscription?.periodEnd ?? null,
+        yearlySubscription
+      );
+
+      await page.goto('/settings/billing');
+      await page.getByTestId('customer-portal-button').click();
+      await changeStripePortalInterval(page, 'Monthly');
+      const monthlySubscription = await waitForStripeSubscriptionPrice(
+        artifacts.subscriptionId,
+        monthlyPriceId
+      );
+      const monthly = await waitForE2EPayment(request, user.email, {
+        paidOnly: true,
+        predicate: (state) =>
+          state.subscription?.priceId === monthlyPriceId &&
+          state.subscription.interval === 'month',
+      });
+      expect(monthly?.subscription).toMatchObject({
+        priceId: monthlyPriceId,
+        interval: 'month',
+      });
+      expectBillingPeriodMatches(
+        monthly?.subscription?.periodStart ?? null,
+        monthly?.subscription?.periodEnd ?? null,
+        monthlySubscription
+      );
     });
 
     test('completes a yearly subscription', async ({ page, request }) => {

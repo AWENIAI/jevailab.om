@@ -499,6 +499,41 @@ describe('Stripe provider lifecycle', () => {
     );
   });
 
+  test('persists a subscription price and billing period change', async () => {
+    const provider = new StripeProvider();
+    const update = configureUpdate();
+    const periodStart = 1_756_592_000;
+    const periodEnd = 1_788_128_000;
+
+    await dispatch(
+      provider,
+      'customer.subscription.updated',
+      subscription({
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+        items: {
+          data: [
+            {
+              price: { id: 'price_year' },
+              plan: { interval: 'year' },
+              current_period_start: periodStart,
+              current_period_end: periodEnd,
+            },
+          ],
+        },
+      })
+    );
+
+    expect(update.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        priceId: 'price_year',
+        interval: 'year',
+        periodStart: new Date(periodStart * 1000),
+        periodEnd: new Date(periodEnd * 1000),
+      })
+    );
+  });
+
   test('revokes a lifetime payment after a full charge refund', async () => {
     const provider = new StripeProvider();
     const update = configureUpdate();

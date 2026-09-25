@@ -215,7 +215,7 @@ instead of relying on rendered Billing text.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Monthly subscription and portal | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, verify the D1 subscription row and Stripe subscription price, then open Customer Portal. |
+| 1 | Monthly subscription and portal plan changes | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, verify the D1 subscription row and Stripe subscription price, then use Customer Portal to switch monthly → yearly → monthly and verify the Stripe Subscription plus D1 price, interval, and billing period after each change. |
 | 2 | Yearly subscription | Register and sign in, select yearly pricing, complete sandbox Checkout, and verify the D1 interval/status and yearly Stripe price. |
 | 3 | Lifetime payment | Register and sign in, complete a one-time sandbox Checkout, and verify the paid Lifetime D1 row and Stripe line-item price. |
 | 4 | Declined card | Submit Stripe's decline test card and verify the checkout remains unsuccessful with no paid D1 row. |
@@ -224,9 +224,8 @@ instead of relying on rendered Billing text.
 
 Renewal lookup and period updates are covered in the fast provider tests with
 signed `invoice.paid` events. The sandbox suite does not cover failed
-renewals/past-due recovery, time-based Test Clock advancement, or interactive
-Customer Portal changes such as upgrade, downgrade, and payment method
-replacement.
+renewals/past-due recovery, time-based Test Clock advancement, or Customer
+Portal payment method replacement.
 
 ## Creem Payment Coverage
 
