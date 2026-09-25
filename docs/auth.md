@@ -8,17 +8,22 @@ Authentication is built on [Better Auth](https://www.better-auth.com/). The serv
 
 ```
 src/auth/
-├── auth.ts   # Server: betterAuth instance (DB, email, social, plugins)
-├── client.ts # Client: createAuthClient + plugins (admin, apiKey, inferAdditionalFields)
-└── types.ts  # Session / SessionUser types inferred from auth
+├── auth.ts                  # Server: betterAuth instance (DB, email, social, plugins, hooks)
+├── client.ts                # Client: createAuthClient + plugins (admin, apiKey, inferAdditionalFields)
+├── google-token-handlers.ts # Google verifyIdToken / getUserInfo for web ID tokens and extension access tokens
+├── trusted-origins.ts       # Parse BETTER_AUTH_TRUSTED_ORIGINS and match extension origins
+└── types.ts                 # Session / SessionUser types inferred from auth
 ```
 
 **Related (outside `src/auth/`):**
 
-- **API route**: `src/routes/api/auth/$.ts` — forwards GET/POST to `auth.handler(request)`.
-- **Middleware**: `src/middlewares/auth-middleware.ts`, `src/middlewares/admin-middleware.ts`. Both use `auth.api.getSession({ headers })` to obtain the session; there is no separate `lib/session.ts`.
-- **Routes**: `src/routes/auth.tsx` (layout), `src/routes/auth/login.tsx`, `src/routes/auth/register.tsx`, `auth/forgot-password`, `auth/reset-password`, `auth/error`.
-- **Components**: `src/components/auth/` (login-form, register-form, forgot-password-form, auth-card, error-card, login-wrapper, social-login-button, etc.); `UserButton`, `SidebarUser` use `SessionUser` from `@/auth/types`.
+- **API routes**:
+  - `src/routes/api/auth/$.ts` — forwards GET/POST to `auth.handler(request)`.
+  - `src/routes/api/auth/extension/google.ts` — `POST /api/auth/extension/google` for the browser extension (see [Browser extension auth](#browser-extension-auth)).
+- **CORS**: `src/server.ts` adds CORS headers only for trusted extension origins.
+- **Middleware**: `src/middlewares/auth-middleware.ts`, `admin-middleware.ts`, `guest-middleware.ts`. All use `auth.api.getSession({ headers })`; there is no separate `lib/session.ts`.
+- **Routes**: `src/routes/auth.tsx` (layout), `auth/login`, `auth/register`, `auth/forgot-password`, `auth/reset-password`, `auth/error`.
+- **Components**: `src/components/auth/` (login-form, register-form, forgot-password-form, reset-password-form, auth-card, error-card, login-wrapper, social-login-button, etc.); `UserButton`, `SidebarUser` use `SessionUser` from `@/auth/types`.
 - **Hooks**: `src/hooks/use-auth.ts` — `useUserAccounts`, `useHasCredentialProvider`.
 - **DB user type**: `src/db/types.ts` exports `User` (table row); use for admin user list/detail. Use `SessionUser` from `@/auth/types` for current-session user (e.g. navbar, sidebar).
 
@@ -27,30 +32,43 @@ src/auth/
 ## Server (auth.ts)
 
 - **baseURL**: From `getBaseUrl()` (build-time `VITE_BASE_URL`).
+- **appName**: `websiteConfig.metadata.name`.
+- **trustedOrigins**: Parsed from `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated).
 - **database**: `drizzleAdapter(getDb(), { provider: 'sqlite' })`. `getDb()` (from `@/db`) uses the Worker's **`env.DB`** D1 binding.
-- **session**: Cookie cache enabled; `expiresIn` / `updateAge` / `freshAge` configured; freshness check disabled to allow user deletion.
+- **session**:
+  - `cookieCache`: enabled, `maxAge` 1 hour.
+  - `expiresIn`: 7 days; `updateAge`: 1 day.
+  - `freshAge: 0` — freshness check disabled so users can delete their account without re-authenticating.
 - **emailAndPassword**:
   - Enabled when `websiteConfig.auth.enableCredentialLogin` is true.
   - `requireEmailVerification: true`.
   - `sendResetPassword`: calls Mail module `sendEmail({ template: 'forgotPassword', ... })`.
+  - No server-side minimum password length is configured, so Better Auth's default applies. The register and reset-password forms require at least 8 characters.
 - **emailVerification**:
   - `sendVerificationEmail`: calls `sendEmail({ template: 'verifyEmail', ... })`.
+  - `sendOnSignIn: true` — an unverified user who signs in receives a new verification email.
   - `autoSignInAfterVerification: true`.
-- **socialProviders**: Google when `websiteConfig.auth.enableGoogleLogin` and `serverEnv.GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set.
+- **socialProviders**: Google when `websiteConfig.auth.enableGoogleLogin` and `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set.
+  - `clientId` is an array: `[GOOGLE_CLIENT_ID, GOOGLE_EXTENSION_CLIENT_ID]` (empty values removed). Better Auth uses the first ID for the website authorization URL and accepts every ID as an ID-token audience, so keep the website client first.
+  - Custom `verifyIdToken` / `getUserInfo` handlers from `google-token-handlers.ts`: JWT ID tokens use Google ID-token verification; opaque extension access tokens are checked against Google tokeninfo (audience must equal `GOOGLE_EXTENSION_CLIENT_ID`) and the profile is loaded from Google userinfo.
 - **account**: Account linking enabled when Google login is enabled; trusted provider `google`.
-- **user**: `deleteUser.enabled: true`.
-- **plugins**:
-  - `tanstackStartCookies()` — cookies/session with TanStack Start on Cloudflare.
-  - `admin()` — user management, ban/unban, roles; `bannedUserMessage` and optional `defaultBanExpiresIn`.
-  - `apiKey()` — API key management for users.
-  - `emailHarmony()` — email normalization/validation; `allowNormalizedSignin: false`.
-- **onAPIError**: `errorURL: '/auth/error'`; optional `onError` logging.
+- **user**:
+  - `additionalFields.customerId` (`string`, optional, `input: false`). Payment providers own this mapping; sign-up and `updateUser` cannot set it.
+  - `deleteUser.enabled`: `websiteConfig.auth.enableDeleteAccount` (default `false`).
+- **databaseHooks**: `user.create.after` auto-subscribes the new user's email to the newsletter when `websiteConfig.newsletter.enable` and `autoSubscribeAfterSignUp` are both true. Failures are logged, not thrown.
+- **plugins** (order matters):
+  1. `bearer()` — `Authorization: Bearer <token>` auth for the browser extension; the token is returned in the `set-auth-token` header.
+  2. `admin()` — user management, ban/unban, roles; `bannedUserMessage` and optional `defaultBanExpiresIn`.
+  3. `apiKey()` — API key management for users (from the `@better-auth/api-key` package).
+  4. `emailHarmony()` — email normalization/validation (`better-auth-harmony`); `allowNormalizedSignin: false`.
+  5. `tanstackStartCookies()` — must be **last** so cookies set by earlier plugins are forwarded.
+- **onAPIError**: `errorURL: '/auth/error'`; errors are logged with `console.error`.
 
 ---
 
 ## Client (client.ts)
 
-- `createAuthClient({ baseURL: getBaseUrl(), plugins: [adminClient(), apiKeyClient(), inferAdditionalFields<typeof auth>()] })` exported as **`authClient`**.
+- `createAuthClient({ baseURL: getBaseUrl(), plugins: [adminClient(), apiKeyClient(), inferAdditionalFields<typeof auth>()] })` exported as **`authClient`**. `apiKeyClient` comes from `@better-auth/api-key/client`.
 - Typical usage:
   - `authClient.useSession()` — current session (includes user with role when admin plugin is used).
   - `authClient.signIn.email()`, `authClient.signUp.email()`, `authClient.signOut()`.
@@ -61,43 +79,62 @@ Requests go to `baseURL + /api/auth/*` and are handled by `auth.handler`.
 
 ---
 
-## Session checks for protected APIs
+## Middleware
 
-Session is obtained with **`auth.api.getSession({ headers })`** (from `@/auth/auth`). There is no shared `lib/session.ts`; each protected API route and middleware calls `getSession` directly.
+All middleware lives in `src/middlewares/` and calls `auth.api.getSession({ headers })`.
 
-- **Middleware** (`auth-middleware.ts`, `admin-middleware.ts`): call `await auth.api.getSession({ headers })`; redirect to login or dashboard when null or when role is not admin.
-- **API routes** (e.g. `routes/api/storage/file.ts` for file serving): call `auth.api.getSession({ headers })` and return 401/403 when session is null or ownership fails.
-- **Server functions** (e.g. `src/api/user-files.ts`): use `authApiMiddleware` so unauthenticated calls get 401. Upload is implemented as `uploadUserFile` server function, not an API route.
+### Route middleware (redirects)
 
-Server functions that need a session (e.g. `listUsers` in `src/api/users.ts`) use middleware such as `adminApiMiddleware`, which runs on the server and obtains the session the same way.
+Use in route definitions via `server: { middleware: [...] }`. When `websiteConfig.auth.enable` is false, all route middleware redirects to `Routes.Root`.
 
----
+| Export | File | Behavior | Used by |
+|--------|------|----------|---------|
+| `authRouteMiddleware` | `auth-middleware.ts` | No session → `Routes.Login`. Unverified email → `Routes.Login?error=email_not_verified`. | `dashboard.tsx`, `settings.tsx` |
+| `adminRouteMiddleware` | `admin-middleware.ts` | No session → `Routes.Login`. Role not `admin` → `Routes.Dashboard`. | `admin.tsx` |
+| `guestRouteMiddleware` | `guest-middleware.ts` | Signed-in user → `DEFAULT_LOGIN_REDIRECT`. | `auth/login.tsx`, `auth/register.tsx` |
 
-## Route protection (middleware)
+### Server function middleware (JSON responses)
 
-- **authMiddleware** (`src/middlewares/auth-middleware.ts`): Requires an authenticated user; redirects to `Routes.Login` when there is no session. Use in route definitions via `server: { middleware: [authMiddleware] }` (e.g. dashboard, settings).
-- **adminMiddleware** (`src/middlewares/admin-middleware.ts`): Requires `session.user.role === 'admin'`; redirects to login if not signed in, otherwise to dashboard if not admin. Use on admin routes (e.g. `/admin/users`).
+Use with `createServerFn().middleware([...])`. Both pass `context.userId` to the handler.
+
+| Export | File | Behavior |
+|--------|------|----------|
+| `authApiMiddleware` | `auth-middleware.ts` | No session → 401 `{ error: 'Unauthorized' }`. Unverified email → 403 `{ error, code: 'email_not_verified' }`. |
+| `adminApiMiddleware` | `admin-middleware.ts` | No session → 401. Role not `admin` → 403. |
+
+### API routes
+
+File routes with server handlers (e.g. `routes/api/storage/file.ts`) call `auth.api.getSession({ headers })` directly and return 401/403 when the session is missing or ownership fails. Uploads use the `uploadUserFile` server function with `authApiMiddleware`, not an API route.
 
 ---
 
 ## Configuration and environment
 
-- **websiteConfig.auth** (`src/config/website.ts`): `enable`, `enableGoogleLogin`, `enableCredentialLogin`.
+- **websiteConfig.auth** (`src/config/website.ts`): `enable`, `enableGoogleLogin`, `enableCredentialLogin`, `enableDeleteAccount`.
 - **D1**: Configure `d1_databases` in `wrangler.jsonc` with binding name **`DB`**; `getDb()` uses `env.DB`.
-- **Mail**: Verification and password reset depend on the Mail module. (see [Mail](./mail.md)).
+- **Mail**: Verification and password reset depend on the Mail module (see [Mail](./mail.md)).
 - **Google OAuth**: Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in server env. Full list: [Env](./env.md).
-- **Browser-native extension OAuth**: `mkext-template` uses the Chrome
-  manifest `oauth2` configuration and `browser.identity.getAuthToken()`, then
-  posts the Google access token to `/api/auth/extension/google`. Configure
-  `GOOGLE_EXTENSION_CLIENT_ID`; the backend verifies the token audience before
-  Better Auth creates the product session.
-- **Browser extension OAuth**: The `bearer()` plugin is enabled for
-  `mkext-template`. Add the extension origin to
-  `BETTER_AUTH_TRUSTED_ORIGINS`; the Worker CORS layer exposes
-  `set-auth-token` to that origin.
+
+---
+
+## Browser extension auth
+
+The template supports `mkext-template` (Chrome and Firefox) with bearer tokens instead of cookies.
+
+- **Trusted origins**: Add each extension origin to `BETTER_AUTH_TRUSTED_ORIGINS`, e.g. `chrome-extension://<extension-id>`. Chrome origins must match exactly. `moz-extension://*` is an explicit opt-in that trusts any Firefox extension origin, because Firefox assigns a per-profile UUID.
+- **CORS** (`src/server.ts`): Only for trusted extension origins:
+  - `OPTIONS` preflight is answered directly with `204`.
+  - Responses get `Access-Control-Allow-Origin: <origin>`, `Allow-Methods: GET, POST, OPTIONS`, `Allow-Headers: Content-Type, Authorization`, `Expose-Headers: set-auth-token`, and `Vary: Origin`.
+  - Normal web and SSR traffic is unaffected.
+- **Browser-native Google OAuth**: The extension uses the manifest `oauth2` configuration and `browser.identity.getAuthToken()`, then posts `{ accessToken }` to `POST /api/auth/extension/google`. Configure `GOOGLE_EXTENSION_CLIENT_ID`. The route:
+  - returns `403` unless `Origin` is a trusted extension origin;
+  - returns `400` for an invalid body;
+  - returns `503` when `GOOGLE_EXTENSION_CLIENT_ID` is not set;
+  - calls `auth.api.signInSocial` with the access token (verified via tokeninfo audience);
+  - returns `{ token }` on success, or `502` if no session token was created.
 
 ---
 
 ## Database tables
 
-Better Auth tables are defined in **`src/db/auth.schema.ts`**: `user` (with `role`, `banned`, `banReason`, `banExpires`, `normalizedEmail`), `session`, `account`, `verification`, `apikey`. Schema is re-exported from `src/db/schema.ts`. Migrations and Drizzle usage are described in the [DB module](./db.md).
+Better Auth tables are defined in **`src/db/auth.schema.ts`**: `user` (with `role`, `banned`, `banReason`, `banExpires`, `normalizedEmail`, `customerId`), `session`, `account`, `verification`, `apikey`. `customerId` is declared in `additionalFields` so it survives `pnpm auth:schema:generate`. Schema is merged in `src/db/schema.ts`. Migrations and Drizzle usage are described in the [DB module](./db.md).

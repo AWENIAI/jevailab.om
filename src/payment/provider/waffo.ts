@@ -285,8 +285,9 @@ export class WaffoProvider implements PaymentProvider {
           // The checkout `sessionId` returned by createCheckout (CHK_*) is
           // never carried on webhook payloads, so no server function can
           // match orders back to it. Leave null instead of storing orderId
-          // under a misleading column name — Waffo callers redirect straight
-          // to Billing and do not rely on session polling.
+          // under a misleading column name — Waffo returns through
+          // /settings/payment in hosted post-checkout mode, which polls the
+          // current plan instead of a session.
           sessionId: null,
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.ONE_TIME,

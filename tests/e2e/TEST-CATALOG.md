@@ -314,28 +314,49 @@ by `subscription.renewed` and covered at the provider boundary.
 
 ### Prerequisites
 
-`pnpm e2e:waffo` currently expects the following to be set up manually before
-running — there is no bootstrap script yet:
+`pnpm e2e:waffo` runs `scripts/run-waffo-e2e.ts`, which validates the
+required env vars and launches Playwright. It does **not** start the server
+or the tunnel; set these up manually before running:
 
-1. Local dev server running on port `3018` (`PORT=3018 pnpm dev` or an
-   equivalent E2E-mode entrypoint) with `MODE=e2e` and the E2E secret header
-   accepted by `src/routes/api/e2e/users.ts`.
-2. Public tunnel to `http://localhost:3018` via **cloudflared**
-   (`cloudflared tunnel --url http://localhost:3018`). It preserves the
-   `X-Waffo-Signature` header, needs no account, and has no 2-hour session
-   cap. ngrok works too but requires signup. Do **not** use localtunnel — it
-   strips custom headers, so Waffo webhook signature verification fails.
+1. Local dev server in E2E mode on port `3018`. The `dev` script hardcodes
+   port 3000, so start Vite directly:
+
+   ```bash
+   pnpm exec vite dev --mode e2e --host localhost --port 3018 --strictPort
+   ```
+
+   Vite's `--mode e2e` is what enables the E2E helper route in
+   `src/routes/api/e2e/users.ts` (the `x-e2e-secret` header must match).
+2. Public tunnel to `http://localhost:3018` via **cloudflared**:
+
+   ```bash
+   cloudflared --config /dev/null tunnel \
+     --url http://localhost:3018 \
+     --no-autoupdate \
+     --protocol quic
+   ```
+
+   It preserves the `X-Waffo-Signature` header, needs no account, and has no
+   2-hour session cap. ngrok works too but requires signup. Do **not** use
+   localtunnel — it strips custom headers, so Waffo webhook signature
+   verification fails.
 3. Waffo dashboard configured with:
-   - test-mode products whose IDs match the price plans in
-     `src/config/website.ts` (monthly / yearly / lifetime),
-   - a `http` webhook pointing at `<tunnel>/api/webhooks/waffo` for the test
-     environment (see `docs/waffo/SKILL.md` → Configuring Webhook URLs).
-4. `.dev.vars` containing `WAFFO_MERCHANT_ID` and `WAFFO_PRIVATE_KEY`
-   (PEM). If deploying via Cloudflare, run `pnpm cf-typegen` after adding.
+   - test-mode products for the monthly / yearly / lifetime plans, with
+     their IDs in `VITE_WAFFO_PRODUCT_PRO_MONTHLY`,
+     `VITE_WAFFO_PRODUCT_PRO_YEARLY`, and `VITE_WAFFO_PRODUCT_LIFETIME`,
+   - an `http` webhook pointing at `<tunnel>/api/webhooks/waffo` for the
+     test environment. Register it with
+     `pnpm tsx scripts/setup-waffo.ts --store <STORE_ID> --url <tunnel>/api/webhooks/waffo`
+     (see `docs/waffo/SKILL.md` → Configuring Webhook URLs).
+4. `WAFFO_MERCHANT_ID`, `WAFFO_PRIVATE_KEY` (PEM), and the three
+   `VITE_WAFFO_PRODUCT_*` IDs in the shell or an `.env*` file. The runner
+   loads env via Vite's `loadEnv('e2e')`; `.dev.vars` alone is **not**
+   loaded. If deploying via Cloudflare, run `pnpm cf-typegen` after adding
+   credentials.
 
 Optional: override the base URL with
-`PLAYWRIGHT_BASE_URL=https://<tunnel>.ngrok.app pnpm e2e:waffo` to walk the
-tunnel directly instead of localhost.
+`PLAYWRIGHT_BASE_URL=https://<tunnel>.trycloudflare.com pnpm e2e:waffo` to
+walk the tunnel directly instead of localhost.
 
 ### Known gaps
 

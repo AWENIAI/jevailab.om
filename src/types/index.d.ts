@@ -99,8 +99,8 @@ export interface CacheConfig {
 export interface StorageConfig {
   enable: boolean;                   // Whether to enable the storage
   provider?: 'r2';                   // The storage provider (e.g. R2)
-  maxFileSize?: number;              // Max file size in bytes (default 4MB)
-  allowedTypes?: string[];           // Allowed file extensions or MIME types. e.g. ['.jpg', '.png', 'image/webp']. Empty = all allowed.
+  maxFileSize?: number;              // Max file size in bytes (default 10MB)
+  allowedTypes?: string[];           // Allowed file extensions, e.g. ['.jpg', '.png', 'webp']. MIME types are not matched. Empty = all allowed.
   userFilesFolder?: string;          // The folder to store user files (default 'userfiles')
 }
 

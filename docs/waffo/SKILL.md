@@ -7,6 +7,13 @@ args: "[scenario]"
 
 # Waffo Pancake SDK Integration
 
+> **Scope:** This is the generic Waffo vendor guide for integrating
+> `@waffo/pancake-ts` into any TypeScript project. It does not describe this
+> template. Where it differs from the template (webhook path
+> `/api/webhooks/waffo`, webhook response status codes, the 11-event
+> subscription list), follow [docs/payment.md](../payment.md) and
+> `src/payment/provider/waffo.ts` instead.
+
 You are integrating the `@waffo/pancake-ts` payment SDK into a TypeScript project. Follow these steps exactly. The SDK uses Merchant API Key authentication — all requests are signed automatically.
 
 **Trigger when:** code imports `@waffo/pancake-ts`, user asks about Waffo Pancake payments, checkout integration, webhook verification, or product/order management.

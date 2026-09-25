@@ -12,24 +12,42 @@ This file provides guidance to Code Agents (Codex, Cursor, etc.) when working wi
 pnpm dev                    # Dev server on port 3000
 pnpm build                  # Production build
 pnpm deploy                 # Build + deploy to Cloudflare Workers
-pnpm e2e                    # Run local Playwright E2E tests
+
+pnpm test                   # Vitest unit tests (tests/unit/**/*.test.ts)
+pnpm test:watch             # Vitest in watch mode
+pnpm e2e                    # Run local Playwright E2E tests (tests/e2e/specs)
 pnpm e2e:ui                 # Run Playwright E2E in UI mode
 pnpm e2e:install            # Install Playwright browser binaries
+pnpm e2e:production         # Smoke-test a deployed site (tests/e2e/production)
+pnpm e2e:stripe             # Stripe Test Mode suite (see tests/e2e/stripe/README.md)
+pnpm e2e:creem              # Creem sandbox suite (see tests/e2e/creem/README.md)
+pnpm e2e:waffo              # Waffo sandbox suite (see tests/e2e/waffo/README.md)
+pnpm verify:upgrade         # check + build + e2e + e2e:production
 
 pnpm lint                   # Biome lint + format with auto-fix
-pnpm check                  # Biome lint (read-only, no auto-fix)
+pnpm check                  # Biome check (read-only) + Vitest unit tests
 pnpm format                 # Biome format only
 pnpm knip                   # Find unused exports/dependencies
+
+pnpm locale:sort            # Sort keys in project.inlang/messages/*.json
+pnpm locale:check           # Verify en/zh key parity
+pnpm locale:compile         # Compile the Paraglide runtime manually
 
 pnpm db:generate            # Generate Drizzle migrations from schema
 pnpm db:migrate:local       # Apply migrations to local D1
 pnpm db:migrate:remote      # Apply migrations to remote D1
+pnpm db:push                # drizzle-kit push to the REMOTE D1 (d1-http)
 pnpm db:studio:local        # Open Drizzle Studio (local)
 pnpm db:studio:remote       # Open Drizzle Studio (remote)
+pnpm db:sync:local          # Overwrite local D1 with a remote export (destructive)
+pnpm db:admin:local <email> # Promote a user to admin in local D1
+pnpm db:admin:remote <email># Promote a user to admin in remote D1
 
 pnpm auth:schema:generate   # Regenerate Better Auth schema → src/db/auth.schema.ts
 pnpm email:dev              # React Email preview on port 3333
 pnpm cf-typegen             # Generate Cloudflare Worker types (also runs on postinstall)
+pnpm sync-worker-secrets    # wrangler secret bulk .env.production
+pnpm sync-github-secrets    # Sync .env.production to GitHub secrets + deploy.yml env
 ```
 
 ## Architecture
@@ -39,13 +57,15 @@ Incoming request → Cloudflare Worker (`src/server.ts`) → TanStack Start hand
 
 ### Key Architectural Patterns
 
-- **File-based routing**: `src/routes/` maps to URL paths. `[param]` for dynamic segments, `$` for catch-all, `(group)` for layout-only groups, `__root.tsx` for root layout. Route tree auto-generates into `src/routeTree.gen.ts` — never edit this file.
+- **File-based routing**: `src/routes/` maps to URL paths. `$param` for dynamic segments (e.g. `blog/$slug.tsx`), `$.ts` for catch-all (e.g. `api/auth/$.ts`), `(group)` for layout-only groups, `[.]` to escape a literal dot (e.g. `sitemap[.]xml.ts`), `__root.tsx` for root layout. Server-only handlers use `createFileRoute(...)({ server: { handlers } })`. Route tree auto-generates into `src/routeTree.gen.ts` — never edit this file.
 
-- **Server functions**: Defined with `createServerFn()` from `@tanstack/react-start`. Located in `src/api/`. Support `.inputValidator()` (Zod) and `.middleware()` chains. Called directly from client code.
+- **Server functions**: Defined with `createServerFn()` from `@tanstack/react-start`. Located in `src/api/`. Use `.validator()` (Zod) and `.middleware()` chains. Called directly from client code.
 
-- **Provider pattern**: Mail, storage, newsletter, notification, and payment each use a provider abstraction (`src/*/provider/`) so implementations can be swapped (e.g., `src/mail/provider/resend.ts`, `src/storage/provider/r2.ts`).
+- **Provider pattern**: Mail, storage, newsletter, notification, cache, and payment each use a provider abstraction (`src/*/provider/`) so implementations can be swapped (e.g., `src/mail/provider/resend.ts`, `src/storage/provider/r2.ts`).
 
-- **Middleware**: `src/middlewares/auth-middleware.ts` (requires login) and `src/middlewares/admin-middleware.ts` (requires admin role) used with server functions.
+- **Middleware** (`src/middlewares/`):
+  - Route middleware (redirects): `authRouteMiddleware` (login + verified email), `adminRouteMiddleware` (admin role), `guestRouteMiddleware` (signed-out only, for login/register).
+  - Server function middleware (JSON 401/403): `authApiMiddleware`, `adminApiMiddleware`. Both pass `context.userId` to the handler.
 
 - **Environment variables**: Client-side uses `VITE_` prefix (build-time, via `src/env/client.ts`). Server-side uses Cloudflare Worker bindings/secrets (runtime, via `src/env/server.ts`). Both validated with Zod via `@t3-oss/env-core`.
 
@@ -54,38 +74,46 @@ Incoming request → Cloudflare Worker (`src/server.ts`) → TanStack Start hand
 | Directory | Purpose |
 |-----------|---------|
 | `src/routes/` | File-based routes (pages, API handlers, webhooks) |
-| `src/api/` | Server functions (payment, users, contact, newsletter, files) |
-| `src/auth/` | Better Auth config (`auth.ts` server, `client.ts` client) |
+| `src/api/` | Server functions (ai, payment, users, contact, newsletter, user-files) |
+| `src/auth/` | Better Auth config (`auth.ts` server, `client.ts` client, extension Google token handlers, trusted origins) |
+| `src/middlewares/` | Route and server-function middleware (auth, admin, guest) |
 | `src/db/` | Drizzle schemas (`auth.schema.ts` auto-generated, `app.schema.ts` app tables), migrations, types |
 | `src/payment/` | Stripe / Creem / Waffo integration (checkout, portal, webhooks) |
 | `src/mail/` | Resend / Cloudflare Email — provider, templates (React components), rendering |
 | `src/storage/` | Cloudflare R2 file storage |
+| `src/cache/` | Cloudflare KV JSON cache |
 | `src/newsletter/` | Resend and Beehiiv newsletter via API |
 | `src/notification/` | Discord/Feishu webhook notifications |
+| `src/locale/` | Paraglide middleware; `src/locale/paraglide/` is generated (git-ignored) |
 | `src/components/ui/` | shadcn/ui components (auto-generated, excluded from linting) |
-| `src/config/` | Site configuration (website.ts is the main config for features, pricing, metadata) |
-| `src/lib/` | Utilities (routes, SEO, formatters, markdown parsing) |
+| `src/config/` | Site configuration (`website.ts` for features, providers, pricing, metadata; plus navbar, sidebar, footer, AI model config) |
+| `src/lib/` | Utilities (routes, SEO, URLs, locale, price plans, payment return URLs, markdown) |
 | `src/hooks/` | React hooks (auth, payment, files, etc.) |
+| `project.inlang/` | Paraglide settings and source messages (`messages/en.json`, `messages/zh.json`) |
 | `content/` | Markdown content (blog, pages, changelog) for Content Collections |
-| `docs/` | Module-specific documentation (auth, db, payment, mail, storage, env, design) |
+| `scripts/` | Tooling scripts (admin promotion, D1 sync, locale checks, payment E2E runners) |
+| `tests/unit/` | Vitest unit tests |
+| `tests/e2e/` | Playwright E2E specs, fixtures, and `TEST-CATALOG.md` |
+| `docs/` | Module docs: ai, auth, cache, db, design, env, locale, mail, newsletter, notification, payment, storage |
 
 ### Database
 
 Two schema files merged in `src/db/schema.ts`:
-- `auth.schema.ts` — auto-generated by Better Auth (user, session, account, verification, apiKey)
-- `app.schema.ts` — application tables (userFiles, payment, etc.)
+- `auth.schema.ts` — auto-generated by Better Auth (user, session, account, verification, apikey)
+- `app.schema.ts` — application tables (`payment`, `userFiles`)
 
-Types inferred from tables in `src/db/types.ts`. Access via `getDb()` from `src/db/index.ts`.
+Types inferred from tables in `src/db/types.ts`. Access via `getDb()` from `src/db/index.ts` (it exports only `getDb`; import tables from `@/db/auth.schema`, `@/db/app.schema`, or `@/db/schema`).
 
 ### Cloudflare Bindings (wrangler.jsonc)
 - `DB` — D1 database binding
 - `BUCKET` — R2 storage binding
+- `CACHE` — KV namespace for the cache module
 
 ## Code Style
 
 Enforced by Biome (`biome.json`):
 - 2-space indent, 80-char line width, single quotes, semicolons always, ES5 trailing commas
-- Files excluded from linting: `src/components/ui/`, `src/components/data-table/`, `src/db/`, `src/routeTree.gen.ts`, type definition files
+- Files excluded from linting: `src/components/ui/`, `src/components/data-table/`, `src/db/`, `src/routeTree.gen.ts`, `src/locale/paraglide/`, and the module `types.ts` / `index.d.ts` definition files (see `biome.json`)
 
 ### Conventions
 - **File names**: kebab-case (`use-auth.ts`, `data-table.tsx`)
@@ -100,6 +128,13 @@ Enforced by Biome (`biome.json`):
 
 ### Cloudflare Workers Constraint
 Avoid Node.js-specific APIs — this runs on Cloudflare Workers runtime, not Node.js.
+
+## Unit Testing
+
+Vitest runs `tests/unit/**/*.test.ts` in a Node environment (`vitest.config.ts`,
+`@` alias to `src`). Use unit tests for pure logic and provider/webhook
+behavior (auth token handling, trusted origins, payment providers, webhook
+routes, return-URL normalization). `pnpm check` runs them together with Biome.
 
 ## E2E Testing
 
@@ -139,7 +174,9 @@ the outcome more directly than rendered UI.
   in scope. Add visual-regression tests only when the user explicitly requests
   them; do not mix either concern into functional E2E flows.
 
-The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally with `import.meta.env.DEV === true`, `MODE=e2e`, and a matching `x-e2e-secret`. Keep E2E test accounts scoped to `e2e-*@example.test`.
+The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally in dev with `--mode e2e` (`import.meta.env.DEV === true` and `import.meta.env.MODE === 'e2e'`) and the request sends the matching `x-e2e-secret` header (hardcoded in the route and `tests/e2e/fixtures/test-data.ts`). Keep E2E test accounts scoped to `e2e-*@example.test`.
+
+`pnpm e2e` starts its own server via `playwright.config.ts`: it resets `.wrangler/e2e-state`, applies D1 migrations there, and runs `vite dev --mode e2e`. Payment sandbox suites (`e2e:stripe`, `e2e:creem`, `e2e:waffo`) use their own Playwright configs and runner scripts; see the READMEs under `tests/e2e/<provider>/`.
 
 ## Commit Messages
 

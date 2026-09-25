@@ -114,7 +114,10 @@ If the temporary URL changes, register the new URL again.
 Open `http://localhost:3000/pricing`, register or sign in with a test account,
 and choose a Waffo product. On the hosted Waffo checkout:
 
-1. For Pro, verify the `7-day free trial` label, then click `Continue`.
+1. For Pro, verify the free-trial label (e.g. `7-day free trial`) if your
+   sandbox product has one configured, then click `Continue`. No plan in
+   `src/config/website.ts` sets `trialPeriodDays`, so the trial length comes
+   from the product's own setting in the Waffo dashboard.
 2. Choose `Credit/Debit Card`.
 3. Select the sandbox `Success` test option.
 4. Click `Subscribe` for Pro or `Pay` for Lifetime.
@@ -183,9 +186,9 @@ Register the tunnel URL as a Waffo Test Mode webhook with the same
 pnpm e2e:waffo
 ```
 
-The suite covers monthly and yearly trial subscriptions, Lifetime checkout,
-webhook-backed Billing state, and the accompanying payment event. To run one
-scenario:
+The suite covers monthly and yearly subscriptions (trial if the sandbox
+product enables one), Lifetime checkout, webhook-backed Billing state, and
+the accompanying payment event. To run one scenario:
 
 ```bash
 pnpm e2e:waffo -- --grep "monthly subscription"

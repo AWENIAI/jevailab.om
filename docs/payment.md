@@ -5,15 +5,19 @@ Subscription and one-time payment support via a **provider pattern** — switch 
 ### Shared routes
 
 - **Pricing**: `/pricing` — plans and checkout buttons.
-- **Payment callback**: `/payment?session_id=...&callback=/settings/billing` — polls the authenticated user's payment row every two seconds for up to 60 seconds, then redirects after `paid=true`.
+- **Payment callback**: `/settings/payment` — polls every two seconds for up to 60 seconds (`src/payment/constants.ts`), then redirects to `callback` (default `/settings/billing`). It has two modes:
+  - **Session mode (Stripe)**: `/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/settings/billing`. Stripe fills in the session ID; the page calls `checkPaymentCompletion` until the authenticated user's payment row for that session has `paid=true`.
+  - **Hosted post-checkout mode (Creem, Waffo)**: `/settings/payment?callback=%2Fsettings%2Fbilling` with no `session_id`. These providers set `hostsPostCheckoutPage = true` and do not replace URL placeholders, so the page calls `getCurrentPlan` until the user has a non-free plan. This keeps Billing from showing a stale plan while the webhook is still in flight.
 - **Billing**: `/settings/billing` — current plan and subscription management.
 
 ### Shared server API (Server Functions)
 
-- `createCheckoutSession` — create a checkout session, redirect URL returned.
-- `createCustomerPortalSession` — create a billing portal session (Stripe Customer Portal / Creem customer portal).
-- `getCurrentPlan` — current plan and subscription for a user.
-- `checkPaymentCompletion` — whether a session is paid (for polling).
+All functions in `src/api/payment.ts` use `authApiMiddleware`.
+
+- `createCheckoutSession` — create a checkout session for the current user; returns `{ url, id }`. Adds `userId` and `userName` to the checkout metadata.
+- `createCustomerPortalSession` — create a billing portal session: Stripe Customer Portal, Creem customer portal, or Waffo's shared consumer portal URL. Requires `user.customerId` unless the provider sets `requiresCustomerId = false` (Waffo).
+- `getCurrentPlan` — current plan and subscription for the current user. A completed Lifetime payment wins over subscriptions; otherwise the latest `active`/`trialing` subscription; otherwise the free plan.
+- `checkPaymentCompletion` — whether the current user's payment for a Checkout Session ID is paid (Stripe polling).
 
 Client-supplied Checkout success/cancel URLs and Customer Portal return URLs
 are resolved against `VITE_BASE_URL`; request `Host` and `Origin` headers are
@@ -40,6 +44,8 @@ The checkout is always hosted by the payment provider, so language and theme fol
 | `src/payment/types.ts` | `PaymentProvider` interface, shared types |
 | `src/payment/index.ts` | Provider factory/registry, exported functions |
 | `src/payment/constants.ts` | Payment callback polling interval and timeout |
+| `src/payment/errors.ts` | `InvalidWebhookSignatureError` (mapped to `400` by the Stripe route) |
+| `src/lib/payment-return-url.ts` | `normalizePaymentReturnUrl` for success/cancel/portal return URLs |
 | `src/payment/provider/stripe.ts` | Stripe provider implementation |
 | `src/payment/provider/creem.ts` | Creem provider implementation |
 | `src/payment/provider/waffo.ts` | Waffo Pancake provider implementation |
@@ -109,6 +115,7 @@ The Stripe endpoint uses HTTP status codes to control provider retries:
 | Missing payload/signature or invalid signature | `400` | The request cannot become valid by retrying. |
 | Stripe is not the configured payment provider | `404` | The stale provider endpoint is inactive. |
 | Temporary Stripe API, D1, or processing failure | `500` | Stripe should retry the event. |
+| Payment is disabled (`VITE_PAYMENT_PROVIDER=''`) | `200` | The event is acknowledged and ignored. |
 
 The handler does not poll D1 or sleep while processing a webhook. Provider
 retries remain a recovery path for real transient failures, not the normal way
@@ -146,7 +153,7 @@ revoke access. Partial refunds do not revoke access.
 3. **Creem Dashboard**:
    - Create Products for Pro (monthly/yearly) and Lifetime.
    - Webhook: Settings → Webhooks → Add endpoint: `https://your-domain.com/api/webhooks/creem`
-     Events: `checkout.completed`, `subscription.paid`, `subscription.canceled`, `subscription.expired`, `subscription.trialing`, `subscription.paused`.
+     Events handled by the provider: `checkout.completed`, `subscription.active`, `subscription.paid`, `subscription.update`, `subscription.trialing`, `subscription.scheduled_cancel`, `subscription.canceled`, `subscription.expired`, `subscription.past_due`, `subscription.paused`. Other events are logged and ignored.
 
 ### Key differences from Stripe
 
@@ -154,6 +161,20 @@ revoke access. Partial refunds do not revoke access.
 - Creem is a **merchant of record** — it handles tax, VAT, and payouts on your behalf.
 - Creem provides a **customer portal** for subscription management, similar to Stripe's Customer Portal.
 - Debug/sandbox mode is toggled via the `CREEM_DEBUG` env var.
+- Checkout returns through the hosted post-checkout mode of `/settings/payment` (no session ID).
+- **Refunds and disputes are not handled.** A Creem refund does not revoke access automatically; revoke it manually or add a handler in `src/payment/provider/creem.ts`.
+
+### Creem webhook responses
+
+| Result | Status |
+|---|---:|
+| Payment is disabled | `200` |
+| Creem is not the configured payment provider | `404` |
+| Missing payload or `creem-signature` header | `400` |
+| Processed | `200` |
+| Invalid signature or processing failure | `200` (error logged) |
+
+Creem is intentionally answered with `200` on processing errors to avoid endless retries, so a failed event is **not** redelivered. Check the Worker logs for `Creem webhook error`.
 
 ## Waffo Pancake
 
@@ -176,8 +197,26 @@ Keep `WAFFO_PRIVATE_KEY` server-only. For a PEM value in a Worker secret or loca
 
 ### Notes and caveats
 
-- **No `user.customerId`**: Waffo has no per-merchant customer entity, so unlike Stripe and Creem, this provider never writes `user.customerId`. The `payment.customerId` column stores the buyer identity (userId) for auditability. Any admin feature that assumes `user.customerId` is populated will silently no-op under Waffo.
+- **No `user.customerId`**: Waffo has no per-merchant customer entity, so unlike Stripe and Creem, this provider never writes `user.customerId`. The `payment.customerId` column stores the buyer identity for auditability: `merchantProvidedBuyerIdentity` from the webhook, falling back to the userId. At checkout the buyer identity is the userId (or the customer email if no userId is present). Any admin feature that assumes `user.customerId` is populated will silently no-op under Waffo.
 - **Shared consumer portal**: `createCustomerPortal()` always returns the same `https://pancake.waffo.ai/consumer/portal/login` URL — no per-customer session is created. The provider declares `requiresCustomerId = false` so `src/api/payment.ts` skips the customerId guard for Waffo.
-- **`sessionId` semantics**: Waffo webhook payloads carry no reference back to the checkout session id, so `payment.sessionId` is stored as `null`. Post-checkout redirects for Waffo go straight to `/settings/billing` instead of the session-poll page.
+- **`sessionId` semantics**: Waffo webhook payloads carry no reference back to the checkout session id, so `payment.sessionId` is stored as `null`. Post-checkout redirects use the hosted post-checkout mode of `/settings/payment` (no `session_id`), which polls `getCurrentPlan` until the webhook has granted the plan.
 - **Subscription periods**: `subscription.activated` stores the first period. `subscription.renewed` advances the current period, and `subscription.recovered` restores an active subscription after a successful retry. The shared payment row intentionally stores only the latest period; add a dedicated ledger if your product needs per-payment historical periods.
-- **Refund policy**: Any successful `refund.succeeded` event revokes access (`paid = false`), matching Stripe and Creem. The Waffo payload has no partial-vs-full marker, so partial refunds intended to preserve access must be handled manually.
+- **Refund policy**: Any successful `refund.succeeded` event revokes access (`paid = false`). This is stricter than Stripe, which only revokes on a full refund; Creem refunds are not handled at all. The Waffo payload has no partial-vs-full marker, so partial refunds intended to preserve access must be handled manually.
+- **Trials**: No plan in `src/config/website.ts` sets `trialPeriodDays`, so the provider leaves `withTrial` unset and Waffo uses each product's own trial setting.
+
+### Waffo webhook responses
+
+| Result | Status |
+|---|---:|
+| Payment is disabled | `200` |
+| Waffo is not the configured payment provider | `404` |
+| Missing payload or `x-waffo-signature` header | `400` |
+| Processed | `200` |
+| Invalid signature or processing failure | `200` (error logged) |
+
+As with Creem, processing errors are acknowledged with `200` and are **not** redelivered. Check the Worker logs for `Waffo webhook error`.
+
+### Waffo reference material
+
+- [`docs/waffo/SKILL.md`](./waffo/SKILL.md) — vendor SDK guide for `@waffo/pancake-ts` in any TypeScript project. Where it differs from this template (webhook path, status codes, event list), this page and `src/payment/provider/waffo.ts` are authoritative.
+- [`docs/resources/waffo-webhook-changes.md`](./resources/waffo-webhook-changes.md) — the 2026-09 Waffo notice about `subscription.renewed`; already implemented.

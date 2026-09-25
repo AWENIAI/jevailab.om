@@ -9,7 +9,8 @@ import { loadEnv } from 'vite';
  * and launches Playwright. The caller is responsible for:
  *
  *   1. Running the dev server on ${port} in E2E mode
- *      (e.g. `PORT=${port} MODE=e2e pnpm dev`).
+ *      (`pnpm exec vite dev --mode e2e --host localhost --port ${port} --strictPort`;
+ *      `pnpm dev` hardcodes port 3000, and MODE as an env var does not set Vite's mode).
  *   2. Exposing that port via **cloudflared** — it preserves the
  *      `X-Waffo-Signature` header, needs no signup, and has no 2-hour
  *      session cap. ngrok also works but requires an account.

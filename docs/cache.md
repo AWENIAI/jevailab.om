@@ -43,7 +43,7 @@ payments, auth, quotas, or other strongly consistent state.
 
 ```txt
 src/cache/
-├── index.ts           # getOrSetCache, deleteCache, provider registry
+├── index.ts           # getOrSetCache, deleteCache, deleteCacheByPrefix, getCacheProvider, provider registry
 ├── constants.ts       # key prefix, version, TTL values
 ├── types.ts           # CacheProvider interface
 ├── utils.ts           # stable cache key helpers
@@ -53,32 +53,55 @@ src/cache/
 
 ## Core API
 
+All exports come from `@/cache` (`CACHE_TTL` and `createCacheKey` are
+re-exported from `constants.ts` and `utils.ts`).
+
 - **getOrSetCache({ key, ttlSeconds, fetcher })**
-  - Reads JSON from cache. On miss or cache failure, calls `fetcher()` and
-    stores the result.
+  - Reads JSON from cache. On miss or cache read failure, calls `fetcher()`
+    and stores the result. Write failures are logged and ignored.
+  - If `fetcher()` throws, the error propagates and nothing is cached. A
+    resolved value is cached as-is, including `false` or an error-shaped
+    object, so return errors by throwing when they must not be cached.
 
 - **deleteCache(key)**
-  - Deletes one cache entry. Use this after mutations.
+  - Deletes one cache entry. Use this after mutations. Failures are logged.
 
 - **deleteCacheByPrefix(prefix)**
-  - Deletes all entries under a key prefix. This is useful for list caches.
+  - Lists all keys under a prefix and deletes them in parallel, page by page.
+    Useful for list caches. Pass `` `${createCacheKey(scope)}:` `` to target
+    only keys created with parts for that scope.
 
 - **createCacheKey(scope, parts?)**
-  - Builds stable keys with an internal prefix and version. You do not need to
-    define a separate namespace in `websiteConfig`; key isolation is handled by
-    `src/cache/constants.ts`.
+  - Format: `mkfast-template-cache:v1:<scope>` without parts, or
+    `mkfast-template-cache:v1:<scope>:<hash>` with parts. `parts` is
+    stable-JSON-stringified and hashed (FNV-1a), so keys never contain raw
+    values such as email addresses.
+  - Bump `CACHE_VERSION` in `constants.ts` to invalidate every key at once.
+    You do not need a separate namespace in `websiteConfig`.
+
+- **getCacheProvider()**
+  - Returns the lazily created provider, or `null` when `cache.enable` is
+    false or no provider is set.
 
 ## Current consumers
 
 - **Newsletter status** (`src/api/newsletter.ts`)
   - `getNewsletterStatus` caches provider status checks for
-    `CACHE_TTL.newsletterStatus`.
+    `CACHE_TTL.newsletterStatus` (10 minutes) under
+    `createCacheKey('newsletter:status', email)`.
   - `subscribeNewsletter` and `unsubscribeNewsletter` delete the corresponding
     status cache key after a successful mutation.
+
+This is currently the only consumer.
 
 ## Notes
 
 - TTL values live in `src/cache/constants.ts`, not `websiteConfig`, so product
-  configuration stays focused on provider selection.
-- If `CACHE` is not bound, cache operations are skipped and callers fall back
-  to the underlying `fetcher()`.
+  configuration stays focused on provider selection. TTLs are clamped to at
+  least `MIN_CACHE_TTL_SECONDS` (60), the KV minimum.
+- If `cache.enable` is false, `getOrSetCache` calls `fetcher()` directly and
+  the delete helpers do nothing.
+- If `CACHE` is not bound, KV reads return a miss and writes/deletes are
+  skipped, so callers fall back to the underlying `fetcher()`.
+- `wrangler.jsonc` already binds `CACHE` for the template; replace the
+  namespace ID with your own.

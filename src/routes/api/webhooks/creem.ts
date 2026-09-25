@@ -9,8 +9,10 @@ import {
  * Creem webhook endpoint
  * Configure in Creem Dashboard: Settings -> Webhooks -> Add endpoint
  * Endpoint URL: https://your-domain.com/api/webhooks/creem
- * Events: checkout.completed, subscription.paid, subscription.canceled,
- *         subscription.expired, subscription.trialing, subscription.paused
+ * Events: checkout.completed, subscription.active, subscription.paid,
+ *         subscription.update, subscription.trialing,
+ *         subscription.scheduled_cancel, subscription.canceled,
+ *         subscription.expired, subscription.past_due, subscription.paused
  */
 export const Route = createFileRoute('/api/webhooks/creem')({
   server: {
