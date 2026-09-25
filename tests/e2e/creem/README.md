@@ -77,6 +77,7 @@ Subscribe the endpoint to the events handled by this project:
 - `subscription.canceled`
 - `subscription.expired`
 - `subscription.past_due`
+- `subscription.unpaid`
 - `subscription.trialing`
 - `subscription.paused`
 

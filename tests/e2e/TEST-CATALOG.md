@@ -272,8 +272,8 @@ Before running it, configure the following in Creem Test Mode:
    → Webhooks page, with the events used by the suite:
    `checkout.completed`, `subscription.active`, `subscription.paid`,
    `subscription.scheduled_cancel`, `subscription.canceled`,
-   `subscription.expired`, `subscription.past_due`, `subscription.trialing`,
-   and `subscription.paused`.
+   `subscription.expired`, `subscription.past_due`, `subscription.unpaid`,
+   `subscription.trialing`, and `subscription.paused`.
 3. Set `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_DEBUG=true`, and the
    three `VITE_CREEM_PRODUCT_*` test product IDs.
 

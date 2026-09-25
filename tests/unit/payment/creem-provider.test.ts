@@ -35,6 +35,59 @@ import { CreemProvider } from '@/payment/provider/creem';
 import { user } from '@/db/auth.schema';
 
 const WEBHOOK_SECRET = 'whsec_test';
+const SUBSCRIPTION_TIMESTAMP = '2026-09-05T00:00:00.000Z';
+
+function createSubscriptionPayload(eventType: string): string {
+  return JSON.stringify({
+    id: `evt_${eventType.replace('.', '_')}`,
+    eventType,
+    created_at: Date.parse(SUBSCRIPTION_TIMESTAMP),
+    object: {
+      id: 'sub_creem_buyer',
+      mode: 'test',
+      object: 'subscription',
+      customer: {
+        id: 'cus_creem_buyer',
+        mode: 'test',
+        object: 'customer',
+        email: 'buyer@example.com',
+        country: 'US',
+        created_at: SUBSCRIPTION_TIMESTAMP,
+        updated_at: SUBSCRIPTION_TIMESTAMP,
+      },
+      product: {
+        id: 'PROD_monthly',
+        mode: 'test',
+        object: 'product',
+        name: 'Pro Monthly',
+        description: 'Monthly plan',
+        price: 990,
+        currency: 'USD',
+        billing_type: 'recurring',
+        billing_period: 'every-month',
+        status: 'active',
+        tax_mode: 'inclusive',
+        tax_category: 'saas',
+        created_at: SUBSCRIPTION_TIMESTAMP,
+        updated_at: SUBSCRIPTION_TIMESTAMP,
+      },
+      collection_method: 'charge_automatically',
+      status: 'active',
+      current_period_start_date: SUBSCRIPTION_TIMESTAMP,
+      current_period_end_date: '2026-10-05T00:00:00.000Z',
+      created_at: SUBSCRIPTION_TIMESTAMP,
+      updated_at: SUBSCRIPTION_TIMESTAMP,
+    },
+  });
+}
+
+async function dispatchSubscriptionEvent(eventType: string) {
+  const payload = createSubscriptionPayload(eventType);
+  const signature = createHmac('sha256', WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex');
+  await new CreemProvider().handleWebhookEvent(payload, signature);
+}
 
 describe('Creem provider boundary', () => {
   beforeEach(() => {
@@ -192,6 +245,30 @@ describe('Creem provider boundary', () => {
     ).rejects.toMatchObject({
       name: 'InvalidWebhookSignatureError',
       message: 'Invalid Creem webhook signature',
+    });
+  });
+
+  test.each([
+    ['subscription.expired', 'past_due'],
+    ['subscription.unpaid', 'unpaid'],
+  ])('maps %s to lifecycle state %s', async (eventType, status) => {
+    const returning = vi.fn().mockResolvedValue([{ id: 'payment_creem' }]);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    dbMocks.update.mockReturnValue({ set });
+
+    await dispatchSubscriptionEvent(eventType);
+
+    expect(set).toHaveBeenCalledExactlyOnceWith({
+      status,
+      updatedAt: expect.any(Date),
+    });
+    expect(where).toHaveBeenCalledOnce();
+    expect(
+      new SQLiteSyncDialect().sqlToQuery(where.mock.calls[0][0])
+    ).toMatchObject({
+      sql: '"payment"."subscription_id" = ?',
+      params: ['sub_creem_buyer'],
     });
   });
 });

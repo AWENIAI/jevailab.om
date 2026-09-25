@@ -157,7 +157,7 @@ Partial refunds do not revoke access.
 3. **Creem Dashboard**:
    - Create Products for Pro (monthly/yearly) and Lifetime.
    - Webhook: Settings → Webhooks → Add endpoint: `https://your-domain.com/api/webhooks/creem`
-     Events handled by the provider: `checkout.completed`, `subscription.active`, `subscription.paid`, `subscription.update`, `subscription.trialing`, `subscription.scheduled_cancel`, `subscription.canceled`, `subscription.expired`, `subscription.past_due`, `subscription.paused`. Other events are logged and ignored.
+     Events handled by the provider: `checkout.completed`, `subscription.active`, `subscription.paid`, `subscription.update`, `subscription.trialing`, `subscription.scheduled_cancel`, `subscription.canceled`, `subscription.expired`, `subscription.past_due`, `subscription.unpaid`, `subscription.paused`. Other events are logged and ignored. `subscription.expired` remains recoverable and maps to `past_due`; only `subscription.canceled` is terminal. `subscription.unpaid` suspends access after collection attempts are exhausted.
 
 ### Key differences from Stripe
 

@@ -71,7 +71,8 @@ export async function handleCreemWebhookRequest(
  * Events: checkout.completed, subscription.active, subscription.paid,
  *         subscription.update, subscription.trialing,
  *         subscription.scheduled_cancel, subscription.canceled,
- *         subscription.expired, subscription.past_due, subscription.paused
+ *         subscription.expired, subscription.past_due, subscription.unpaid,
+ *         subscription.paused
  */
 export const Route = createFileRoute('/api/webhooks/creem')({
   server: {

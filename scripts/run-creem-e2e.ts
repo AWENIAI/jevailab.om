@@ -52,7 +52,7 @@ console.log(
   '  2. Creem Dashboard Test Mode: webhook → <tunnel>/api/webhooks/creem'
 );
 console.log(
-  '     subscribed to checkout.completed, subscription.active, subscription.paid, subscription.scheduled_cancel, subscription.canceled, subscription.expired, subscription.past_due, subscription.trialing, subscription.paused'
+  '     subscribed to checkout.completed, subscription.active, subscription.paid, subscription.scheduled_cancel, subscription.canceled, subscription.expired, subscription.past_due, subscription.unpaid, subscription.trialing, subscription.paused'
 );
 console.log(`Playwright base URL: ${baseURL}`);
 console.log('');

@@ -91,6 +91,8 @@ type CreemSubscriptionExpiredEvent =
   CreemSubscriptionEvent<'subscription.expired'>;
 type CreemSubscriptionPastDueEvent =
   CreemSubscriptionEvent<'subscription.past_due'>;
+type CreemSubscriptionUnpaidEvent =
+  CreemSubscriptionEvent<'subscription.unpaid'>;
 type CreemSubscriptionPausedEvent =
   CreemSubscriptionEvent<'subscription.paused'>;
 type CreemSubscriptionUpdateEvent =
@@ -231,6 +233,7 @@ export class CreemProvider implements PaymentProvider {
    * - subscription.scheduled_cancel: Cancellation scheduled at period end
    * - subscription.expired: Subscription expired without payment
    * - subscription.past_due: Payment failed
+   * - subscription.unpaid: Payment collection exhausted
    * - subscription.paused: Subscription paused
    *
    * @param payload Raw webhook payload
@@ -291,6 +294,11 @@ export class CreemProvider implements PaymentProvider {
           const event =
             this.parseSubscriptionEvent<'subscription.past_due'>(raw);
           await this.onSubscriptionPastDue(event);
+          break;
+        }
+        case 'subscription.unpaid': {
+          const event = this.parseSubscriptionEvent<'subscription.unpaid'>(raw);
+          await this.onSubscriptionUnpaid(event);
           break;
         }
         case 'subscription.trialing': {
@@ -541,9 +549,8 @@ export class CreemProvider implements PaymentProvider {
   /**
    * Handle subscription.expired event
    *
-   * Maps to 'canceled' status since our PaymentStatus doesn't have 'expired'.
-   * Both represent "subscription no longer active" which is what matters
-   * for getCurrentPlan() logic.
+   * Creem can still recover payment after this event. Keep the state
+   * non-terminal while suspending access; only subscription.canceled is final.
    */
   private async onSubscriptionExpired(
     event: CreemSubscriptionExpiredEvent
@@ -556,17 +563,37 @@ export class CreemProvider implements PaymentProvider {
     const result = await db
       .update(payment)
       .set({
-        status: 'canceled' as PaymentStatus,
-        paid: false,
+        status: 'past_due' as PaymentStatus,
         updatedAt: new Date(),
       })
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
     if (result.length > 0) {
-      console.log('<< Marked payment record as canceled (expired)');
+      console.log('<< Marked payment record as past due (expired)');
     } else {
       console.warn('<< No payment record found for subscription expiration');
+    }
+  }
+
+  /** Suspend access after Creem exhausts payment collection attempts. */
+  private async onSubscriptionUnpaid(
+    event: CreemSubscriptionUnpaidEvent
+  ): Promise<void> {
+    console.log('>> Handle Creem subscription unpaid:', event.id);
+
+    const db = getDb();
+    const result = await db
+      .update(payment)
+      .set({
+        status: 'unpaid' as PaymentStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(payment.subscriptionId, event.object.id))
+      .returning({ id: payment.id });
+
+    if (result.length === 0) {
+      console.warn('<< No payment record found for subscription unpaid');
     }
   }
 
