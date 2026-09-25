@@ -1,19 +1,9 @@
 /**
- * Polling interval for payment completion (ms)
+ * Interval used by the payment result page to query payment completion (ms)
  */
 export const PAYMENT_POLL_INTERVAL = 2000;
 
 /**
- * Max polling time for payment completion (ms)
+ * Maximum time the payment result page waits for paid=true (ms)
  */
 export const PAYMENT_MAX_POLL_TIME = 60000;
-
-/**
- * Max retry attempts for finding payment record (webhook race)
- */
-export const PAYMENT_RECORD_RETRY_ATTEMPTS = 30;
-
-/**
- * Retry delay between attempts (ms)
- */
-export const PAYMENT_RECORD_RETRY_DELAY = 2000;

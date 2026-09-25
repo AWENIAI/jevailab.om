@@ -188,14 +188,25 @@ Stripe.
 
 ### Fast webhook layer
 
-**Files:** `tests/unit/payment/stripe-webhook.test.ts` and
-`tests/unit/payment/stripe-provider.test.ts`
+**Files:** `tests/unit/payment/stripe-webhook.test.ts`,
+`tests/unit/payment/stripe-provider.test.ts`, and
+`tests/unit/payment/stripe-webhook-route.test.ts`
 
 Runs inside `pnpm check` with Stripe SDK-generated test signatures. It verifies
 invalid signatures, checkout creation for subscription and Lifetime prices,
 Customer Portal parameters, subscription and one-time `invoice.paid` handling,
 renewal lookup by subscription ID, cancellation/deletion, refund access
 revocation, and duplicate payment idempotency without making network requests.
+The event-order matrix covers Checkout-first, subscription Invoice-first,
+Lifetime Invoice-first, Checkout arriving after reconstruction, and a concurrent
+insert conflict. Checkout always creates an unpaid row; only `invoice.paid`
+makes the row paid. Invoice-first recovery obtains the original Checkout Session
+and persists its `sessionId`, so the payment result page can observe success on
+the first delivery without waiting for a Stripe retry.
+The HTTP route boundary returns 400 for invalid signatures, 500 for retryable
+processing failures, and 200 for successful or safely duplicated deliveries;
+it also verifies that later Stripe retries can succeed after temporary D1 or
+Stripe API failures.
 
 The provider-independent server boundary is covered by
 `tests/unit/payment/payment-security.test.ts`. It rejects external Checkout and

@@ -5,7 +5,7 @@ Subscription and one-time payment support via a **provider pattern** — switch 
 ### Shared routes
 
 - **Pricing**: `/pricing` — plans and checkout buttons.
-- **Payment callback**: `/payment?session_id=...&callback=/settings/billing` — polls until paid, then redirects.
+- **Payment callback**: `/payment?session_id=...&callback=/settings/billing` — polls the authenticated user's payment row every two seconds for up to 60 seconds, then redirects after `paid=true`.
 - **Billing**: `/settings/billing` — current plan and subscription management.
 
 ### Shared server API (Server Functions)
@@ -33,7 +33,7 @@ The checkout is always hosted by the payment provider, so language and theme fol
 |------|---------|
 | `src/payment/types.ts` | `PaymentProvider` interface, shared types |
 | `src/payment/index.ts` | Provider factory/registry, exported functions |
-| `src/payment/constants.ts` | Polling/retry constants |
+| `src/payment/constants.ts` | Payment callback polling interval and timeout |
 | `src/payment/provider/stripe.ts` | Stripe provider implementation |
 | `src/payment/provider/creem.ts` | Creem provider implementation |
 | `src/payment/provider/waffo.ts` | Waffo Pancake provider implementation |
@@ -59,6 +59,59 @@ The checkout is always hosted by the payment provider, so language and theme fol
    - Create Products/Prices for Pro (monthly/yearly) and Lifetime.
    - Webhook: `https://your-domain.com/api/webhooks/stripe`
      Events: `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.paid`, `charge.refunded`.
+
+### Payment confirmation and event ordering
+
+`invoice.paid` is the authority for a successful Stripe payment. A completed
+Checkout Session is useful payment context, but it does not set `payment.paid`
+to `true`:
+
+1. `checkout.session.completed` creates the subscription or Lifetime payment
+   row with `paid=false`.
+2. `invoice.paid` changes the row to `paid=true` and applies the latest
+   subscription fields or Lifetime benefit.
+3. The payment callback observes the row by Checkout Session ID and current
+   user, then redirects to Billing.
+
+Stripe does not guarantee delivery order. When `invoice.paid` arrives before
+Checkout has created the local row, the same Invoice request reconstructs the
+missing context instead of waiting in the webhook request:
+
+- **Subscription:** read the Subscription referenced by the Invoice, then find
+  its Checkout Session using the Subscription ID.
+- **Lifetime:** retrieve the Invoice when necessary to obtain its PaymentIntent,
+  then find the Checkout Session using the PaymentIntent ID.
+
+The recovered Session supplies the original `sessionId`, `userId`, and Price
+metadata. The provider creates a complete `paid=true` row during that first
+`invoice.paid` delivery, so the callback does not depend on a delayed Stripe
+retry. Lifetime Checkout also copies the metadata onto its generated Invoice
+for future event payloads.
+
+Concurrent Checkout and Invoice handlers are expected. The Invoice transition
+to paid wins an insert conflict, repeated deliveries do not create another
+payment row, and a Lifetime notification is emitted only by the handler that
+actually changes the row from unpaid to paid.
+
+### Stripe webhook responses
+
+The Stripe endpoint uses HTTP status codes to control provider retries:
+
+| Result | Status | Meaning |
+|---|---:|---|
+| Successfully processed or safely duplicated | `200` | Stripe can stop delivering the event. |
+| Missing payload/signature or invalid signature | `400` | The request cannot become valid by retrying. |
+| Stripe is not the configured payment provider | `404` | The stale provider endpoint is inactive. |
+| Temporary Stripe API, D1, or processing failure | `500` | Stripe should retry the event. |
+
+The handler does not poll D1 or sleep while processing a webhook. Provider
+retries remain a recovery path for real transient failures, not the normal way
+an out-of-order payment becomes visible.
+
+See the [payment test catalog](../tests/e2e/TEST-CATALOG.md#stripe-payment-coverage)
+for the event-order and HTTP test matrix. See the
+[Stripe sandbox guide](../tests/e2e/stripe/README.md) for local Test Mode setup
+and browser verification.
 
 ### Billing portal
 

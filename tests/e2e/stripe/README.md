@@ -90,8 +90,15 @@ three-digit CVC such as `123`. Verify that:
 2. The Stripe CLI terminal shows the forwarded events and a successful local
    webhook response.
 3. Billing shows the expected Pro or Lifetime entitlement.
-4. The local D1 payment row eventually becomes paid. Webhook delivery is
-   asynchronous, so allow a few seconds before treating the flow as failed.
+4. The local D1 payment row becomes paid during `invoice.paid`. Webhook delivery
+   is asynchronous, so allow a few seconds before treating the flow as failed.
+
+`invoice.paid` may appear before `checkout.session.completed`. This is an
+expected successful order: the Invoice handler reconstructs the Checkout
+Session and should return HTTP 200 on its first delivery. The payment page may
+continue polling briefly, but it should not need a later Stripe retry. See
+[Payment confirmation and event ordering](../../../docs/payment.md#payment-confirmation-and-event-ordering)
+for the persistence contract.
 
 For the declined-card case, confirm that Checkout remains unsuccessful and no
 paid payment row is created in local D1.
@@ -167,6 +174,8 @@ and the Playwright Worker will use that port together.
 - Checkout uses the wrong plan: confirm `VITE_PAYMENT_PROVIDER=stripe` and
   that the Price IDs are from the same Test Mode account as the secret key.
 - The browser succeeds but Billing does not update: keep Stripe CLI running,
-  inspect the forwarded event response, and wait for asynchronous D1 updates.
+  inspect the `invoice.paid` response, and query the isolated D1 payment row. A
+  500 response means Stripe API or D1 processing failed and Stripe should retry;
+  a 200 response means the row was created, updated, or safely deduplicated.
 
 Never commit `.env.local`, `.env.e2e`, Stripe secret keys, or webhook secrets.

@@ -17,10 +17,11 @@ vi.mock('@/notification', () => ({
 }));
 
 import { StripeProvider } from '@/payment/provider/stripe';
+import { InvalidWebhookSignatureError } from '@/payment/errors';
 
 const WEBHOOK_SECRET = 'whsec_e2e_fast_webhook_secret';
 
-function signedCheckoutEvent() {
+function signedCheckoutEvent(overrides: Record<string, unknown> = {}) {
   const suffix = Date.now().toString();
   const event = {
     id: `evt_fast_${suffix}`,
@@ -38,6 +39,7 @@ function signedCheckoutEvent() {
           userId: `user_fast_${suffix}`,
         },
         mode: 'payment',
+        ...overrides,
       },
     },
     livemode: false,
@@ -67,7 +69,7 @@ describe('Stripe webhook boundary', () => {
 
     await expect(
       provider.handleWebhookEvent('{"id":"evt_invalid"}', 'invalid')
-    ).rejects.toThrow('Failed to handle webhook event');
+    ).rejects.toBeInstanceOf(InvalidWebhookSignatureError);
     expect(dbMocks.insert).not.toHaveBeenCalled();
   });
 
@@ -89,6 +91,19 @@ describe('Stripe webhook boundary', () => {
         type: 'one_time',
         userId: event.data.object.metadata.userId,
       })
+    );
+  });
+
+  test('keeps a Stripe-confirmed one-time checkout pending until invoice.paid', async () => {
+    const provider = new StripeProvider();
+    const { payload, signature } = signedCheckoutEvent({
+      payment_status: 'paid',
+    });
+
+    await provider.handleWebhookEvent(payload, signature);
+
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: false })
     );
   });
 
