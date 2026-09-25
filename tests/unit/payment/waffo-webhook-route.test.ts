@@ -148,6 +148,23 @@ describe('Waffo webhook HTTP route', () => {
     expect(mocks.verifyWebhook).not.toHaveBeenCalled();
   });
 
+  test('rejects requests when Waffo is not the active provider', async () => {
+    const provider = new WaffoProvider();
+    const response = await handleWaffoWebhookRequest(
+      waffoRequest(orderCompletedPayload, 'signed'),
+      {
+        ...dependencies(provider),
+        getPaymentProviderName: () => 'stripe',
+      }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Waffo is not the active payment provider',
+    });
+    expect(mocks.verifyWebhook).not.toHaveBeenCalled();
+  });
+
   test('acknowledges an event from the wrong mode without processing it', async () => {
     // Vitest runs with import.meta.env.PROD === false, so the provider
     // expects test-mode events; a live event is skipped with a warning.
@@ -169,7 +186,7 @@ describe('Waffo webhook HTTP route', () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
-  test('acknowledges a processing failure with 200 to avoid endless retries', async () => {
+  test('requests a Waffo retry after a temporary processing failure', async () => {
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_123',
       eventId: 'PAY_123',
@@ -193,16 +210,22 @@ describe('Waffo webhook HTTP route', () => {
     mocks.values.mockRejectedValueOnce(
       new Error('D1_ERROR: temporary database unavailable')
     );
+    const provider = new WaffoProvider();
 
-    const response = await handleWaffoWebhookRequest(
+    const failedResponse = await handleWaffoWebhookRequest(
       waffoRequest(orderCompletedPayload, 'signed'),
-      dependencies(new WaffoProvider())
+      dependencies(provider)
+    );
+    const retryResponse = await handleWaffoWebhookRequest(
+      waffoRequest(orderCompletedPayload, 'signed'),
+      dependencies(provider)
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
+    expect(failedResponse.status).toBe(500);
+    await expect(failedResponse.json()).resolves.toEqual({
       error: 'Webhook processing failed',
-      received: true,
     });
+    expect(retryResponse.status).toBe(200);
+    await expect(retryResponse.json()).resolves.toEqual({ received: true });
   });
 });

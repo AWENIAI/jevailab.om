@@ -19,8 +19,8 @@ const waffoWebhookDependencies: WaffoWebhookDependencies = {
 };
 
 /**
- * Acknowledge processed work, reject invalid signatures with 400, and still
- * acknowledge processing failures with 200 so Waffo does not retry forever.
+ * Acknowledge processed work, reject invalid signatures with 400, and return
+ * a retryable 500 when database or provider processing fails.
  */
 export async function handleWaffoWebhookRequest(
   request: Request,
@@ -57,10 +57,9 @@ export async function handleWaffoWebhookRequest(
         { status: 400 }
       );
     }
-    // Return 200 even on processing errors to prevent Waffo infinite retries
     return Response.json(
-      { error: 'Webhook processing failed', received: true },
-      { status: 200 }
+      { error: 'Webhook processing failed' },
+      { status: 500 }
     );
   }
 }

@@ -137,22 +137,50 @@ describe('Creem webhook HTTP route', () => {
     });
   });
 
-  test('acknowledges a processing failure with 200 to avoid endless retries', async () => {
+  test('rejects requests when Creem is not the active provider', async () => {
+    const provider = new CreemProvider();
+    const response = await handleCreemWebhookRequest(
+      creemRequest(unhandledPayload, sign(unhandledPayload)),
+      {
+        ...dependencies(provider),
+        getPaymentProviderName: () => 'stripe',
+      }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Creem is not the active payment provider',
+    });
+    expect(dbMocks.insert).not.toHaveBeenCalled();
+    expect(dbMocks.update).not.toHaveBeenCalled();
+  });
+
+  test('requests a Creem retry after a temporary processing failure', async () => {
     dbMocks.update.mockReturnValue({ set: dbMocks.set });
     dbMocks.set.mockReturnValue({ where: dbMocks.where });
-    dbMocks.where.mockRejectedValueOnce(
-      new Error('D1_ERROR: temporary database unavailable')
-    );
+    dbMocks.where
+      .mockRejectedValueOnce(
+        new Error('D1_ERROR: temporary database unavailable')
+      )
+      .mockResolvedValueOnce(undefined);
+    dbMocks.insert.mockReturnValue({ values: dbMocks.values });
+    dbMocks.values.mockResolvedValue(undefined);
+    const provider = new CreemProvider();
 
-    const response = await handleCreemWebhookRequest(
+    const failedResponse = await handleCreemWebhookRequest(
       creemRequest(checkoutPayload, sign(checkoutPayload)),
-      dependencies(new CreemProvider())
+      dependencies(provider)
+    );
+    const retryResponse = await handleCreemWebhookRequest(
+      creemRequest(checkoutPayload, sign(checkoutPayload)),
+      dependencies(provider)
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
+    expect(failedResponse.status).toBe(500);
+    await expect(failedResponse.json()).resolves.toEqual({
       error: 'Webhook processing failed',
-      received: true,
     });
+    expect(retryResponse.status).toBe(200);
+    await expect(retryResponse.json()).resolves.toEqual({ received: true });
   });
 });

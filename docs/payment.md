@@ -175,9 +175,13 @@ revoke access. Partial refunds do not revoke access.
 | Missing payload or `creem-signature` header | `400` |
 | Invalid signature | `400` |
 | Processed | `200` |
-| Processing failure (e.g. database unavailable) | `200` (error logged) |
+| Processing failure (e.g. database unavailable) | `500` |
 
-Creem is intentionally answered with `200` on processing errors to avoid endless retries, so a failed event is **not** redelivered. Signature failures instead return `400` like Stripe so forged or mis-signed requests are rejected. Check the Worker logs for `Creem webhook error`.
+Only successfully processed events are acknowledged with `200`. Temporary
+processing failures return `500` so Creem can retry the delivery. Handlers must
+remain idempotent because a successfully processed event may also be delivered
+again. Signature failures return `400` because retrying the same invalid request
+cannot make it valid. Check the Worker logs for `Creem webhook error`.
 
 ## Waffo Pancake
 
@@ -216,9 +220,13 @@ Keep `WAFFO_PRIVATE_KEY` server-only. For a PEM value in a Worker secret or loca
 | Missing payload or `x-waffo-signature` header | `400` |
 | Invalid signature, malformed header, or stale timestamp | `400` |
 | Processed | `200` |
-| Processing failure (e.g. database unavailable) | `200` (error logged) |
+| Processing failure (e.g. database unavailable) | `500` |
 
-As with Creem, processing errors are acknowledged with `200` and are **not** redelivered, while signature verification failures return `400` so forged or mis-signed requests are rejected. Check the Worker logs for `Waffo webhook error`.
+As with Creem, only successfully processed events are acknowledged with `200`.
+Temporary processing failures return `500` so Waffo can retry the delivery;
+handlers must remain idempotent. Signature verification failures return `400`
+because retrying the same invalid request cannot make it valid. Check the Worker
+logs for `Waffo webhook error`.
 
 ### Waffo reference material
 

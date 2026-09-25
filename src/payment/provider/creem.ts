@@ -937,6 +937,7 @@ export class CreemProvider implements PaymentProvider {
       console.log('Updated user with Creem customer ID');
     } catch (error) {
       console.error('Update user with Creem customer ID error:', error);
+      throw error;
     }
   }
 }
