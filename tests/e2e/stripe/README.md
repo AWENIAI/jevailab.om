@@ -103,6 +103,13 @@ for the persistence contract.
 For the declined-card case, confirm that Checkout remains unsuccessful and no
 paid payment row is created in local D1.
 
+For a real zero-cost Lifetime order, create a one-use 100% off coupon and an
+active promotion code in Stripe Test Mode, then apply that code in hosted
+Checkout. The completed Session and generated Invoice must both have a zero
+amount and no PaymentIntent, while the local D1 row must still become
+`paid=true` from `invoice.paid`. Deactivate the promotion code and delete the
+coupon after the test.
+
 ### 5. Test cancellation and refunds
 
 For a subscription, open the Stripe Customer Portal from local Billing and
@@ -157,6 +164,19 @@ To run a subset of the specification:
 ```bash
 pnpm e2e:stripe -- --grep "monthly subscription"
 ```
+
+The zero-cost test creates and cleans up its own one-use 100% promotion code.
+To force the exact recovery path where Checkout has not created a local row,
+forward only `invoice.paid` while running that focused test:
+
+```bash
+STRIPE_E2E_EVENTS=invoice.paid \
+  pnpm e2e:stripe -- --grep "zero-cost lifetime"
+```
+
+This is intentionally a focused command. Other sandbox tests require their
+normal Checkout, subscription, cancellation, or refund events and should use
+plain `pnpm e2e:stripe`.
 
 Use `STRIPE_E2E_PORT` to select another isolated port. The Stripe CLI listener
 and the Playwright Worker will use that port together.

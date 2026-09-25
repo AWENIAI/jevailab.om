@@ -92,7 +92,9 @@ missing context instead of waiting in the webhook request:
 - **Subscription:** read the Subscription referenced by the Invoice, then find
   its Checkout Session using the Subscription ID.
 - **Lifetime:** retrieve the Invoice when necessary to obtain its PaymentIntent,
-  then find the Checkout Session using the PaymentIntent ID.
+  then find the Checkout Session using the PaymentIntent ID. A fully discounted
+  ($0) order has no PaymentIntent — Stripe omits it for no-cost orders — so the
+  Session is instead matched by the customer and the Invoice it generated.
 
 The recovered Session supplies the original `sessionId`, `userId`, and Price
 metadata. The provider creates a complete `paid=true` row during that first

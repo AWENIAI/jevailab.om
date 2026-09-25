@@ -550,16 +550,9 @@ export class StripeProvider implements PaymentProvider {
       return;
     }
 
-    const paymentIntentId = await this.getInvoicePaymentIntentId(invoice);
-    const sessions = await this.stripe.checkout.sessions.list({
-      payment_intent: paymentIntentId,
-      limit: 10,
-    });
-    const session = sessions.data[0];
+    const session = await this.findOneTimeCheckoutSession(invoice);
     if (!session) {
-      throw new Error(
-        `No Checkout Session found for PaymentIntent ${paymentIntentId}`
-      );
+      throw new Error(`No Checkout Session found for invoice ${invoice.id}`);
     }
 
     const priceId = session.metadata?.priceId;
@@ -607,18 +600,50 @@ export class StripeProvider implements PaymentProvider {
     );
   }
 
-  private async getInvoicePaymentIntentId(
+  /**
+   * Locate the Checkout Session that produced a one-time invoice.
+   *
+   * A paid order exposes a PaymentIntent that maps straight to its session. A
+   * fully discounted ($0) order has no PaymentIntent (Stripe omits it for
+   * no-cost orders), so fall back to matching the customer's session against
+   * the invoice it generated. Without this, invoice.paid delivered before
+   * checkout.session.completed could never reconstruct a $0 Lifetime row.
+   */
+  private async findOneTimeCheckoutSession(
     invoice: Stripe.Invoice
-  ): Promise<string> {
-    const fromEvent = this.extractPaymentIntentId(invoice);
-    if (fromEvent) return fromEvent;
+  ): Promise<Stripe.Checkout.Session | null> {
+    const paymentIntentId =
+      this.extractPaymentIntentId(invoice) ??
+      this.extractPaymentIntentId(
+        await this.stripe.invoices.retrieve(invoice.id)
+      );
 
-    const retrievedInvoice = await this.stripe.invoices.retrieve(invoice.id);
-    const fromApi = this.extractPaymentIntentId(retrievedInvoice);
-    if (!fromApi) {
-      throw new Error(`Invoice ${invoice.id} has no PaymentIntent`);
+    if (paymentIntentId) {
+      const byPaymentIntent = await this.stripe.checkout.sessions.list({
+        payment_intent: paymentIntentId,
+        limit: 10,
+      });
+      if (byPaymentIntent.data[0]) {
+        return byPaymentIntent.data[0];
+      }
     }
-    return fromApi;
+
+    const customerId =
+      typeof invoice.customer === 'string'
+        ? invoice.customer
+        : (invoice.customer?.id ?? null);
+    if (!customerId) {
+      return null;
+    }
+
+    const byCustomer = await this.stripe.checkout.sessions.list({
+      customer: customerId,
+      limit: 100,
+    });
+    return (
+      byCustomer.data.find((candidate) => candidate.invoice === invoice.id) ??
+      null
+    );
   }
 
   private extractPaymentIntentId(invoice: Stripe.Invoice): string | null {

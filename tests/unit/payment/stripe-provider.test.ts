@@ -654,6 +654,66 @@ describe('Stripe provider lifecycle', () => {
     });
   });
 
+  test('reconstructs a zero-cost lifetime payment that has no PaymentIntent', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // findPaymentRecord (invoiceId) then the reconstruct sessionId lookup.
+    configureSelectSequence([[], []]);
+    // A $0 order has no PaymentIntent, so retrieving the invoice still yields
+    // none and the session must be matched by customer + invoice id.
+    stripe.invoices.retrieve.mockResolvedValue({ id: 'in_zero' });
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_zero',
+          object: 'checkout.session',
+          customer: 'cus_test',
+          invoice: 'in_zero',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+          payment_intent: null,
+        },
+      ],
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_zero',
+      object: 'invoice',
+      amount_paid: 0,
+      customer: 'cus_test',
+      payment_intent: null,
+      subscription: null,
+    });
+
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      customer: 'cus_test',
+      limit: 100,
+    });
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: 'cus_test',
+        invoiceId: 'in_zero',
+        paid: true,
+        priceId: 'price_lifetime',
+        scene: 'lifetime',
+        sessionId: 'cs_zero',
+        status: 'completed',
+        type: 'one_time',
+        userId: 'user_test',
+      })
+    );
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledWith({
+      amount: 0,
+      customerId: 'cus_test',
+      sessionId: 'cs_zero',
+      userName: 'Buyer',
+    });
+  });
+
   test('keeps the reconstructed paid row when checkout arrives afterward', async () => {
     const provider = new StripeProvider();
     const stripe = configureStripeClient(provider);

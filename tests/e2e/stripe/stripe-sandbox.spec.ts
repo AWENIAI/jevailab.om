@@ -28,6 +28,7 @@ type CheckoutScenario = {
   interval?: 'month' | 'year';
   openPortal?: boolean;
   cardNumber?: string;
+  zeroCostPromotionCode?: string;
 };
 
 type CheckoutArtifacts = {
@@ -168,6 +169,25 @@ async function fillStripeCheckout(
   if ((await emailField.count()) > 0 && (await emailField.isEditable())) {
     await emailField.fill(user.email);
   }
+
+  if (scenario.zeroCostPromotionCode) {
+    await page
+      .locator('input[name="promotionCode"]')
+      .filter({ visible: true })
+      .fill(scenario.zeroCostPromotionCode);
+    await page
+      .getByRole('button', { name: /^apply$/i })
+      .filter({ visible: true })
+      .click();
+    await expect(
+      page.getByRole('textbox', { name: /card number/i })
+    ).toBeHidden();
+
+    return page
+      .getByRole('button', { name: /complete order|subscribe|pay/i })
+      .first();
+  }
+
   await fillStripeField(
     page,
     /card number/i,
@@ -270,9 +290,28 @@ async function waitForPaidSnapshot(request: APIRequestContext, email: string) {
 test.describe
   .serial('Stripe sandbox payment flows', () => {
     const paidEmails = new Set<string>();
+    let zeroCostCouponId: string | undefined;
+    let zeroCostPromotionCodeId: string | undefined;
+    let zeroCostPromotionCode: string | undefined;
+
     test.beforeAll(async ({ request }) => {
       await cleanupStripeE2ECustomers();
       await cleanupE2EUsers(request);
+
+      const suffix = Date.now().toString(36).toUpperCase();
+      const coupon = await stripe.coupons.create({
+        duration: 'once',
+        name: `E2E zero-cost ${suffix}`,
+        percent_off: 100,
+      });
+      const promotionCode = await stripe.promotionCodes.create({
+        code: `E2EZERO${suffix}`,
+        coupon: coupon.id,
+        max_redemptions: 1,
+      });
+      zeroCostCouponId = coupon.id;
+      zeroCostPromotionCodeId = promotionCode.id;
+      zeroCostPromotionCode = promotionCode.code;
     });
 
     test.afterEach(async ({ request }) => {
@@ -285,6 +324,14 @@ test.describe
 
     test.afterAll(async () => {
       await cleanupStripeE2ECustomers();
+      if (zeroCostPromotionCodeId) {
+        await stripe.promotionCodes.update(zeroCostPromotionCodeId, {
+          active: false,
+        });
+      }
+      if (zeroCostCouponId) {
+        await stripe.coupons.del(zeroCostCouponId);
+      }
     });
 
     test('changes a monthly subscription to yearly and back in Customer Portal', async ({
@@ -407,6 +454,56 @@ test.describe
         type: 'one_time',
       });
       expect(state.latestPayment?.sessionId).toBe(artifacts.sessionId);
+    });
+
+    test('completes a zero-cost lifetime payment without a PaymentIntent', async ({
+      page,
+      request,
+    }) => {
+      if (!zeroCostPromotionCode) {
+        throw new Error('Stripe zero-cost promotion code was not created');
+      }
+      const user = await registerE2EUser(request, {
+        email: `e2e-stripe-zero-${Date.now()}@example.test`,
+      });
+      paidEmails.add(user.email);
+
+      const artifacts = await completeStripeCheckout(page, user, {
+        planId: 'lifetime',
+        expectedPriceId: process.env.VITE_STRIPE_PRICE_LIFETIME ?? '',
+        zeroCostPromotionCode,
+      });
+      if (!artifacts.sessionId) {
+        throw new Error('Stripe zero-cost session id was not returned');
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(
+        artifacts.sessionId
+      );
+      expect(session).toMatchObject({
+        amount_total: 0,
+        payment_intent: null,
+        payment_status: 'paid',
+      });
+      if (typeof session.invoice !== 'string') {
+        throw new Error('Stripe zero-cost invoice id was not returned');
+      }
+      const invoice = await stripe.invoices.retrieve(session.invoice);
+      expect(invoice).toMatchObject({
+        amount_paid: 0,
+        payment_intent: null,
+      });
+
+      const state = await waitForPaidSnapshot(request, user.email);
+      expect(state.latestPayment).toMatchObject({
+        invoiceId: session.invoice,
+        paid: true,
+        priceId: process.env.VITE_STRIPE_PRICE_LIFETIME,
+        scene: 'lifetime',
+        sessionId: artifacts.sessionId,
+        status: 'completed',
+        type: 'one_time',
+      });
     });
 
     test('rejects a declined card without creating a paid payment row', async ({

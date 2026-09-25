@@ -5,6 +5,19 @@ const port = Number(process.env.STRIPE_E2E_PORT ?? 3019);
 const baseURL = `http://127.0.0.1:${port}`;
 const fileEnv = loadEnv('e2e', process.cwd(), '');
 const runtimeEnv = { ...process.env, ...fileEnv };
+const defaultEvents = [
+  'checkout.session.completed',
+  'customer.subscription.created',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+  'invoice.paid',
+  'charge.refunded',
+];
+const events = runtimeEnv.STRIPE_E2E_EVENTS
+  ? runtimeEnv.STRIPE_E2E_EVENTS.split(',')
+      .map((event) => event.trim())
+      .filter(Boolean)
+  : defaultEvents;
 const requiredVariables = [
   'STRIPE_SECRET_KEY',
   'VITE_STRIPE_PRICE_PRO_MONTHLY',
@@ -28,14 +41,7 @@ const listener = spawn(
     'listen',
     '--skip-update',
     '--events',
-    [
-      'checkout.session.completed',
-      'customer.subscription.created',
-      'customer.subscription.updated',
-      'customer.subscription.deleted',
-      'invoice.paid',
-      'charge.refunded',
-    ].join(','),
+    events.join(','),
     '--forward-to',
     `${baseURL}/api/webhooks/stripe`,
   ],
