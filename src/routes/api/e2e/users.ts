@@ -6,7 +6,7 @@ import { payment, userFiles } from '@/db/app.schema';
 import { PaymentTypes } from '@/payment/types';
 
 const TEST_EMAIL_PATTERN = 'e2e-%@example.test';
-const TEST_API_SECRET = 'mkfast-e2e-secret';
+const TEST_API_SECRET = 'local-e2e-secret';
 
 function assertE2EAccess(request: Request) {
   const requestSecret = request.headers.get('x-e2e-secret');

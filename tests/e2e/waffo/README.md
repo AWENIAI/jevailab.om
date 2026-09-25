@@ -77,8 +77,8 @@ Keep this terminal running for the entire checkout.
 
 ### 4. Register the Waffo Test Mode webhook
 
-The MkFast setup helper requires an explicit Waffo store ID. Register the
-webhook with:
+The setup helper requires an explicit Waffo store ID. Register the webhook
+with:
 
 ```bash
 pnpm tsx scripts/setup-waffo.ts \
@@ -210,8 +210,8 @@ WAFFO_E2E_PORT=3028 \
   restart the Worker.
 - Waffo reports an invalid or missing signature: use Cloudflared or another
   HTTPS tunnel that preserves `X-Waffo-Signature`; do not use localtunnel.
-- The setup helper reports a missing store: pass `--store STO_xxx`; MkFast's
-  helper does not auto-discover a store.
+- The setup helper reports a missing store: pass `--store STO_xxx`; the helper
+  does not auto-discover a store.
 - The runner cannot find Waffo credentials: put them in `.env.e2e` or export
   them. `.dev.vars` alone is not loaded by `scripts/run-waffo-e2e.ts`.
 - Checkout succeeds but Billing stays unchanged: keep the Worker and tunnel

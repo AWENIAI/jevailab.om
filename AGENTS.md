@@ -125,6 +125,9 @@ Enforced by Biome (`biome.json`):
 - **State**: TanStack Query for server state (query key factory pattern)
 - **Styling**: Tailwind CSS v4 with `cn()` from `src/lib/utils.ts`, class-based dark mode
 - **Icons**: `@tabler/icons-react`
+- **Reusable text**: Keep docs, test fixtures, comments, and error messages
+  product-neutral. Mention a repository or sibling product only when its
+  identity is part of the documented behavior or configuration.
 
 ### Cloudflare Workers Constraint
 Avoid Node.js-specific APIs — this runs on Cloudflare Workers runtime, not Node.js.

@@ -44,7 +44,7 @@ test('production Worker serves SSR pages and the health API', async ({
   expect(await health.json()).toEqual({ message: 'pong' });
 
   const testHelper = await request.delete('/api/e2e/users', {
-    headers: { 'x-e2e-secret': 'mkfast-e2e-secret' },
+    headers: { 'x-e2e-secret': 'local-e2e-secret' },
   });
   expect(testHelper.status()).toBe(404);
 });

@@ -10,14 +10,15 @@ The storage module provides file upload, download, and delete using **Cloudflare
    pnpm wrangler r2 bucket create <BUCKET_NAME>
    ```
 
-   Use the same name as `bucket_name` in `wrangler.jsonc` (e.g. `mkfast-template`).
+   Use the same name as `bucket_name` in `wrangler.jsonc` (for example,
+   `your-project-storage`).
 
 2. **Configure the bucket in `wrangler.jsonc`**:
 
    ```jsonc
    "r2_buckets": [
      {
-       "bucket_name": "mkfast-template",
+       "bucket_name": "your-project-storage",
        "binding": "BUCKET"
      }
    ]

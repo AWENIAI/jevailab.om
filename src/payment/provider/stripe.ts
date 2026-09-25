@@ -776,7 +776,7 @@ export class StripeProvider implements PaymentProvider {
         })
         .where(eq(payment.id, paymentRecord.id));
 
-      // Process subscription benefits (no credits in MkFast)
+      // Apply any subscription-specific benefits.
       await this.processSubscriptionPurchase(userId, priceId);
     } catch (error) {
       console.error('<< Update subscription payment error:', error);
@@ -797,7 +797,7 @@ export class StripeProvider implements PaymentProvider {
   ): Promise<void> {
     console.log('>> Process subscription purchase');
 
-    // No credits in MkFast; keep log for consistency with MkSaaS flow
+    // No additional subscription benefits are configured.
     console.log('<< Process subscription purchase success');
   }
 
@@ -831,7 +831,7 @@ export class StripeProvider implements PaymentProvider {
         .where(and(eq(payment.id, paymentRecord.id), eq(payment.paid, false)))
         .returning({ id: payment.id });
 
-      // Process benefits: lifetime plan purchase only (no credits in MkFast)
+      // Apply lifetime-plan benefits only on the first paid transition.
       if (
         !paymentRecord.paid &&
         paidTransition.length > 0 &&
@@ -1141,7 +1141,7 @@ export class StripeProvider implements PaymentProvider {
     const invoiceId: string | null = session.invoice as string | null;
     console.log('createOneTimePaymentRecord, invoiceId:', invoiceId);
 
-    // One-time payments in MkFast are lifetime only (no credits)
+    // One-time checkout purchases map to the lifetime scene.
     const scene = PaymentScenes.LIFETIME;
 
     // Checkout completion establishes the local payment context. Stripe's

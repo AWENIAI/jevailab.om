@@ -72,8 +72,8 @@ re-exported from `constants.ts` and `utils.ts`).
     only keys created with parts for that scope.
 
 - **createCacheKey(scope, parts?)**
-  - Format: `mkfast-template-cache:v1:<scope>` without parts, or
-    `mkfast-template-cache:v1:<scope>:<hash>` with parts. `parts` is
+  - Format: `app-cache:v1:<scope>` without parts, or
+    `app-cache:v1:<scope>:<hash>` with parts. `parts` is
     stable-JSON-stringified and hashed (FNV-1a), so keys never contain raw
     values such as email addresses.
   - Bump `CACHE_VERSION` in `constants.ts` to invalidate every key at once.
