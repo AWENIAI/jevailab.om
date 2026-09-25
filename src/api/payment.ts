@@ -22,6 +22,23 @@ import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
 
+const PAYMENT_RETURN_URL_ERROR =
+  'Payment return URL must use the application origin';
+
+function assertSameOriginReturnUrl(url: string | undefined): void {
+  if (!url) return;
+
+  try {
+    const applicationOrigin = new URL(getCanonicalUrl('/')).origin;
+    if (new URL(url).origin === applicationOrigin) return;
+  } catch {
+    // The schemas reject malformed URLs; keep this guard safe when called
+    // directly from tests or future internal callers.
+  }
+
+  throw new Error(PAYMENT_RETURN_URL_ERROR);
+}
+
 const checkoutSchema = z.object({
   planId: z.string().min(1),
   priceId: z.string().min(1),
@@ -44,6 +61,8 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
     const { planId, priceId, successUrl, cancelUrl, metadata, theme } = data;
+    assertSameOriginReturnUrl(successUrl);
+    assertSameOriginReturnUrl(cancelUrl);
     const locale = getLocale();
     const provider = getPaymentProvider();
     const hostsPostCheckoutPage = provider.hostsPostCheckoutPage === true;
@@ -97,6 +116,7 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    assertSameOriginReturnUrl(data.returnUrl);
     const provider = getPaymentProvider();
     const db = getDb();
     const [row] = await db

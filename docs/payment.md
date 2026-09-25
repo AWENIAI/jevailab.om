@@ -15,6 +15,10 @@ Subscription and one-time payment support via a **provider pattern** — switch 
 - `getCurrentPlan` — current plan and subscription for a user.
 - `checkPaymentCompletion` — whether a session is paid (for polling).
 
+Client-supplied Checkout success/cancel URLs and Customer Portal return URLs
+must use the application's configured origin. Payment completion lookups are
+scoped to both the Checkout Session ID and the authenticated user.
+
 ### Checkout localization & theme
 
 The checkout is always hosted by the payment provider, so language and theme follow each provider's own page:

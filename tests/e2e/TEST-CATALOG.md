@@ -197,6 +197,12 @@ Customer Portal parameters, subscription and one-time `invoice.paid` handling,
 renewal lookup by subscription ID, cancellation/deletion, refund access
 revocation, and duplicate payment idempotency without making network requests.
 
+The provider-independent server boundary is covered by
+`tests/unit/payment/payment-security.test.ts`. It rejects external Checkout and
+Customer Portal return URLs, allows same-origin URLs, and verifies that a paid
+Checkout Session is visible only to its owner while foreign, forged, and
+missing Session IDs remain unpaid.
+
 ### Sandbox E2E layer
 
 **File:** `tests/e2e/stripe/stripe-sandbox.spec.ts`
