@@ -140,3 +140,16 @@ the outcome more directly than rendered UI.
   them; do not mix either concern into functional E2E flows.
 
 The test-only helper route `src/routes/api/e2e/users.ts` is disabled unless Vite runs locally with `import.meta.env.DEV === true`, `MODE=e2e`, and a matching `x-e2e-secret`. Keep E2E test accounts scoped to `e2e-*@example.test`.
+
+## Commit Messages
+
+Use the format `type(scope): summary`. The scope is required and should name
+the affected module or concern. Use one of these commit types:
+
+- `fix(scope): summary` for bug fixes.
+- `feat(scope): summary` for new functionality.
+- `chore(scope): summary` for maintenance, tooling, tests, or documentation.
+
+Examples: `fix(payment): handle duplicate webhooks`,
+`chore(ui): update component tooling`, and
+`feat(email): add delivery status tracking`.
