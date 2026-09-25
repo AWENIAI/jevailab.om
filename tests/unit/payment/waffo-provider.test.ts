@@ -434,6 +434,7 @@ describe('Waffo provider boundary', () => {
         productName: 'Pro Yearly',
         orderStatus: 'active',
         billingPeriod: 'yearly',
+        orderMetadata: { priceId: 'PROD_monthly' },
         productMetadata: { priceId: 'PROD_yearly' },
       },
     });
@@ -445,6 +446,8 @@ describe('Waffo provider boundary', () => {
 
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
+        // Waffo keeps the original checkout metadata on the order, so the
+        // current product metadata must win after a plan change.
         priceId: 'PROD_yearly',
         interval: 'year',
         status: 'active',

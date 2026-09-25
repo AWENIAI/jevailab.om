@@ -271,11 +271,16 @@ export class WaffoProvider implements PaymentProvider {
 
   /**
    * Waffo webhook payloads carry no productId, so the plan price is resolved
-   * from the checkout metadata, falling back to the product metadata for
-   * events that are not tied to a checkout we created (plan changes).
+   * from the checkout metadata. Plan-change events must prefer product
+   * metadata because order metadata can still describe the original checkout.
    */
-  private getPriceId(data: WebhookEventData): string | undefined {
-    return data.orderMetadata?.priceId ?? data.productMetadata?.priceId;
+  private getPriceId(
+    data: WebhookEventData,
+    preferProductMetadata = false
+  ): string | undefined {
+    return preferProductMetadata
+      ? (data.productMetadata?.priceId ?? data.orderMetadata?.priceId)
+      : (data.orderMetadata?.priceId ?? data.productMetadata?.priceId);
   }
 
   private getPaymentSessionId(data: WebhookEventData): string | null {
@@ -407,7 +412,7 @@ export class WaffoProvider implements PaymentProvider {
       values.interval = this.mapBillingPeriod(data.billingPeriod);
     }
     if (options.syncPlan) {
-      const priceId = this.getPriceId(data);
+      const priceId = this.getPriceId(data, true);
       if (priceId) values.priceId = priceId;
     }
     await getDb()
