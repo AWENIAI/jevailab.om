@@ -105,7 +105,11 @@ describe('Waffo provider boundary', () => {
         priceId: 'PROD_monthly',
         customerEmail: 'buyer@example.com',
         successUrl: 'https://example.com/settings/billing',
-        metadata: { userId: 'user_123', userName: 'Buyer' },
+        metadata: {
+          paymentReference: 'checkout_ref',
+          userId: 'user_123',
+          userName: 'Buyer',
+        },
       })
     ).resolves.toEqual({
       id: 'CHK_test',
@@ -117,22 +121,16 @@ describe('Waffo provider boundary', () => {
       buyerEmail: 'buyer@example.com',
       currency: 'USD',
       metadata: {
+        paymentReference: 'checkout_ref',
         userId: 'user_123',
         userName: 'Buyer',
         planId: 'pro',
         priceId: 'PROD_monthly',
       },
-      orderMerchantExternalId: expect.any(String),
+      orderMerchantExternalId: 'checkout_ref',
       productId: 'PROD_monthly',
       successUrl: 'https://example.com/settings/billing',
     });
-    // The order-scoped external id must be unique per checkout (not per user),
-    // so assert it is a UUID rather than the userId.
-    const [callArgs] = mocks.createCheckout.mock.calls[0];
-    expect(callArgs.orderMerchantExternalId).not.toBe('user_123');
-    expect(callArgs.orderMerchantExternalId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    );
   });
 
   test('maps the site locale and resolved theme to the Waffo checkout', async () => {
@@ -187,7 +185,9 @@ describe('Waffo provider boundary', () => {
         taxAmount: '0.00',
         productName: 'Pro Monthly',
         paymentId: 'PAY_123',
+        orderMerchantExternalId: 'checkout_ref',
         orderMetadata: {
+          paymentReference: 'metadata_fallback_ref',
           planId: 'pro',
           priceId: 'PROD_monthly',
           userId: 'user_123',
@@ -206,7 +206,7 @@ describe('Waffo provider boundary', () => {
         invoiceId: 'PAY_123',
         paid: true,
         priceId: 'PROD_monthly',
-        sessionId: null,
+        sessionId: 'checkout_ref',
         status: 'completed',
         type: 'one_time',
         userId: 'user_123',
@@ -390,6 +390,7 @@ describe('Waffo provider boundary', () => {
         currentPeriodStart: '2026-08-01T00:00:00.000Z',
         currentPeriodEnd: '2026-09-01T00:00:00.000Z',
         orderMetadata: {
+          paymentReference: 'subscription_checkout_ref',
           planId: 'pro',
           priceId: 'PROD_monthly',
           userId: 'user_123',
@@ -412,6 +413,7 @@ describe('Waffo provider boundary', () => {
         status: 'active',
         paid: true,
         cancelAtPeriodEnd: false,
+        sessionId: 'subscription_checkout_ref',
         type: 'subscription',
       })
     );

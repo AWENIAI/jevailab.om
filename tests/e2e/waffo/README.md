@@ -122,8 +122,8 @@ and choose a Waffo product. On the hosted Waffo checkout:
 3. Select the sandbox `Success` test option.
 4. Click `Subscribe` for Pro or `Pay` for Lifetime.
 5. Click `Done` on Waffo's confirmation page.
-6. Wait for the local payment-processing page to poll the webhook result and
-   return to Billing.
+6. Wait for `/settings/payment?checkout_id=...` to poll the matching
+   webhook-backed payment row and return to Billing.
 
 Verify that:
 

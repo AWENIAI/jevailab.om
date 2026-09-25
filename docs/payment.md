@@ -5,19 +5,19 @@ Subscription and one-time payment support via a **provider pattern** — switch 
 ### Shared routes
 
 - **Pricing**: `/pricing` — plans and checkout buttons.
-- **Payment callback**: `/settings/payment` — polls every two seconds for up to 60 seconds (`src/payment/constants.ts`), then redirects to `callback` (default `/settings/billing`). It has two modes:
+- **Payment callback**: `/settings/payment` — polls every two seconds for up to 60 seconds (`src/payment/constants.ts`), then redirects to `callback` (default `/settings/billing`). It accepts two forms of order-scoped reference:
   - **Session mode (Stripe)**: `/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/settings/billing`. Stripe fills in the session ID; the page calls `checkPaymentCompletion` until the authenticated user's payment row for that session has `paid=true`.
-  - **Hosted post-checkout mode (Creem, Waffo)**: `/settings/payment?callback=%2Fsettings%2Fbilling` with no `session_id`. These providers set `hostsPostCheckoutPage = true` and do not replace URL placeholders, so the page calls `getCurrentPlan` until the user has a non-free plan. This keeps Billing from showing a stale plan while the webhook is still in flight.
+  - **Hosted post-checkout mode (Creem, Waffo)**: `/settings/payment?checkout_id=<reference>&callback=%2Fsettings%2Fbilling`. The server creates a unique reference before checkout, sends it in provider metadata, and the webhook stores it in `payment.sessionId`. The page polls only that payment, so an older paid plan cannot complete a new checkout.
 - **Billing**: `/settings/billing` — current plan and subscription management.
 
 ### Shared server API (Server Functions)
 
 All functions in `src/api/payment.ts` use `authApiMiddleware`.
 
-- `createCheckoutSession` — create a checkout session for the current user; returns `{ url, id }`. Adds `userId` and `userName` to the checkout metadata.
+- `createCheckoutSession` — create a checkout session for the current user; returns `{ url, id }`. Adds `userId` and `userName` to the checkout metadata, plus a server-generated `paymentReference` for hosted post-checkout providers.
 - `createCustomerPortalSession` — create a billing portal session: Stripe Customer Portal, Creem customer portal, or Waffo's shared consumer portal URL. Requires `user.customerId` unless the provider sets `requiresCustomerId = false` (Waffo).
 - `getCurrentPlan` — current plan and subscription for the current user. A completed Lifetime payment wins over subscriptions; otherwise the latest `active`/`trialing` subscription; otherwise the free plan.
-- `checkPaymentCompletion` — whether the current user's payment for a Checkout Session ID is paid (Stripe polling).
+- `checkPaymentCompletion` — whether the current user's payment for a Stripe Checkout Session ID or hosted-provider order reference is paid.
 
 Client-supplied Checkout success/cancel URLs and Customer Portal return URLs
 are resolved against `VITE_BASE_URL`; request `Host` and `Origin` headers are
@@ -163,7 +163,7 @@ revoke access. Partial refunds do not revoke access.
 - Creem is a **merchant of record** — it handles tax, VAT, and payouts on your behalf.
 - Creem provides a **customer portal** for subscription management, similar to Stripe's Customer Portal.
 - Debug/sandbox mode is toggled via the `CREEM_DEBUG` env var.
-- Checkout returns through the hosted post-checkout mode of `/settings/payment` (no session ID).
+- Checkout returns through `/settings/payment?checkout_id=<reference>` and polls the payment row created for that specific order.
 - **Refunds and disputes are not handled.** A Creem refund does not revoke access automatically; revoke it manually or add a handler in `src/payment/provider/creem.ts`.
 
 ### Creem webhook responses
@@ -206,7 +206,7 @@ Keep `WAFFO_PRIVATE_KEY` server-only. For a PEM value in a Worker secret or loca
 
 - **No `user.customerId`**: Waffo has no per-merchant customer entity, so unlike Stripe and Creem, this provider never writes `user.customerId`. The `payment.customerId` column stores the buyer identity for auditability: `merchantProvidedBuyerIdentity` from the webhook, falling back to the userId. At checkout the buyer identity is the userId (or the customer email if no userId is present). Any admin feature that assumes `user.customerId` is populated will silently no-op under Waffo.
 - **Shared consumer portal**: `createCustomerPortal()` always returns the same `https://pancake.waffo.ai/consumer/portal/login` URL — no per-customer session is created. The provider declares `requiresCustomerId = false` so `src/api/payment.ts` skips the customerId guard for Waffo.
-- **`sessionId` semantics**: Waffo webhook payloads carry no reference back to the checkout session id, so `payment.sessionId` is stored as `null`. Post-checkout redirects use the hosted post-checkout mode of `/settings/payment` (no `session_id`), which polls `getCurrentPlan` until the webhook has granted the plan.
+- **`sessionId` semantics**: Waffo does not return its `CHK_*` checkout session ID in webhook payloads. The server-generated `paymentReference` is therefore sent as `orderMerchantExternalId`, inherited by webhook events, and stored in `payment.sessionId`. Post-checkout redirects use `/settings/payment?checkout_id=<reference>` and poll that exact row.
 - **Subscription periods**: `subscription.activated` stores the first period. `subscription.renewed` advances the current period, and `subscription.recovered` restores an active subscription after a successful retry. The shared payment row intentionally stores only the latest period; add a dedicated ledger if your product needs per-payment historical periods.
 - **Refund policy**: Any successful `refund.succeeded` event revokes access (`paid = false`). This is stricter than Stripe, which only revokes on a full refund; Creem refunds are not handled at all. The Waffo payload has no partial-vs-full marker, so partial refunds intended to preserve access must be handled manually.
 - **Trials**: No plan in `src/config/website.ts` sets `trialPeriodDays`, so the provider leaves `withTrial` unset and Waffo uses each product's own trial setting.

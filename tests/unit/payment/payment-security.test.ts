@@ -174,6 +174,32 @@ describe('payment security boundaries', () => {
     );
   });
 
+  test('creates an unforgeable order reference for hosted checkout polling', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      hostsPostCheckoutPage: true,
+    });
+
+    await checkout({
+      context: { userId: 'user_a' },
+      data: {
+        planId: 'pro',
+        priceId: 'price_monthly',
+        metadata: { paymentReference: 'forged_reference' },
+      },
+    });
+
+    const params = mocks.createCheckout.mock.calls[0][0];
+    const paymentReference = params.metadata.paymentReference;
+    expect(paymentReference).not.toBe('forged_reference');
+    expect(paymentReference).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+    const successUrl = new URL(params.successUrl);
+    expect(successUrl.pathname).toBe('/settings/payment');
+    expect(successUrl.searchParams.get('checkout_id')).toBe(paymentReference);
+    expect(successUrl.searchParams.get('callback')).toBe('/settings/billing');
+  });
+
   test('does not reveal another user payment through its session ID', async () => {
     const now = Date.now();
     await client.execute({
@@ -218,6 +244,36 @@ describe('payment security boundaries', () => {
       completion({
         context: { userId: 'user_a' },
         data: { sessionId },
+      })
+    ).resolves.toEqual({ isPaid: false });
+  });
+
+  test('does not treat an older paid order as completion of a new checkout', async () => {
+    const now = Date.now();
+    await client.execute({
+      sql: `INSERT INTO payment (
+        id, price_id, user_id, customer_id, session_id, type, scene,
+        status, paid, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        'older_payment',
+        'price_monthly',
+        'user_a',
+        'cus_a',
+        'older_checkout_reference',
+        'subscription',
+        'subscription',
+        'active',
+        1,
+        now,
+        now,
+      ],
+    });
+
+    await expect(
+      completion({
+        context: { userId: 'user_a' },
+        data: { sessionId: 'new_checkout_reference' },
       })
     ).resolves.toEqual({ isPaid: false });
   });

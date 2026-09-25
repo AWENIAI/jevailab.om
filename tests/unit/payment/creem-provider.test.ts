@@ -57,6 +57,7 @@ describe('Creem provider boundary', () => {
         planId: 'pro',
         priceId: 'PROD_monthly',
         customerEmail: 'buyer@example.com',
+        metadata: { paymentReference: 'checkout_ref' },
       })
     ).resolves.toEqual({
       id: 'CHK_test',
@@ -68,7 +69,7 @@ describe('Creem provider boundary', () => {
         productId: 'PROD_monthly',
         successUrl: '',
         requestId: expect.any(String),
-        metadata: {},
+        metadata: { paymentReference: 'checkout_ref' },
       })
     );
   });
@@ -119,7 +120,10 @@ describe('Creem provider boundary', () => {
         object: 'checkout',
         status: 'completed',
         request_id: 'checkout_dedup_key',
-        metadata: { userId: 'user_buyer' },
+        metadata: {
+          paymentReference: 'checkout_ref',
+          userId: 'user_buyer',
+        },
         product: {
           id: 'PROD_lifetime',
           mode: 'test',
@@ -170,6 +174,7 @@ describe('Creem provider boundary', () => {
         customerId: 'cus_creem_buyer',
         userId: 'user_buyer',
         paid: true,
+        sessionId: 'checkout_ref',
       })
     );
   });

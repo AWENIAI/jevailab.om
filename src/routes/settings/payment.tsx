@@ -8,9 +8,11 @@ export const Route = createFileRoute('/settings/payment')({
     s
   ): {
     session_id?: string;
+    checkout_id?: string;
     callback?: string;
   } => ({
     session_id: typeof s?.session_id === 'string' ? s.session_id : undefined,
+    checkout_id: typeof s?.checkout_id === 'string' ? s.checkout_id : undefined,
     callback: typeof s?.callback === 'string' ? s.callback : undefined,
   }),
   component: PaymentPage,
@@ -29,14 +31,7 @@ function PaymentPage() {
       description={m.settings_billing_description()}
     >
       <PaymentCard
-        sessionId={search.session_id}
-        // Providers with a hosted post-checkout page (Creem, Waffo) return
-        // with a callback but no checkout session id; treat that as hosted
-        // post-checkout mode so the card polls the current plan instead of
-        // failing.
-        hostedPostCheckout={
-          search.session_id === undefined && search.callback !== undefined
-        }
+        sessionId={search.session_id ?? search.checkout_id}
         callback={search.callback ?? '/settings/billing'}
       />
     </DashboardLayout>

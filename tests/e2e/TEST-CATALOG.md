@@ -301,11 +301,12 @@ payment and subscription state, and verifies the pure payment event
 (`subscription.payment_succeeded`) does not overwrite subscription lifecycle
 state or create duplicate rows.
 
-Hosted checkouts return through the payment processing page
-(`/settings/payment?callback=...`, detected by "callback present and no
-`session_id`"), which polls the current plan until the webhook lands and then
-navigates to Billing. The specs assert that route transition and the resulting
-database state without coupling the flow to Billing-page copy.
+Hosted checkouts return through the payment processing page with an
+order-scoped reference (`/settings/payment?checkout_id=...`). The webhook stores
+the same reference in `payment.sessionId`, so the page polls only the payment
+created by that checkout before navigating to Billing. The specs assert that
+route transition and the resulting database state without coupling the flow to
+Billing-page copy.
 
 Waffo test mode delivers `subscription.payment_succeeded` alongside the first
 payment's `subscription.activated` event. The dedicated state test asserts

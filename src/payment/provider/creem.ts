@@ -789,7 +789,7 @@ export class CreemProvider implements PaymentProvider {
         userId: userId,
         customerId: object.customer?.id ?? '',
         subscriptionId: null,
-        sessionId: event.id,
+        sessionId: this.getCheckoutPaymentReference(event),
         invoiceId: event.id,
         type: PaymentTypes.ONE_TIME,
         scene: PaymentScenes.LIFETIME,
@@ -859,7 +859,7 @@ export class CreemProvider implements PaymentProvider {
         userId: userId,
         customerId: object.customer?.id ?? '',
         subscriptionId: subscriptionId ?? null,
-        sessionId: event.id,
+        sessionId: this.getCheckoutPaymentReference(event),
         invoiceId: event.id,
         type: PaymentTypes.SUBSCRIPTION,
         scene: PaymentScenes.SUBSCRIPTION,
@@ -901,6 +901,19 @@ export class CreemProvider implements PaymentProvider {
     object: WebhookCheckoutObject
   ): string | undefined {
     return (object.metadata?.userId as string) || undefined;
+  }
+
+  /**
+   * Resolve the order-scoped reference generated before hosted checkout.
+   * Older or externally-created checkouts fall back to the Creem event ID.
+   */
+  private getCheckoutPaymentReference(
+    event: CreemCheckoutCompletedEvent
+  ): string {
+    const paymentReference = event.object.metadata?.paymentReference;
+    return typeof paymentReference === 'string' && paymentReference
+      ? paymentReference
+      : event.id;
   }
 
   /**

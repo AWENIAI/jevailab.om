@@ -50,22 +50,22 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     const locale = getLocale();
     const provider = getPaymentProvider();
     const hostsPostCheckoutPage = provider.hostsPostCheckoutPage === true;
+    const paymentReference = hostsPostCheckoutPage
+      ? crypto.randomUUID()
+      : undefined;
     const billingUrl = getCanonicalUrl(Routes.SettingsBilling);
     const cancel = normalizedCancelUrl ?? billingUrl;
 
     // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
     // then the Payment page polls by sessionId until the webhook writes the DB record.
     // For providers that host their own post-checkout page (Creem, Waffo):
-    // neither replaces URL placeholders and both have their own payment
-    // confirmation page, so the payment page polls the current plan instead.
-    // Routing the return through that page keeps Billing from rendering a
-    // stale plan while the webhook is still in flight. The payment page
-    // treats "callback without session_id" as hosted mode, so only
-    // `callback` is passed here.
+    // neither replaces URL placeholders, so the server generates an
+    // order-scoped reference that is carried through provider metadata and
+    // the webhook-backed payment row.
     const success = hostsPostCheckoutPage
       ? (normalizedSuccessUrl ??
         getCanonicalUrl(
-          `${Routes.Payment}?callback=${encodeURIComponent(Routes.SettingsBilling)}`
+          `${Routes.Payment}?checkout_id=${paymentReference}&callback=${encodeURIComponent(Routes.SettingsBilling)}`
         ))
       : (normalizedSuccessUrl ??
         getCanonicalUrl(
@@ -75,6 +75,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       ...metadata,
       userId,
       userName: userRow.name ?? '',
+      ...(paymentReference ? { paymentReference } : {}),
     };
 
     const result = await createCheckout({
@@ -224,8 +225,9 @@ export const getCurrentPlan = createServerFn({ method: 'GET' })
 const checkCompletionSchema = z.object({ sessionId: z.string().min(1) });
 
 /**
- * Check payment completion by Stripe session ID.
- * Used by Stripe flow where the session ID is embedded in the redirect URL.
+ * Check payment completion by an order-scoped checkout reference.
+ * Stripe supplies its Checkout Session ID; hosted providers round-trip the
+ * server-generated payment reference through webhook metadata.
  */
 export const checkPaymentCompletion = createServerFn({ method: 'GET' })
   .validator(checkCompletionSchema)

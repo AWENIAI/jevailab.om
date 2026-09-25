@@ -123,7 +123,8 @@ export class WaffoProvider implements PaymentProvider {
         metadata,
         // Order-scoped identifier inherited by the order, its payments and its
         // refunds — it must be unique per checkout, not per customer.
-        orderMerchantExternalId: crypto.randomUUID(),
+        orderMerchantExternalId:
+          params.metadata?.paymentReference ?? crypto.randomUUID(),
         productId: params.priceId,
         successUrl: params.successUrl,
         ...(language ? { language } : {}),
@@ -277,6 +278,14 @@ export class WaffoProvider implements PaymentProvider {
     return data.orderMetadata?.priceId ?? data.productMetadata?.priceId;
   }
 
+  private getPaymentSessionId(data: WebhookEventData): string | null {
+    return (
+      data.orderMerchantExternalId ??
+      data.orderMetadata?.paymentReference ??
+      null
+    );
+  }
+
   private async createOneTimePayment(event: WaffoEvent): Promise<void> {
     const { data } = event;
     const userId = this.getUserId(data);
@@ -295,13 +304,7 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: null,
-          // The checkout `sessionId` returned by createCheckout (CHK_*) is
-          // never carried on webhook payloads, so no server function can
-          // match orders back to it. Leave null instead of storing orderId
-          // under a misleading column name — Waffo returns through
-          // /settings/payment in hosted post-checkout mode, which polls the
-          // current plan instead of a session.
-          sessionId: null,
+          sessionId: this.getPaymentSessionId(data),
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.ONE_TIME,
           scene: PaymentScenes.LIFETIME,
@@ -351,9 +354,7 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: data.orderId,
-          // See createOneTimePayment: Waffo webhooks do not carry the
-          // checkout session id, so we cannot round-trip CHK_* here.
-          sessionId: null,
+          sessionId: this.getPaymentSessionId(data),
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.SUBSCRIPTION,
           scene: PaymentScenes.SUBSCRIPTION,

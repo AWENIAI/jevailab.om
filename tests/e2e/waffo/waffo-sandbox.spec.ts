@@ -62,17 +62,26 @@ test.describe('Waffo sandbox payment', () => {
     await expect(payButton).toBeEnabled();
     await payButton.click();
     const doneLink = page.getByRole('link', { name: 'Done', exact: true });
-    // Hosted checkouts return to the payment processing page, which polls
-    // the current plan until the webhook lands and then navigates to Billing.
+    // Hosted checkouts return with the order-scoped reference, which the
+    // payment page polls until the webhook-backed row exists.
     await expect(doneLink).toHaveAttribute(
       'href',
-      /\/settings\/payment\?callback=/,
+      /\/settings\/payment\?checkout_id=.*callback=/,
       { timeout: 60_000 }
     );
+    const returnUrl = await doneLink.getAttribute('href');
+    const checkoutReference = new URL(
+      returnUrl ?? '',
+      options.baseURL
+    ).searchParams.get('checkout_id');
+    if (!checkoutReference) {
+      throw new Error('Waffo return URL is missing checkout_id');
+    }
     await doneLink.click();
     await page.waitForURL(billingUrl, {
       timeout: 60_000,
     });
+    return checkoutReference;
   }
 
   test('monthly subscription pays and returns to Billing', async ({
@@ -89,7 +98,7 @@ test.describe('Waffo sandbox payment', () => {
 
     await page.getByTestId('pricing-card-pro').getByRole('button').click();
 
-    await completeHostedCheckout(page, {
+    const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
     });
@@ -102,6 +111,7 @@ test.describe('Waffo sandbox payment', () => {
       paid: true,
       scene: 'subscription',
       status: 'active',
+      sessionId: checkoutReference,
     });
   });
 
@@ -117,7 +127,7 @@ test.describe('Waffo sandbox payment', () => {
     await page.waitForTimeout(1_500);
     await page.getByTestId('pricing-interval-year').click();
     await page.getByTestId('pricing-card-pro').getByRole('button').click();
-    await completeHostedCheckout(page, {
+    const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
     });
@@ -130,6 +140,7 @@ test.describe('Waffo sandbox payment', () => {
       paid: true,
       scene: 'subscription',
       status: 'active',
+      sessionId: checkoutReference,
     });
   });
 
@@ -143,7 +154,7 @@ test.describe('Waffo sandbox payment', () => {
     await loginByForm(page, user);
     await page.goto('/pricing');
     await page.getByTestId('pricing-card-lifetime').getByRole('button').click();
-    await completeHostedCheckout(page, {
+    const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Pay',
       baseURL: baseURL ?? 'http://localhost:3018',
     });
@@ -156,6 +167,7 @@ test.describe('Waffo sandbox payment', () => {
       scene: 'lifetime',
       status: 'completed',
       type: 'one_time',
+      sessionId: checkoutReference,
     });
   });
 
