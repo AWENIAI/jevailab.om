@@ -107,7 +107,7 @@ and choose a Creem product. Use these hosted-checkout test values:
 For a successful payment, verify that:
 
 1. Creem returns the browser through
-   `/settings/payment?checkout_id=...`; the same reference is stored in the
+   `/settings/payment?request_id=...`; the same reference is stored in the
    resulting D1 payment row before the page redirects to Billing.
 2. The Worker receives `POST /api/webhooks/creem` with HTTP 200.
 3. Billing shows the active monthly/yearly Pro plan or Lifetime access.

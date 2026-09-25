@@ -157,12 +157,16 @@ export class CreemProvider implements PaymentProvider {
     params: CreateCheckoutParams
   ): Promise<CheckoutResult> {
     const { priceId, customerEmail, successUrl, metadata } = params;
+    const paymentReference = metadata?.paymentReference;
 
     try {
       const checkout: CheckoutEntity = await this.client.checkouts.create({
         productId: priceId,
         successUrl: successUrl ?? '',
-        requestId: crypto.randomUUID(),
+        requestId:
+          typeof paymentReference === 'string' && paymentReference
+            ? paymentReference
+            : crypto.randomUUID(),
         metadata: metadata ?? {},
         ...(customerEmail ? { customer: { email: customerEmail } } : {}),
       });

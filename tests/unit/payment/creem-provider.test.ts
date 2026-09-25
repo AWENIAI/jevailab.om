@@ -121,7 +121,7 @@ describe('Creem provider boundary', () => {
       expect.objectContaining({
         productId: 'PROD_monthly',
         successUrl: '',
-        requestId: expect.any(String),
+        requestId: 'checkout_ref',
         metadata: { paymentReference: 'checkout_ref' },
       })
     );

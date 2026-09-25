@@ -9,10 +9,12 @@ export const Route = createFileRoute('/settings/payment')({
   ): {
     session_id?: string;
     checkout_id?: string;
+    request_id?: string;
     callback?: string;
   } => ({
     session_id: typeof s?.session_id === 'string' ? s.session_id : undefined,
     checkout_id: typeof s?.checkout_id === 'string' ? s.checkout_id : undefined,
+    request_id: typeof s?.request_id === 'string' ? s.request_id : undefined,
     callback: typeof s?.callback === 'string' ? s.callback : undefined,
   }),
   component: PaymentPage,
@@ -31,7 +33,7 @@ function PaymentPage() {
       description={m.settings_billing_description()}
     >
       <PaymentCard
-        sessionId={search.session_id ?? search.checkout_id}
+        sessionId={search.session_id ?? search.checkout_id ?? search.request_id}
         callback={search.callback ?? '/settings/billing'}
       />
     </DashboardLayout>

@@ -106,12 +106,11 @@ async function findCreemPaymentField(
   throw new Error(`Creem hosted checkout field not found: ${description}`);
 }
 
-async function fillCreemCard(page: Page, user: E2EUser, cardNumber: string) {
+async function fillCreemCard(page: Page, cardNumber: string) {
   const cardholder = page
     .locator('input[name="cardHolderName"], input[autocomplete="cc-name"]')
     .first();
   await expect(cardholder).toBeVisible({ timeout: 45_000 });
-  await cardholder.fill(user.name);
 
   const cardNumberField = await findCreemPaymentField(
     page,
@@ -150,7 +149,16 @@ async function fillCreemCard(page: Page, user: E2EUser, cardNumber: string) {
     /security code|cvc/i,
     'card security code'
   );
-  await cvcField.fill('123');
+  await cvcField.fill('');
+  await cvcField.pressSequentially('123', { delay: 50 });
+  await expect(cvcField).toHaveValue('123');
+
+  // Creem can remount the cardholder field while its payment iframe
+  // initializes. Its validation also rejects generated account names that
+  // contain digits, so use a stable alphabetic sandbox cardholder name.
+  await cardholder.click();
+  await cardholder.pressSequentially('Sandbox User', { delay: 50 });
+  await expect(cardholder).toHaveValue('Sandbox User');
 }
 
 async function startCreemCheckout(
@@ -186,7 +194,7 @@ async function startCreemCheckout(
     .filter({ hasText: /^Pay\b/i })
     .first();
   await expect(payButton).toBeVisible({ timeout: 60_000 });
-  await fillCreemCard(page, user, scenario.cardNumber ?? '4242424242424242');
+  await fillCreemCard(page, scenario.cardNumber ?? '4242424242424242');
   await expect(payButton).toBeEnabled();
   return payButton;
 }
@@ -199,14 +207,15 @@ async function completeCreemCheckout(
   const payButton = await startCreemCheckout(page, user, scenario);
   await payButton.click();
 
-  // Creem returns through the order-scoped reference generated before
-  // checkout, which the webhook copies into payment.sessionId.
-  await page.waitForURL(/\/settings\/payment\?checkout_id=.*callback=/, {
+  // Creem rewrites the success URL query and returns the checkout request ID.
+  // The provider sets it to the same order-scoped reference copied into
+  // payment.sessionId by the webhook.
+  await page.waitForURL(/\/settings\/payment\?.*request_id=/, {
     timeout: 120_000,
   });
-  const checkoutReference = new URL(page.url()).searchParams.get('checkout_id');
+  const checkoutReference = new URL(page.url()).searchParams.get('request_id');
   if (!checkoutReference) {
-    throw new Error('Creem return URL is missing checkout_id');
+    throw new Error('Creem return URL is missing request_id');
   }
   await page.waitForURL(/\/settings\/billing\/?$/, { timeout: 120_000 });
   return checkoutReference;
