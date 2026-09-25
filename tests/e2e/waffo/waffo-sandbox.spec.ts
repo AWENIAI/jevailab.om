@@ -51,10 +51,29 @@ test.describe('Waffo sandbox payment', () => {
       await cardMethod.click();
     }
     await expect(cardNumber).toBeVisible({ timeout: 30_000 });
-    await page
-      .getByRole('button', { name: 'Success', exact: true })
-      .first()
-      .click();
+    await cardNumber.click();
+    await cardNumber.pressSequentially('2226900000000110', { delay: 50 });
+    const expiry = page.locator('input[autocomplete="cc-exp"]');
+    await expiry.click();
+    await expiry.pressSequentially('1229', { delay: 50 });
+    await expect(expiry).toHaveValue('12/29');
+    const cvv = page.locator('input[autocomplete="cc-csc"]');
+    await cvv.click();
+    await cvv.pressSequentially('123', { delay: 50 });
+    const cardholder = page.locator('input[autocomplete="cc-name"]');
+    await cardholder.click();
+    await cardholder.pressSequentially('TEST USER', { delay: 30 });
+    const terms = page.getByRole('checkbox', {
+      name: /By clicking Pay/i,
+    });
+    if (await terms.isVisible().catch(() => false)) {
+      await terms.check();
+      await expect(terms).toBeChecked();
+    }
+    const formIsValid = await cardNumber.evaluate(
+      (input: HTMLInputElement) => input.form?.checkValidity() ?? false
+    );
+    expect(formIsValid).toBe(true);
     const payButton = page.getByRole('button', {
       name: options.paymentButton,
       exact: true,
@@ -67,7 +86,7 @@ test.describe('Waffo sandbox payment', () => {
     await expect(doneLink).toHaveAttribute(
       'href',
       /\/settings\/payment\?checkout_id=.*callback=/,
-      { timeout: 60_000 }
+      { timeout: 240_000 }
     );
     const returnUrl = await doneLink.getAttribute('href');
     const checkoutReference = new URL(

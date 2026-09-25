@@ -143,8 +143,8 @@ a duplicate payment row or overwrite subscription lifecycle state.
 ## Automated sandbox test
 
 `pnpm e2e:waffo` validates the required Waffo environment and launches the
-Playwright suite, but it does **not** start the local Worker, Cloudflared, or
-the Waffo webhook registration. The default E2E port is `3018`.
+Playwright suite with an isolated local Worker. It does **not** start
+Cloudflared or register the Waffo webhook. The default E2E port is `3018`.
 
 Put the required sandbox variables in the git-ignored `.env.e2e` file or export
 them in the shell. The runner reads the `e2e` Vite environment:
@@ -159,18 +159,8 @@ WAFFO_MERCHANT_ID=MER_...
 WAFFO_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
-Start the E2E-mode Worker in one terminal. Use the explicit Vite command so
-the mode and port are not overridden by the root `pnpm dev` script:
-
-```bash
-MODE=e2e pnpm exec vite dev \
-  --mode e2e \
-  --host localhost \
-  --port 3018 \
-  --strictPort
-```
-
-In another terminal, start the isolated tunnel:
+Start the isolated tunnel before launching the suite. It can connect before
+Playwright starts the local Worker:
 
 ```bash
 cloudflared --config /dev/null tunnel \
@@ -189,6 +179,10 @@ pnpm e2e:waffo
 The suite covers monthly and yearly subscriptions (trial if the sandbox
 product enables one), Lifetime checkout, webhook-backed Billing state, and
 the accompanying payment event. To run one scenario:
+
+Waffo sandbox payment processing and webhook delivery can take several
+minutes. The suite keeps each test user until the hosted success page and
+webhook-backed payment row have both completed.
 
 ```bash
 pnpm e2e:waffo -- --grep "monthly subscription"
