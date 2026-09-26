@@ -36,6 +36,13 @@
       "when": 1785080796113,
       "tag": "0004_curious_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790393019000,
+      "tag": "0005_repair_payment_indexes",
+      "breakpoints": true
     }
   ]
 }

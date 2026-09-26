@@ -235,14 +235,15 @@ export const checkPaymentCompletion = createServerFn({ method: 'GET' })
   .handler(async ({ data, context }) => {
     const db = getDb();
     const [record] = await db
-      .select()
+      .select({ id: payment.id })
       .from(payment)
       .where(
         and(
           eq(payment.sessionId, data.sessionId),
-          eq(payment.userId, context.userId)
+          eq(payment.userId, context.userId),
+          eq(payment.paid, true)
         )
       )
       .limit(1);
-    return { isPaid: !!record?.paid };
+    return { isPaid: !!record };
   });

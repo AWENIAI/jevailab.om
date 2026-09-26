@@ -236,6 +236,53 @@ describe('payment security boundaries', () => {
     ).resolves.toEqual({ isPaid: true });
   });
 
+  test('reports a checkout as paid when a duplicate pending row also exists', async () => {
+    const now = Date.now();
+    await client.execute({
+      sql: `INSERT INTO payment (
+        id, price_id, user_id, customer_id, subscription_id, session_id,
+        invoice_id, type, scene, status, paid, created_at, updated_at
+      ) VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        'pending_payment',
+        'price_monthly',
+        'user_a',
+        'cus_a',
+        'sub_duplicate',
+        'cs_duplicate',
+        'in_duplicate',
+        'subscription',
+        'subscription',
+        'active',
+        0,
+        now,
+        now,
+        'paid_payment',
+        'price_monthly',
+        'user_a',
+        'cus_a',
+        'sub_duplicate',
+        'cs_duplicate',
+        'in_duplicate',
+        'subscription',
+        'subscription',
+        'active',
+        1,
+        now + 1,
+        now + 1,
+      ],
+    });
+
+    await expect(
+      completion({
+        context: { userId: 'user_a' },
+        data: { sessionId: 'cs_duplicate' },
+      })
+    ).resolves.toEqual({ isPaid: true });
+  });
+
   test.each([
     'cs_forged',
     'cs_missing',
