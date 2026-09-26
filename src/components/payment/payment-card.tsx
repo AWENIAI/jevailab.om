@@ -1,5 +1,5 @@
 import { m } from '@/locale/paraglide/messages';
-import { checkPaymentCompletion, getCurrentPlan } from '@/api/payment';
+import { checkPaymentCompletion } from '@/api/payment';
 import {
   Card,
   CardDescription,
@@ -10,6 +10,7 @@ import {
   PAYMENT_MAX_POLL_TIME,
   PAYMENT_POLL_INTERVAL,
 } from '@/payment/constants';
+import { getSafePaymentCallback } from '@/lib/payment-return-url';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -90,7 +91,6 @@ function StatusIcon({ status }: { status: PaymentStatus }) {
 }
 type PaymentCardProps = {
   sessionId: string | undefined;
-  hostedPostCheckout?: boolean;
   callback?: string;
 };
 /**
@@ -98,21 +98,20 @@ type PaymentCardProps = {
  */
 export function PaymentCard({
   sessionId,
-  hostedPostCheckout = false,
   callback = '/settings/billing',
 }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const safeCallback = getSafePaymentCallback(callback) ?? '/settings/billing';
   const [status, setStatus] = useState<PaymentStatus>(() =>
-    sessionId || hostedPostCheckout ? 'processing' : 'failed'
+    sessionId ? 'processing' : 'failed'
   );
   const pollEndRef = useRef(false);
   const startRef = useRef<number>(0);
-  // Poll for payment completion: Stripe polls the payment record by
-  // sessionId, providers with a hosted post-checkout page (Creem, Waffo)
-  // poll the current plan because their webhooks carry no checkout session id.
+  // Poll the payment created for this checkout. Stripe uses its Checkout
+  // Session ID; hosted providers use the server-generated checkout reference.
   useEffect(() => {
-    if (status !== 'processing') return;
+    if (!sessionId || status !== 'processing') return;
     pollEndRef.current = false;
     startRef.current = Date.now();
     const poll = async () => {
@@ -121,22 +120,13 @@ export function PaymentCard({
         Date.now() - startRef.current < PAYMENT_MAX_POLL_TIME
       ) {
         try {
-          if (sessionId) {
-            const result = await checkPaymentCompletion({
-              data: { sessionId },
-            });
-            if (result?.isPaid) {
-              setStatus('success');
-              pollEndRef.current = true;
-              return;
-            }
-          } else if (hostedPostCheckout) {
-            const result = await getCurrentPlan();
-            if (result?.currentPlan && !result.currentPlan.isFree) {
-              setStatus('success');
-              pollEndRef.current = true;
-              return;
-            }
+          const result = await checkPaymentCompletion({
+            data: { sessionId },
+          });
+          if (result?.isPaid) {
+            setStatus('success');
+            pollEndRef.current = true;
+            return;
           }
         } catch {
           // continue polling
@@ -146,17 +136,17 @@ export function PaymentCard({
       if (!pollEndRef.current) setStatus('timeout');
     };
     poll();
-  }, [sessionId, hostedPostCheckout, status]);
+  }, [sessionId, status]);
   // On success: invalidate currentPlan then redirect to callback
   useEffect(() => {
-    if (status !== 'success' || !callback) return;
+    if (status !== 'success') return;
     const run = async () => {
       await queryClient.invalidateQueries({ queryKey: ['currentPlan'] });
       await queryClient.refetchQueries({ queryKey: ['currentPlan'] });
-      navigate({ to: callback });
+      navigate({ to: safeCallback });
     };
     run();
-  }, [status, callback, queryClient, navigate]);
+  }, [status, safeCallback, queryClient, navigate]);
   const { title, description } = getStatusContent(status);
   return (
     <div className="flex min-h-[60vh] items-center justify-center">

@@ -49,6 +49,7 @@ export function CustomerPortalButton({
   };
   return (
     <Button
+      data-testid="customer-portal-button"
       variant={variant}
       size={size}
       className={className}

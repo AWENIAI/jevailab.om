@@ -19,13 +19,13 @@
 
 ### Aesthetic Direction
 
-**Visual tone:** Ultra-minimal. Warm-charcoal neutrals with a single amber accent; decorative color is limited to low-opacity amber/ochre gradients. Dark mode is the default and primary experience. Surfaces are flat with minimal elevation — prefer subtle rings and translucent borders over shadows. Density is compact, respecting screen real estate.
+**Visual tone:** Ultra-minimal. Achromatic neutrals (chroma 0 in oklch) with a single amber accent; decorative color is limited to low-opacity amber/ochre gradients. Dark mode is the default and primary experience. Surfaces are flat with minimal elevation — prefer subtle rings and translucent borders over shadows. Density is compact, respecting screen real estate.
 
-**Typography:** Bricolage Grotesque at medium weight (500) as the default. A distinctive but professional grotesque sans-serif that adds just enough personality without being distracting. Bold (700) for headings only.
+**Typography:** Bricolage Grotesque, body text at regular weight (400). A distinctive but professional grotesque sans-serif that adds just enough personality without being distracting. Bold (700) for headings. The shipped `@font-face` files are 400, 600, and 700 only; `font-medium` (500, used by components such as the default Button) is synthesized by the browser.
 
-**Shape language:** Moderately rounded (8px base radius). Not pill-shaped, not sharp — balanced and quiet.
+**Shape language:** Moderately rounded (10px base radius, `--radius: 0.625rem`). Not pill-shaped, not sharp — balanced and quiet.
 
-**Color philosophy:** Warm-charcoal grayscale in oklch color space with one amber primary (oklch 0.553 0.195 38.402) shared by both themes. Chroma is reserved for the primary accent, functional states (destructive red), chart hues, and low-opacity warm gradients. The restraint of the neutrals is the brand, and the amber is earned rather than sprayed.
+**Color philosophy:** Achromatic grayscale in oklch color space with one amber primary (oklch 0.553 0.195 38.402) shared by both themes. Chroma is reserved for the primary accent, the slightly different sidebar amber (`--sidebar-primary`), functional states (destructive red), chart hues, and low-opacity warm gradients. The restraint of the neutrals is the brand, and the amber is earned rather than sprayed.
 
 **Theme:** Dark-first with full light/dark/system support. Dark mode uses semi-transparent white borders for a subtle glassy depth effect.
 
@@ -59,7 +59,7 @@
 - **Component Library:** shadcn/ui (base-nova style) + Base UI React primitives
 - **Variant System:** class-variance-authority (CVA) + clsx + tailwind-merge
 - **Icons:** Tabler Icons (`@tabler/icons-react`)
-- **Animation:** tw-animate-css (minimal, purposeful transitions)
-- **Font:** Bricolage Grotesque (400, 500, 600, 700 weights, Latin subset)
+- **Animation:** tw-animate-css, plus custom entrance animations in `src/custom.css` (`fade-up`, `fade-in`, `crossfade-in`, `.delay-*`)
+- **Font:** Bricolage Grotesque, Latin subset, self-hosted woff2 in `public/fonts/` (400, 600, 700) loaded with `font-display: optional` via `@font-face` in `src/styles.css`. The `@fontsource/bricolage-grotesque` package is installed but not imported.
 - **Dark mode:** Class-based (`.dark` on `<html>`), localStorage-persisted
 - **Color tokens:** oklch variables with the warm amber primary (`--primary`), a warm off-white primary foreground (`--primary-foreground`), and warm chart hues (`--chart-1..5`)

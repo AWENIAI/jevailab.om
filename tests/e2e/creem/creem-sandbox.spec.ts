@@ -25,7 +25,7 @@ if (!creemApiKey || process.env.CREEM_DEBUG !== 'true') {
 const creem = new Creem({ apiKey: creemApiKey, serverIdx: 1 });
 
 type CheckoutScenario = {
-  expectedPlan: 'Lifetime' | 'Pro';
+  planId: 'lifetime' | 'pro';
   expectedProductId: string;
   interval?: 'month' | 'year';
   cardNumber?: string;
@@ -106,12 +106,11 @@ async function findCreemPaymentField(
   throw new Error(`Creem hosted checkout field not found: ${description}`);
 }
 
-async function fillCreemCard(page: Page, user: E2EUser, cardNumber: string) {
+async function fillCreemCard(page: Page, cardNumber: string) {
   const cardholder = page
     .locator('input[name="cardHolderName"], input[autocomplete="cc-name"]')
     .first();
   await expect(cardholder).toBeVisible({ timeout: 45_000 });
-  await cardholder.fill(user.name);
 
   const cardNumberField = await findCreemPaymentField(
     page,
@@ -150,7 +149,16 @@ async function fillCreemCard(page: Page, user: E2EUser, cardNumber: string) {
     /security code|cvc/i,
     'card security code'
   );
-  await cvcField.fill('123');
+  await cvcField.fill('');
+  await cvcField.pressSequentially('123', { delay: 50 });
+  await expect(cvcField).toHaveValue('123');
+
+  // Creem can remount the cardholder field while its payment iframe
+  // initializes. Its validation also rejects generated account names that
+  // contain digits, so use a stable alphabetic sandbox cardholder name.
+  await cardholder.click();
+  await cardholder.pressSequentially('Sandbox User', { delay: 50 });
+  await expect(cardholder).toHaveValue('Sandbox User');
 }
 
 async function startCreemCheckout(
@@ -163,25 +171,11 @@ async function startCreemCheckout(
   await page.waitForLoadState('networkidle');
 
   if (scenario.interval === 'year') {
-    await page.getByText('Yearly', { exact: true }).click();
+    await page.getByTestId('pricing-interval-year').click();
   }
 
-  const planCard = page
-    .locator('[data-slot="card"]')
-    .filter({
-      has: page.getByRole('heading', {
-        name: scenario.expectedPlan,
-        exact: true,
-      }),
-    })
-    .first();
-  const checkoutButtonName =
-    scenario.expectedPlan === 'Lifetime'
-      ? 'Get Lifetime Access'
-      : 'Get Started';
-  await planCard
-    .getByRole('button', { name: checkoutButtonName, exact: true })
-    .click();
+  const planCard = page.getByTestId(`pricing-card-${scenario.planId}`);
+  await planCard.getByRole('button').click();
 
   await page.waitForURL(/https:\/\/(?:www\.)?creem\.io\//, {
     timeout: 60_000,
@@ -200,7 +194,7 @@ async function startCreemCheckout(
     .filter({ hasText: /^Pay\b/i })
     .first();
   await expect(payButton).toBeVisible({ timeout: 60_000 });
-  await fillCreemCard(page, user, scenario.cardNumber ?? '4242424242424242');
+  await fillCreemCard(page, scenario.cardNumber ?? '4242424242424242');
   await expect(payButton).toBeEnabled();
   return payButton;
 }
@@ -213,22 +207,18 @@ async function completeCreemCheckout(
   const payButton = await startCreemCheckout(page, user, scenario);
   await payButton.click();
 
-  // Creem appends checkout/order/customer data to the configured success URL.
-  // The app deliberately accepts only the callback parameter and polls D1 by
-  // the current user because this is a hosted post-checkout provider.
-  await page.waitForURL(/\/settings\/payment\?callback=/, {
+  // Creem rewrites the success URL query and returns the checkout request ID.
+  // The provider sets it to the same order-scoped reference copied into
+  // payment.sessionId by the webhook.
+  await page.waitForURL(/\/settings\/payment\?.*request_id=/, {
     timeout: 120_000,
   });
+  const checkoutReference = new URL(page.url()).searchParams.get('request_id');
+  if (!checkoutReference) {
+    throw new Error('Creem return URL is missing request_id');
+  }
   await page.waitForURL(/\/settings\/billing\/?$/, { timeout: 120_000 });
-
-  await expect
-    .poll(async () => page.locator('body').innerText(), {
-      timeout: 60_000,
-      intervals: [2_000, 4_000, 8_000],
-    })
-    .toMatch(
-      scenario.expectedPlan === 'Lifetime' ? /Lifetime/ : /Pro[\s\S]*Active/
-    );
+  return checkoutReference;
 }
 
 async function waitForCreemPayment(
@@ -291,12 +281,17 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month' as const,
       };
-      await completeCreemCheckout(page, user, scenario);
+      const checkoutReference = await completeCreemCheckout(
+        page,
+        user,
+        scenario
+      );
       const state = await waitForCreemPayment(request, user.email, scenario);
+      expect(state.latestPayment?.sessionId).toBe(checkoutReference);
       expect(state.subscription).toMatchObject({
         status: 'active',
         interval: 'month',
@@ -316,12 +311,17 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_YEARLY'),
         interval: 'year' as const,
       };
-      await completeCreemCheckout(page, user, scenario);
+      const checkoutReference = await completeCreemCheckout(
+        page,
+        user,
+        scenario
+      );
       const state = await waitForCreemPayment(request, user.email, scenario);
+      expect(state.latestPayment?.sessionId).toBe(checkoutReference);
       expect(state.subscription).toMatchObject({
         status: 'active',
         interval: 'year',
@@ -340,10 +340,14 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Lifetime' as const,
+        planId: 'lifetime' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_LIFETIME'),
       };
-      await completeCreemCheckout(page, user, scenario);
+      const checkoutReference = await completeCreemCheckout(
+        page,
+        user,
+        scenario
+      );
       const state = await waitForCreemPayment(request, user.email, scenario);
       expect(state.latestPayment).toMatchObject({
         paid: true,
@@ -352,7 +356,7 @@ test.describe
         type: 'one_time',
         interval: null,
       });
-      expect(state.latestPayment?.sessionId).toMatch(/^evt_/);
+      expect(state.latestPayment?.sessionId).toBe(checkoutReference);
     });
 
     test('rejects the Creem declined test card without a paid payment row', async ({
@@ -365,18 +369,12 @@ test.describe
       currentUserEmail = user.email;
 
       const payButton = await startCreemCheckout(page, user, {
-        expectedPlan: 'Pro',
+        planId: 'pro',
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month',
         cardNumber: '4000000000000002',
       });
       await payButton.click();
-      await expect
-        .poll(async () => page.locator('body').innerText(), {
-          timeout: 60_000,
-          intervals: [1_000, 2_000, 4_000],
-        })
-        .toMatch(/declined|failed|unable to process|error/i);
 
       const state = await waitForE2EPayment(request, user.email, {
         timeoutMs: 10_000,
@@ -395,7 +393,7 @@ test.describe
       paymentExpected = true;
 
       const scenario = {
-        expectedPlan: 'Pro' as const,
+        planId: 'pro' as const,
         expectedProductId: productId('VITE_CREEM_PRODUCT_PRO_MONTHLY'),
         interval: 'month' as const,
       };

@@ -80,6 +80,7 @@ export function PricingCard({
     price?.trialPeriodDays != null && price.trialPeriodDays > 0;
   return (
     <Card
+      data-testid={`pricing-card-${plan.id}`}
       className={cn(
         'flex h-full flex-col',
         plan.popular && 'relative overflow-visible',

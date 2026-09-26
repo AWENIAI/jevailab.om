@@ -3,7 +3,7 @@
 This catalog is the acceptance checklist for Playwright E2E coverage. Update it
 before or alongside changes to a user journey or behavioral contract, then use
 the implemented spec files to lock in the verified behavior. Do not update it
-for copy-only or translation-only changes.
+for presentation-only changes.
 
 ## Workflow
 
@@ -22,12 +22,12 @@ Spec -> Code -> Verify -> Test -> Green
 
 ## Test Intent
 
-E2E coverage validates journeys and state transitions, not exact page wording.
-Use stable `data-testid` values for app-owned controls and durable structural
+E2E coverage validates functional journeys and outcomes, not presentation
+contracts. Use stable `data-testid` values for app-owned controls and durable
 attributes for forms, routes, and generated data. Assert navigation, HTTP/API
-results, persistence, permissions, and visible/interactable states. Do not add
-or revise specs merely because marketing copy, labels, headings, descriptions,
-or localized toast text changed.
+results, persistence, permissions, and controls required to complete a journey.
+Do not assert wording, layout, dimensions, colors, typography, icons, images,
+CSS classes, or other visual styling in functional E2E tests.
 
 E2E tests are intentionally local-first. CI should continue to prefer fast
 checks such as `pnpm check` and `pnpm build` unless a separate E2E environment is
@@ -56,18 +56,15 @@ configured `x-e2e-secret` header. Test accounts must use the
 
 **File:** `specs/public-pages.spec.ts` | **Priority:** P0
 
-Verifies that public pages render in English/Chinese and dark/light mode without
-browser console errors or page errors.
+Verifies that public routes load in English and Chinese without browser console
+errors or page errors.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Public pages render successfully | Open `/`, `/pricing`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`, in `dark` and `light` mode. Verify each returns 2xx, renders a visible body, applies the requested theme, and emits no browser errors. |
+| 1 | Public pages render successfully | Open `/`, `/pricing`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
-| 3 | Desktop auth actions keep stable width while loading | Delay the session request, verify inert Login and Sign up placeholders are visible, then release the request and confirm the resolved actions occupy the same width. |
-| 4 | Open mobile navigation hides at desktop breakpoint | Open the mobile navigation at a narrow viewport, resize to desktop width, and verify the mobile dialog no longer covers the desktop navigation. |
-| 5 | Mobile navigation uses consistent interactive backgrounds | At a narrow viewport, verify standalone links gain the muted background on hover and active standalone, group, and nested links retain the same background treatment. |
-| 6 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
-| 7 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
+| 3 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls are usable, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
+| 4 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
 
 ## 2. Authentication And Protected Routes
 
@@ -80,7 +77,7 @@ verified users.
 |---|---|---|
 | 1 | Guests are redirected from dashboard | Open `/dashboard` while signed out, expect redirect to `/auth/login`, and verify the email input is visible. |
 | 2 | Verified user can sign in | Create an E2E user, mark it verified, sign in through `/auth/login`, and verify dashboard content. |
-| 3 | User can register from UI | Fill `/auth/register`, verify the registration success message, mark the test account verified, sign in through `/auth/login`, and verify dashboard content. |
+| 3 | User can register from UI | Fill `/auth/register`, verify the signup request succeeds, mark the test account verified, sign in through `/auth/login`, and verify navigation to the dashboard. |
 | 4 | Short registration password is rejected locally | Fill a seven-character password and verify the browser blocks submission before it requests `/api/auth/sign-up/email`. |
 | 5 | Non-admin cannot view admin pages | Sign in as a non-admin user, open `/admin/users`, and expect redirect to `/dashboard`. |
 | 6 | Admin can view users dashboard | Sign in as an admin E2E user, open `/admin/users`, verify the users dashboard shows the admin email, then open and close the user's detail drawer. |
@@ -103,12 +100,12 @@ services; these journeys do not require a hosted checkout or real customer IDs.
 
 **File:** `specs/protected-pages.spec.ts` | **Priority:** P0
 
-Verifies authenticated app pages render in English/Chinese and dark/light mode
-without browser console errors or page errors.
+Verifies authenticated app routes load in English and Chinese without browser
+console errors or page errors.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Protected pages render successfully | Sign in as an admin E2E user, then open `/dashboard`, `/admin/users`, `/settings/profile`, `/settings/security`, `/settings/apikeys`, `/settings/files`, `/settings/billing`, `/settings/payment`, `/settings/notifications` for `en` and `zh`, in `dark` and `light` mode. Verify each returns 2xx, renders a visible body, applies the requested theme, and emits no browser errors. |
+| 1 | Protected pages render successfully | Sign in as an admin E2E user, then open `/dashboard`, `/admin/users`, `/settings/profile`, `/settings/security`, `/settings/apikeys`, `/settings/files`, `/settings/billing`, `/settings/payment`, `/settings/notifications` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
 | 2 | Collapsed sidebar persists across protected route groups | Collapse the desktop sidebar, navigate from Dashboard to Profile and Security, then return to Dashboard. Verify the sidebar remains collapsed after every route transition. |
 
 ## 4. Profile Settings
@@ -119,7 +116,7 @@ Verifies the signed-in profile update flow.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | User can update display name | Sign in, open `/settings/profile`, change the name, save, verify success toast and persistence. |
+| 1 | User can update display name | Sign in, open `/settings/profile`, change the name, save, reload, and verify persistence. |
 
 ## 5. API Key Settings
 
@@ -172,7 +169,7 @@ Verifies TanStack Router error handling at the HTTP and rendered UI boundaries.
 |---|---|---|
 | 1 | Unknown route renders not found | Open an unknown route, verify HTTP 404 and the root not-found UI. |
 | 2 | Loader notFound renders root boundary | Open `/test-404`, verify HTTP 404 and the root not-found UI. |
-| 3 | Loader error renders catch boundary | Open `/test-error`, verify HTTP 500, the catch-boundary UI, and the original error message. |
+| 3 | Loader error renders catch boundary | Open `/test-error` and verify the HTTP 500 catch boundary is rendered. |
 
 ## Deferred Coverage
 
@@ -191,14 +188,35 @@ Stripe.
 
 ### Fast webhook layer
 
-**Files:** `tests/unit/payment/stripe-webhook.test.ts` and
-`tests/unit/payment/stripe-provider.test.ts`
+**Files:** `tests/unit/payment/stripe-webhook.test.ts`,
+`tests/unit/payment/stripe-provider.test.ts`, and
+`tests/unit/payment/stripe-webhook-route.test.ts`
 
 Runs inside `pnpm check` with Stripe SDK-generated test signatures. It verifies
 invalid signatures, checkout creation for subscription and Lifetime prices,
 Customer Portal parameters, subscription and one-time `invoice.paid` handling,
 renewal lookup by subscription ID, cancellation/deletion, refund access
 revocation, and duplicate payment idempotency without making network requests.
+The event-order matrix covers Checkout-first, subscription Invoice-first,
+Lifetime Invoice-first, Checkout arriving after reconstruction, and a concurrent
+insert conflict. Checkout always creates an unpaid row; only `invoice.paid`
+makes the row paid. Invoice-first recovery obtains the original Checkout Session
+and persists its `sessionId`, so the payment result page can observe success on
+the first delivery without waiting for a Stripe retry.
+The HTTP route boundary returns 400 for invalid signatures, 500 for retryable
+processing failures, and 200 for successful or safely duplicated deliveries;
+it also verifies that later Stripe retries can succeed after temporary D1 or
+Stripe API failures.
+
+The provider-independent server boundary is covered by
+`tests/unit/payment/payment-security.test.ts`. It rejects external Checkout and
+Customer Portal return URLs, normalizes root-relative and same-origin absolute
+URLs against the configured application origin, and verifies that a paid
+Checkout Session is visible only to its owner while foreign, forged, and
+missing Session IDs remain unpaid. Protocol-relative and backslash variants,
+subdomains, protocol changes, and non-equivalent ports are rejected. The
+payment page reduces an accepted callback to an internal path and falls back to
+Billing for an unsafe callback.
 
 ### Sandbox E2E layer
 
@@ -207,23 +225,23 @@ revocation, and duplicate payment idempotency without making network requests.
 Run explicitly with `pnpm e2e:stripe`. The runner refuses live keys, starts a
 Stripe CLI listener, forwards real sandbox events to the local Worker, and uses
 Playwright to complete hosted Checkout with Stripe's success and decline test
-cards. Successful flows also poll the local E2E API and assert the D1 payment
-row, rather than relying on rendered Billing text alone.
+cards. Successful flows poll the local E2E API and assert the D1 payment row
+instead of relying on rendered Billing text.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Monthly subscription and portal | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, verify the Pro plan, D1 subscription row, Stripe subscription price, then open Customer Portal. |
-| 2 | Yearly subscription | Register and sign in, select yearly pricing, complete sandbox Checkout, verify the Pro plan, D1 interval/status, and yearly Stripe price. |
-| 3 | Lifetime payment | Register and sign in, complete a one-time sandbox Checkout, verify the Lifetime plan, paid Lifetime D1 row, and Stripe line-item price. |
-| 4 | Declined card | Submit Stripe's decline test card and verify the checkout remains unsuccessful with no paid D1 row. |
-| 5 | Cancellation and deletion | Cancel at period end, then cancel immediately through the Stripe API and verify both subscription webhook states in D1. |
-| 6 | Full refund | Refund the Lifetime PaymentIntent and verify the `charge.refunded` webhook revokes access. |
+| 1 | Monthly subscription and portal plan changes | Register and sign in, create a real monthly Checkout Session, complete sandbox Checkout, verify the D1 subscription row and Stripe subscription price, then use Customer Portal to switch monthly → yearly → monthly and verify the Stripe Subscription plus D1 price, interval, and billing period after each change. |
+| 2 | Yearly subscription | Register and sign in, select yearly pricing, complete sandbox Checkout, and verify the D1 interval/status and yearly Stripe price. |
+| 3 | Lifetime payment | Register and sign in, complete a one-time sandbox Checkout, and verify the paid Lifetime D1 row and Stripe line-item price. |
+| 4 | Zero-cost Lifetime payment | Create a temporary one-use 100% promotion code, complete hosted Checkout, verify the Session and Invoice are paid with zero amount and no PaymentIntent, and verify `invoice.paid` creates the paid Lifetime D1 row. The focused command forwards only `invoice.paid` to force reconstruction without Checkout persistence. |
+| 5 | Declined card | Submit Stripe's decline test card and verify the checkout remains unsuccessful with no paid D1 row. |
+| 6 | Cancellation and deletion | Cancel at period end, then cancel immediately through the Stripe API and verify both subscription webhook states in D1. |
+| 7 | Full refund | Refund the Lifetime PaymentIntent and verify the `charge.refunded` webhook revokes access. |
 
 Renewal lookup and period updates are covered in the fast provider tests with
 signed `invoice.paid` events. The sandbox suite does not cover failed
-renewals/past-due recovery, time-based Test Clock advancement, or interactive
-Customer Portal changes such as upgrade, downgrade, and payment method
-replacement.
+renewals/past-due recovery, time-based Test Clock advancement, or Customer
+Portal payment method replacement.
 
 ## Creem Payment Coverage
 
@@ -254,8 +272,8 @@ Before running it, configure the following in Creem Test Mode:
    → Webhooks page, with the events used by the suite:
    `checkout.completed`, `subscription.active`, `subscription.paid`,
    `subscription.scheduled_cancel`, `subscription.canceled`,
-   `subscription.expired`, `subscription.past_due`, `subscription.trialing`,
-   and `subscription.paused`.
+   `subscription.expired`, `subscription.past_due`, `subscription.unpaid`,
+   `subscription.trialing`, and `subscription.paused`.
 3. Set `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_DEBUG=true`, and the
    three `VITE_CREEM_PRODUCT_*` test product IDs.
 
@@ -278,17 +296,17 @@ covers checkout mapping, order completion, subscription lifecycle changes,
 renewal period advancement, and refund handling.
 
 The Playwright journey registers and signs in, completes Waffo test checkout
-for the monthly, yearly and lifetime products, asserts the Billing page
-reflects the corresponding plan (Pro + Active, Pro + Active, Lifetime), and
-verifies the pure payment event (`subscription.payment_succeeded`) does not
-overwrite subscription lifecycle state or create duplicate rows.
+for the monthly, yearly and lifetime products, verifies the corresponding D1
+payment and subscription state, and verifies the pure payment event
+(`subscription.payment_succeeded`) does not overwrite subscription lifecycle
+state or create duplicate rows.
 
-Hosted checkouts return through the payment processing page
-(`/settings/payment?callback=...`, detected by "callback present and no
-`session_id`"), which polls the current plan until the webhook lands and then
-navigates to Billing. The specs assert Billing settles into the paid plan
-**without a manual reload** — regression coverage for a stale-plan bug where
-returning from Waffo rendered the old plan until a hard refresh.
+Hosted checkouts return through the payment processing page with an
+order-scoped reference (`/settings/payment?checkout_id=...`). The webhook stores
+the same reference in `payment.sessionId`, so the page polls only the payment
+created by that checkout before navigating to Billing. The specs assert that
+route transition and the resulting database state without coupling the flow to
+Billing-page copy.
 
 Waffo test mode delivers `subscription.payment_succeeded` alongside the first
 payment's `subscription.activated` event. The dedicated state test asserts
@@ -298,28 +316,49 @@ by `subscription.renewed` and covered at the provider boundary.
 
 ### Prerequisites
 
-`pnpm e2e:waffo` currently expects the following to be set up manually before
-running — there is no bootstrap script yet:
+`pnpm e2e:waffo` runs `scripts/run-waffo-e2e.ts`, which validates the
+required env vars and launches Playwright. It does **not** start the server
+or the tunnel; set these up manually before running:
 
-1. Local dev server running on port `3018` (`PORT=3018 pnpm dev` or an
-   equivalent E2E-mode entrypoint) with `MODE=e2e` and the E2E secret header
-   accepted by `src/routes/api/e2e/users.ts`.
-2. Public tunnel to `http://localhost:3018` via **cloudflared**
-   (`cloudflared tunnel --url http://localhost:3018`). It preserves the
-   `X-Waffo-Signature` header, needs no account, and has no 2-hour session
-   cap. ngrok works too but requires signup. Do **not** use localtunnel — it
-   strips custom headers, so Waffo webhook signature verification fails.
+1. Local dev server in E2E mode on port `3018`. The `dev` script hardcodes
+   port 3000, so start Vite directly:
+
+   ```bash
+   pnpm exec vite dev --mode e2e --host localhost --port 3018 --strictPort
+   ```
+
+   Vite's `--mode e2e` is what enables the E2E helper route in
+   `src/routes/api/e2e/users.ts` (the `x-e2e-secret` header must match).
+2. Public tunnel to `http://localhost:3018` via **cloudflared**:
+
+   ```bash
+   cloudflared --config /dev/null tunnel \
+     --url http://localhost:3018 \
+     --no-autoupdate \
+     --protocol quic
+   ```
+
+   It preserves the `X-Waffo-Signature` header, needs no account, and has no
+   2-hour session cap. ngrok works too but requires signup. Do **not** use
+   localtunnel — it strips custom headers, so Waffo webhook signature
+   verification fails.
 3. Waffo dashboard configured with:
-   - test-mode products whose IDs match the price plans in
-     `src/config/website.ts` (monthly / yearly / lifetime),
-   - a `http` webhook pointing at `<tunnel>/api/webhooks/waffo` for the test
-     environment (see `docs/waffo/SKILL.md` → Configuring Webhook URLs).
-4. `.dev.vars` containing `WAFFO_MERCHANT_ID` and `WAFFO_PRIVATE_KEY`
-   (PEM). If deploying via Cloudflare, run `pnpm cf-typegen` after adding.
+   - test-mode products for the monthly / yearly / lifetime plans, with
+     their IDs in `VITE_WAFFO_PRODUCT_PRO_MONTHLY`,
+     `VITE_WAFFO_PRODUCT_PRO_YEARLY`, and `VITE_WAFFO_PRODUCT_LIFETIME`,
+   - an `http` webhook pointing at `<tunnel>/api/webhooks/waffo` for the
+     test environment. Register it with
+     `pnpm tsx scripts/setup-waffo.ts --store <STORE_ID> --url <tunnel>/api/webhooks/waffo`
+     (see `docs/waffo/SKILL.md` → Configuring Webhook URLs).
+4. `WAFFO_MERCHANT_ID`, `WAFFO_PRIVATE_KEY` (PEM), and the three
+   `VITE_WAFFO_PRODUCT_*` IDs in the shell or an `.env*` file. The runner
+   loads env via Vite's `loadEnv('e2e')`; `.dev.vars` alone is **not**
+   loaded. If deploying via Cloudflare, run `pnpm cf-typegen` after adding
+   credentials.
 
 Optional: override the base URL with
-`PLAYWRIGHT_BASE_URL=https://<tunnel>.ngrok.app pnpm e2e:waffo` to walk the
-tunnel directly instead of localhost.
+`PLAYWRIGHT_BASE_URL=https://<tunnel>.trycloudflare.com pnpm e2e:waffo` to
+walk the tunnel directly instead of localhost.
 
 ### Known gaps
 

@@ -12,6 +12,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { findPlanByPlanId, findPriceInPlan } from '@/lib/price-plan';
 import { sendPaymentNotification } from '@/notification';
+import { InvalidWebhookSignatureError } from '@/payment/errors';
 import type {
   CheckoutResult,
   CreateCheckoutParams,
@@ -122,7 +123,8 @@ export class WaffoProvider implements PaymentProvider {
         metadata,
         // Order-scoped identifier inherited by the order, its payments and its
         // refunds — it must be unique per checkout, not per customer.
-        orderMerchantExternalId: crypto.randomUUID(),
+        orderMerchantExternalId:
+          params.metadata?.paymentReference ?? crypto.randomUUID(),
         productId: params.priceId,
         successUrl: params.successUrl,
         ...(language ? { language } : {}),
@@ -154,10 +156,19 @@ export class WaffoProvider implements PaymentProvider {
       // headers. Waffo retries reuse the original signature timestamp, so the
       // 45-minute past-facing window matches the SDK retry schedule. Future
       // timestamps retain the SDK's stricter one-minute default.
-      const event = verifyWebhook<WebhookEventData>(payload, signature, {
-        environment: expectedMode,
-        toleranceMs: 2_700_000,
-      });
+      let event: WaffoEvent;
+      try {
+        event = verifyWebhook<WebhookEventData>(payload, signature, {
+          environment: expectedMode,
+          toleranceMs: 2_700_000,
+        });
+      } catch (error) {
+        // Surface verification failures (bad signature, malformed header,
+        // stale timestamp) as a typed error so the route can answer 400
+        // instead of acknowledging a forged request with 200.
+        this.logError('webhook signature verification', error);
+        throw new InvalidWebhookSignatureError('Waffo');
+      }
       if (event.mode !== expectedMode) {
         console.warn(
           `Skipping Waffo ${event.mode} event in ${expectedMode} runtime: ${event.eventType}`
@@ -215,6 +226,9 @@ export class WaffoProvider implements PaymentProvider {
           console.warn(`Unhandled Waffo webhook event: ${event.eventType}`);
       }
     } catch (error) {
+      // Signature failures must reach the route unwrapped so it can answer
+      // 400 instead of acknowledging a forged request with 200.
+      if (error instanceof InvalidWebhookSignatureError) throw error;
       this.logError('webhook handling', error);
       throw new Error('Failed to handle Waffo webhook event');
     }
@@ -257,11 +271,24 @@ export class WaffoProvider implements PaymentProvider {
 
   /**
    * Waffo webhook payloads carry no productId, so the plan price is resolved
-   * from the checkout metadata, falling back to the product metadata for
-   * events that are not tied to a checkout we created (plan changes).
+   * from the checkout metadata. Plan-change events must prefer product
+   * metadata because order metadata can still describe the original checkout.
    */
-  private getPriceId(data: WebhookEventData): string | undefined {
-    return data.orderMetadata?.priceId ?? data.productMetadata?.priceId;
+  private getPriceId(
+    data: WebhookEventData,
+    preferProductMetadata = false
+  ): string | undefined {
+    return preferProductMetadata
+      ? (data.productMetadata?.priceId ?? data.orderMetadata?.priceId)
+      : (data.orderMetadata?.priceId ?? data.productMetadata?.priceId);
+  }
+
+  private getPaymentSessionId(data: WebhookEventData): string | null {
+    return (
+      data.orderMerchantExternalId ??
+      data.orderMetadata?.paymentReference ??
+      null
+    );
   }
 
   private async createOneTimePayment(event: WaffoEvent): Promise<void> {
@@ -282,12 +309,7 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: null,
-          // The checkout `sessionId` returned by createCheckout (CHK_*) is
-          // never carried on webhook payloads, so no server function can
-          // match orders back to it. Leave null instead of storing orderId
-          // under a misleading column name — Waffo callers redirect straight
-          // to Billing and do not rely on session polling.
-          sessionId: null,
+          sessionId: this.getPaymentSessionId(data),
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.ONE_TIME,
           scene: PaymentScenes.LIFETIME,
@@ -337,9 +359,7 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: data.orderId,
-          // See createOneTimePayment: Waffo webhooks do not carry the
-          // checkout session id, so we cannot round-trip CHK_* here.
-          sessionId: null,
+          sessionId: this.getPaymentSessionId(data),
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.SUBSCRIPTION,
           scene: PaymentScenes.SUBSCRIPTION,
@@ -392,13 +412,20 @@ export class WaffoProvider implements PaymentProvider {
       values.interval = this.mapBillingPeriod(data.billingPeriod);
     }
     if (options.syncPlan) {
-      const priceId = this.getPriceId(data);
+      const priceId = this.getPriceId(data, true);
       if (priceId) values.priceId = priceId;
     }
-    await getDb()
+    const result = await getDb()
       .update(payment)
       .set(values)
-      .where(eq(payment.subscriptionId, data.orderId));
+      .where(eq(payment.subscriptionId, data.orderId))
+      .returning({ id: payment.id });
+
+    if (result.length === 0) {
+      throw new Error(
+        `No payment record found for ${event.eventType}: ${data.orderId}`
+      );
+    }
   }
 
   /**

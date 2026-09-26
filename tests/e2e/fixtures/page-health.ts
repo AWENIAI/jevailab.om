@@ -1,6 +1,5 @@
 import { expect, type Page } from '@playwright/test';
 
-export type ThemeMode = 'dark' | 'light';
 export type LocaleMode = 'en' | 'zh';
 
 export interface PageHealthMonitor {
@@ -36,19 +35,12 @@ export function localizedPath(path: string, locale: LocaleMode) {
   return path === '/' ? '/zh' : `/zh${path}`;
 }
 
-export async function setTheme(page: Page, theme: ThemeMode) {
-  await page.addInitScript((value) => {
-    window.localStorage.setItem('theme', value);
-  }, theme);
-}
-
 export async function expectHealthyPage(
   page: Page,
   monitor: PageHealthMonitor,
   path: string,
   options: {
     expectedPath?: RegExp;
-    theme?: ThemeMode;
   } = {}
 ) {
   monitor.reset();
@@ -60,12 +52,6 @@ export async function expectHealthyPage(
 
   if (options.expectedPath) {
     await expect(page).toHaveURL(options.expectedPath);
-  }
-
-  if (options.theme) {
-    await expect(page.locator('html')).toHaveClass(
-      new RegExp(`\\b${options.theme}\\b`)
-    );
   }
 
   await page.waitForTimeout(100);

@@ -21,7 +21,7 @@ test.describe('file settings', () => {
   }) => {
     const user = await registerE2EUser(request);
     const fileName = `e2e-file-${Date.now().toString().slice(-6)}.txt`;
-    const fileBody = 'TanStarter E2E private file';
+    const fileBody = 'E2E private file fixture';
 
     await loginByForm(page, user);
     await page.goto('/settings/files');

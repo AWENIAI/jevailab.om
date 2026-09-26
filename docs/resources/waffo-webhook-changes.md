@@ -1,3 +1,14 @@
+> **Status: implemented.** This is the original Waffo vendor change notice
+> (2026-09-06, Chinese). The template already reflects it:
+> `subscription.payment_succeeded` is ignored, `subscription.activated` stores
+> the first period, and `subscription.renewed` / `subscription.recovered`
+> advance it (`src/payment/provider/waffo.ts`, registered by default in
+> `scripts/setup-waffo.ts`). Kept for reference; the notice's optional
+> suggestions (per-period history ledger, backfilling) are intentionally not
+> implemented — only the latest period is stored.
+
+---
+
 WEBHOOK 变更通知 · BREAKING CHANGE
 
 subscription.payment_succeeded

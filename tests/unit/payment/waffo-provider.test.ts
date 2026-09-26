@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   values: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
+  returning: vi.fn(),
 }));
 
 vi.mock('@waffo/pancake-ts', () => ({
@@ -84,11 +85,13 @@ describe('Waffo provider boundary', () => {
     mocks.values.mockReset();
     mocks.set.mockReset();
     mocks.where.mockReset();
+    mocks.returning.mockReset();
     mocks.insert.mockReturnValue({ values: mocks.values });
     mocks.update.mockReturnValue({ set: mocks.set });
     mocks.set.mockReturnValue({ where: mocks.where });
     mocks.values.mockResolvedValue(undefined);
-    mocks.where.mockResolvedValue(undefined);
+    mocks.where.mockReturnValue({ returning: mocks.returning });
+    mocks.returning.mockResolvedValue([{ id: 'payment_123' }]);
     mocks.createCheckout.mockResolvedValue({
       checkoutUrl: 'https://pancake.waffo.ai/checkout/CHK_test',
       sessionId: 'CHK_test',
@@ -105,7 +108,11 @@ describe('Waffo provider boundary', () => {
         priceId: 'PROD_monthly',
         customerEmail: 'buyer@example.com',
         successUrl: 'https://example.com/settings/billing',
-        metadata: { userId: 'user_123', userName: 'Buyer' },
+        metadata: {
+          paymentReference: 'checkout_ref',
+          userId: 'user_123',
+          userName: 'Buyer',
+        },
       })
     ).resolves.toEqual({
       id: 'CHK_test',
@@ -117,22 +124,16 @@ describe('Waffo provider boundary', () => {
       buyerEmail: 'buyer@example.com',
       currency: 'USD',
       metadata: {
+        paymentReference: 'checkout_ref',
         userId: 'user_123',
         userName: 'Buyer',
         planId: 'pro',
         priceId: 'PROD_monthly',
       },
-      orderMerchantExternalId: expect.any(String),
+      orderMerchantExternalId: 'checkout_ref',
       productId: 'PROD_monthly',
       successUrl: 'https://example.com/settings/billing',
     });
-    // The order-scoped external id must be unique per checkout (not per user),
-    // so assert it is a UUID rather than the userId.
-    const [callArgs] = mocks.createCheckout.mock.calls[0];
-    expect(callArgs.orderMerchantExternalId).not.toBe('user_123');
-    expect(callArgs.orderMerchantExternalId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    );
   });
 
   test('maps the site locale and resolved theme to the Waffo checkout', async () => {
@@ -187,7 +188,9 @@ describe('Waffo provider boundary', () => {
         taxAmount: '0.00',
         productName: 'Pro Monthly',
         paymentId: 'PAY_123',
+        orderMerchantExternalId: 'checkout_ref',
         orderMetadata: {
+          paymentReference: 'metadata_fallback_ref',
           planId: 'pro',
           priceId: 'PROD_monthly',
           userId: 'user_123',
@@ -206,7 +209,7 @@ describe('Waffo provider boundary', () => {
         invoiceId: 'PAY_123',
         paid: true,
         priceId: 'PROD_monthly',
-        sessionId: null,
+        sessionId: 'checkout_ref',
         status: 'completed',
         type: 'one_time',
         userId: 'user_123',
@@ -308,6 +311,46 @@ describe('Waffo provider boundary', () => {
     );
   });
 
+  test('retries a renewal that arrives before subscription.activated', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_renewed_early',
+      eventId: 'EVT_renewed_early',
+      eventType: 'subscription.renewed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_subscription',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '9.90',
+        taxAmount: '0.00',
+        productName: 'Pro Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-10-08',
+        currentPeriodEnd: '2026-11-08',
+      },
+    });
+    mocks.returning
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'payment_123' }]);
+    const provider = new WaffoProvider();
+
+    await expect(
+      provider.handleWebhookEvent(
+        '{"eventType":"subscription.renewed"}',
+        'signed'
+      )
+    ).rejects.toThrow('Failed to handle Waffo webhook event');
+    await expect(
+      provider.handleWebhookEvent(
+        '{"eventType":"subscription.renewed"}',
+        'signed'
+      )
+    ).resolves.toBeUndefined();
+
+    expect(mocks.returning).toHaveBeenCalledTimes(2);
+  });
+
   test('restores lifecycle state on subscription.recovered', async () => {
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_recovered',
@@ -390,6 +433,7 @@ describe('Waffo provider boundary', () => {
         currentPeriodStart: '2026-08-01T00:00:00.000Z',
         currentPeriodEnd: '2026-09-01T00:00:00.000Z',
         orderMetadata: {
+          paymentReference: 'subscription_checkout_ref',
           planId: 'pro',
           priceId: 'PROD_monthly',
           userId: 'user_123',
@@ -412,6 +456,7 @@ describe('Waffo provider boundary', () => {
         status: 'active',
         paid: true,
         cancelAtPeriodEnd: false,
+        sessionId: 'subscription_checkout_ref',
         type: 'subscription',
       })
     );
@@ -432,6 +477,7 @@ describe('Waffo provider boundary', () => {
         productName: 'Pro Yearly',
         orderStatus: 'active',
         billingPeriod: 'yearly',
+        orderMetadata: { priceId: 'PROD_monthly' },
         productMetadata: { priceId: 'PROD_yearly' },
       },
     });
@@ -443,6 +489,8 @@ describe('Waffo provider boundary', () => {
 
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
+        // Waffo keeps the original checkout metadata on the order, so the
+        // current product metadata must win after a plan change.
         priceId: 'PROD_yearly',
         interval: 'year',
         status: 'active',
@@ -581,6 +629,22 @@ describe('Waffo provider boundary', () => {
       url: 'https://pancake.waffo.ai/consumer/portal/login',
     });
     expect(provider.requiresCustomerId).toBe(false);
+  });
+
+  test('rejects a failed signature verification with a typed error', async () => {
+    mocks.verifyWebhook.mockImplementation(() => {
+      throw new Error('invalid signature');
+    });
+
+    await expect(
+      new WaffoProvider().handleWebhookEvent(
+        '{"eventType":"order.completed"}',
+        'bad-signature'
+      )
+    ).rejects.toMatchObject({
+      name: 'InvalidWebhookSignatureError',
+      message: 'Invalid Waffo webhook signature',
+    });
   });
 
   test('constructor throws when required env vars are missing', () => {

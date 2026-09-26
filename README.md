@@ -2,7 +2,7 @@
 
 Ship Faster with TanStack, Cost Less with Cloudflare
 
-TanStarter is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, payments, storage, email, newsletter, blog, dashboard, i8n, SEO and more, fully deployed on Cloudflare Workers.
+TanStarter is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, payments, storage, email, newsletter, blog, dashboard, i18n, SEO and more, fully deployed on Cloudflare Workers.
 
 ## Author
 

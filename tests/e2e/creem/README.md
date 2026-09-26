@@ -77,6 +77,7 @@ Subscribe the endpoint to the events handled by this project:
 - `subscription.canceled`
 - `subscription.expired`
 - `subscription.past_due`
+- `subscription.unpaid`
 - `subscription.trialing`
 - `subscription.paused`
 
@@ -105,7 +106,9 @@ and choose a Creem product. Use these hosted-checkout test values:
 
 For a successful payment, verify that:
 
-1. Creem returns the browser to the local payment-processing or Billing page.
+1. Creem returns the browser through
+   `/settings/payment?request_id=...`; the same reference is stored in the
+   resulting D1 payment row before the page redirects to Billing.
 2. The Worker receives `POST /api/webhooks/creem` with HTTP 200.
 3. Billing shows the active monthly/yearly Pro plan or Lifetime access.
 4. The local D1 payment row eventually contains the expected Creem product

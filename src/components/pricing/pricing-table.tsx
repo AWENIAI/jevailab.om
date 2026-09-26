@@ -67,6 +67,7 @@ export function PricingTable({
             {hasMonthly && (
               <ToggleGroupItem
                 value="month"
+                data-testid="pricing-interval-month"
                 className="rounded-md px-3 py-0 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
               >
                 {m.pricing_monthly()}
@@ -75,6 +76,7 @@ export function PricingTable({
             {hasYearly && (
               <ToggleGroupItem
                 value="year"
+                data-testid="pricing-interval-year"
                 className="rounded-md px-3 py-0 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
               >
                 {m.pricing_yearly()}

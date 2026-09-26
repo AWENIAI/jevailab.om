@@ -1,4 +1,4 @@
-export const E2E_TEST_SECRET = 'mkfast-e2e-secret';
+export const E2E_TEST_SECRET = 'local-e2e-secret';
 
 export const E2E_USER_PASSWORD = 'Password123456!';
 

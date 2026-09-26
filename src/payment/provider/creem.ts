@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { user } from '@/db/auth.schema';
 import { sendPaymentNotification } from '@/notification';
+import { InvalidWebhookSignatureError } from '@/payment/errors';
 import { Creem } from 'creem';
 import type {
   CheckoutEntity,
@@ -13,7 +14,7 @@ import {
   CheckoutEntity$inboundSchema,
   SubscriptionEntity$inboundSchema,
 } from 'creem/models/components';
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type {
   CheckoutResult,
   CreateCheckoutParams,
@@ -90,6 +91,8 @@ type CreemSubscriptionExpiredEvent =
   CreemSubscriptionEvent<'subscription.expired'>;
 type CreemSubscriptionPastDueEvent =
   CreemSubscriptionEvent<'subscription.past_due'>;
+type CreemSubscriptionUnpaidEvent =
+  CreemSubscriptionEvent<'subscription.unpaid'>;
 type CreemSubscriptionPausedEvent =
   CreemSubscriptionEvent<'subscription.paused'>;
 type CreemSubscriptionUpdateEvent =
@@ -154,12 +157,16 @@ export class CreemProvider implements PaymentProvider {
     params: CreateCheckoutParams
   ): Promise<CheckoutResult> {
     const { priceId, customerEmail, successUrl, metadata } = params;
+    const paymentReference = metadata?.paymentReference;
 
     try {
       const checkout: CheckoutEntity = await this.client.checkouts.create({
         productId: priceId,
         successUrl: successUrl ?? '',
-        requestId: crypto.randomUUID(),
+        requestId:
+          typeof paymentReference === 'string' && paymentReference
+            ? paymentReference
+            : crypto.randomUUID(),
         metadata: metadata ?? {},
         ...(customerEmail ? { customer: { email: customerEmail } } : {}),
       });
@@ -230,6 +237,7 @@ export class CreemProvider implements PaymentProvider {
    * - subscription.scheduled_cancel: Cancellation scheduled at period end
    * - subscription.expired: Subscription expired without payment
    * - subscription.past_due: Payment failed
+   * - subscription.unpaid: Payment collection exhausted
    * - subscription.paused: Subscription paused
    *
    * @param payload Raw webhook payload
@@ -292,6 +300,11 @@ export class CreemProvider implements PaymentProvider {
           await this.onSubscriptionPastDue(event);
           break;
         }
+        case 'subscription.unpaid': {
+          const event = this.parseSubscriptionEvent<'subscription.unpaid'>(raw);
+          await this.onSubscriptionUnpaid(event);
+          break;
+        }
         case 'subscription.trialing': {
           const event =
             this.parseSubscriptionEvent<'subscription.trialing'>(raw);
@@ -307,6 +320,9 @@ export class CreemProvider implements PaymentProvider {
           console.warn(`Unhandled Creem webhook event: ${eventType}`);
       }
     } catch (error) {
+      // Signature failures must reach the route unwrapped so it can answer
+      // 400 instead of acknowledging a forged request with 200.
+      if (error instanceof InvalidWebhookSignatureError) throw error;
       console.error('Creem webhook handling error:', error);
       throw new Error('Failed to handle Creem webhook event');
     }
@@ -358,7 +374,7 @@ export class CreemProvider implements PaymentProvider {
     signature: string
   ): Promise<void> {
     if (!signature) {
-      throw new Error('Missing Creem webhook signature');
+      throw new InvalidWebhookSignatureError('Creem');
     }
 
     const encoder = new TextEncoder();
@@ -381,7 +397,7 @@ export class CreemProvider implements PaymentProvider {
       .join('');
 
     if (computed !== signature) {
-      throw new Error('Invalid Creem webhook signature');
+      throw new InvalidWebhookSignatureError('Creem');
     }
   }
 
@@ -429,8 +445,8 @@ export class CreemProvider implements PaymentProvider {
    * on both initial payment and renewals, always updating the SAME record
    * created by checkout.completed.
    *
-   * If no record exists yet (event arrived before checkout.completed),
-   * we skip — checkout.completed will create it.
+   * If no record exists yet (event arrived before checkout.completed), the
+   * handler fails so Creem retries after the checkout event creates the row.
    */
   private async onSubscriptionPaid(
     event: CreemSubscriptionPaidEvent
@@ -439,24 +455,9 @@ export class CreemProvider implements PaymentProvider {
 
     const sub = event.object;
 
-    // Find existing payment record by subscriptionId
     const db = getDb();
-    const existing = await db
-      .select()
-      .from(payment)
-      .where(eq(payment.subscriptionId, sub.id))
-      .orderBy(desc(payment.createdAt))
-      .limit(1);
-
-    if (existing.length === 0) {
-      console.log(
-        '<< No payment record for subscription.paid, waiting for checkout.completed'
-      );
-      return;
-    }
-
     // Update existing payment record with renewed period
-    await db
+    const result = await db
       .update(payment)
       .set({
         status: 'active' as PaymentStatus,
@@ -469,7 +470,10 @@ export class CreemProvider implements PaymentProvider {
         cancelAtPeriodEnd: false,
         updatedAt: new Date(),
       })
-      .where(eq(payment.subscriptionId, sub.id));
+      .where(eq(payment.subscriptionId, sub.id))
+      .returning({ id: payment.id });
+
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
 
     console.log('<< Handle Creem subscription paid success');
   }
@@ -495,11 +499,8 @@ export class CreemProvider implements PaymentProvider {
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
-    if (result.length > 0) {
-      console.log('<< Marked payment record as canceled');
-    } else {
-      console.warn('<< No payment record found for subscription cancellation');
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Marked payment record as canceled');
   }
 
   /**
@@ -525,21 +526,15 @@ export class CreemProvider implements PaymentProvider {
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
-    if (result.length > 0) {
-      console.log('<< Marked payment record as scheduled for cancellation');
-    } else {
-      console.warn(
-        '<< No payment record found for subscription scheduled cancel'
-      );
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Marked payment record as scheduled for cancellation');
   }
 
   /**
    * Handle subscription.expired event
    *
-   * Maps to 'canceled' status since our PaymentStatus doesn't have 'expired'.
-   * Both represent "subscription no longer active" which is what matters
-   * for getCurrentPlan() logic.
+   * Creem can still recover payment after this event. Keep the state
+   * non-terminal while suspending access; only subscription.canceled is final.
    */
   private async onSubscriptionExpired(
     event: CreemSubscriptionExpiredEvent
@@ -552,18 +547,33 @@ export class CreemProvider implements PaymentProvider {
     const result = await db
       .update(payment)
       .set({
-        status: 'canceled' as PaymentStatus,
-        paid: false,
+        status: 'past_due' as PaymentStatus,
         updatedAt: new Date(),
       })
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
-    if (result.length > 0) {
-      console.log('<< Marked payment record as canceled (expired)');
-    } else {
-      console.warn('<< No payment record found for subscription expiration');
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Marked payment record as past due (expired)');
+  }
+
+  /** Suspend access after Creem exhausts payment collection attempts. */
+  private async onSubscriptionUnpaid(
+    event: CreemSubscriptionUnpaidEvent
+  ): Promise<void> {
+    console.log('>> Handle Creem subscription unpaid:', event.id);
+
+    const db = getDb();
+    const result = await db
+      .update(payment)
+      .set({
+        status: 'unpaid' as PaymentStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(payment.subscriptionId, event.object.id))
+      .returning({ id: payment.id });
+
+    this.assertSubscriptionUpdated(result, event.eventType, event.object.id);
   }
 
   /**
@@ -589,18 +599,15 @@ export class CreemProvider implements PaymentProvider {
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
-    if (result.length > 0) {
-      console.log('<< Marked payment record as past_due');
-    } else {
-      console.warn('<< No payment record found for subscription past_due');
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Marked payment record as past_due');
   }
 
   /**
    * Handle subscription.trialing event
    *
-   * Updates the payment record to trialing status with trial dates.
-   * If no record exists, skip — checkout.completed will create it.
+   * Updates the payment record to trialing status with trial dates. If no
+   * record exists, fail so Creem retries after checkout.completed creates it.
    */
   private async onSubscriptionTrialing(
     event: CreemSubscriptionTrialingEvent
@@ -610,33 +617,22 @@ export class CreemProvider implements PaymentProvider {
     const sub = event.object;
 
     const db = getDb();
-    const existing = await db
-      .select()
-      .from(payment)
+    // Creem has no separate trial fields; period dates ARE the trial dates.
+    const result = await db
+      .update(payment)
+      .set({
+        status: 'trialing' as PaymentStatus,
+        paid: true,
+        periodStart: sub.currentPeriodStartDate ?? null,
+        periodEnd: sub.currentPeriodEndDate ?? null,
+        trialStart: sub.currentPeriodStartDate ?? null,
+        trialEnd: sub.currentPeriodEndDate ?? null,
+        updatedAt: new Date(),
+      })
       .where(eq(payment.subscriptionId, sub.id))
-      .limit(1);
+      .returning({ id: payment.id });
 
-    if (existing.length > 0) {
-      // Update existing record to trialing status
-      // Creem has no separate trial fields; period dates ARE the trial dates
-      await db
-        .update(payment)
-        .set({
-          status: 'trialing' as PaymentStatus,
-          paid: true,
-          periodStart: sub.currentPeriodStartDate ?? null,
-          periodEnd: sub.currentPeriodEndDate ?? null,
-          trialStart: sub.currentPeriodStartDate ?? null,
-          trialEnd: sub.currentPeriodEndDate ?? null,
-          updatedAt: new Date(),
-        })
-        .where(eq(payment.subscriptionId, sub.id));
-    } else {
-      // No record yet — checkout.completed will create it
-      console.log(
-        '<< No payment record for subscription.trialing, waiting for checkout.completed'
-      );
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
 
     console.log('<< Handle Creem subscription trialing success');
   }
@@ -661,11 +657,8 @@ export class CreemProvider implements PaymentProvider {
       .where(eq(payment.subscriptionId, sub.id))
       .returning({ id: payment.id });
 
-    if (result.length > 0) {
-      console.log('<< Marked payment record as paused');
-    } else {
-      console.warn('<< No payment record found for subscription pause');
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Marked payment record as paused');
   }
 
   /**
@@ -674,8 +667,8 @@ export class CreemProvider implements PaymentProvider {
    * Fires when a subscription becomes active.
    * Updates the payment record with period dates and active status.
    *
-   * If no payment record exists yet, we skip, checkout.completed will
-   * create the record, and subsequent subscription events will update it.
+   * If no payment record exists yet, fail so Creem retries after
+   * checkout.completed creates the record.
    */
   private async onSubscriptionActive(
     event: CreemSubscriptionActiveEvent
@@ -685,32 +678,20 @@ export class CreemProvider implements PaymentProvider {
     const sub = event.object;
 
     const db = getDb();
-    const existing = await db
-      .select()
-      .from(payment)
+    const result = await db
+      .update(payment)
+      .set({
+        status: 'active' as PaymentStatus,
+        paid: true,
+        periodStart: sub.currentPeriodStartDate ?? null,
+        periodEnd: sub.currentPeriodEndDate ?? null,
+        updatedAt: new Date(),
+      })
       .where(eq(payment.subscriptionId, sub.id))
-      .orderBy(desc(payment.createdAt))
-      .limit(1);
+      .returning({ id: payment.id });
 
-    if (existing.length > 0) {
-      await db
-        .update(payment)
-        .set({
-          status: 'active' as PaymentStatus,
-          paid: true,
-          periodStart: sub.currentPeriodStartDate ?? null,
-          periodEnd: sub.currentPeriodEndDate ?? null,
-          updatedAt: new Date(),
-        })
-        .where(eq(payment.subscriptionId, sub.id));
-      console.log('<< Updated subscription record to active with period dates');
-    } else {
-      // No record yet — this event arrived before checkout.completed.
-      // Skip creation; checkout.completed will create the record.
-      console.log(
-        '<< No payment record for subscription.active, waiting for checkout.completed'
-      );
-    }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Updated subscription record to active with period dates');
   }
 
   /**
@@ -719,8 +700,8 @@ export class CreemProvider implements PaymentProvider {
    * Fires when a subscription is updated (e.g. plan change, period renewal).
    * Updates the payment record with the latest period dates and status.
    *
-   * Like subscription.active, this may arrive before checkout.completed.
-   * If no record exists, we skip — never create from this event.
+   * Like subscription.active, this may arrive before checkout.completed. Fail
+   * when no row exists so Creem retries after the checkout event.
    */
   private async onSubscriptionUpdate(
     event: CreemSubscriptionUpdateEvent
@@ -730,35 +711,39 @@ export class CreemProvider implements PaymentProvider {
     const sub = event.object;
 
     const db = getDb();
-    const existing = await db
-      .select()
-      .from(payment)
+    const updateSet: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+    if (sub.currentPeriodStartDate) {
+      updateSet.periodStart = sub.currentPeriodStartDate;
+    }
+    if (sub.currentPeriodEndDate) {
+      updateSet.periodEnd = sub.currentPeriodEndDate;
+    }
+    // Map subscription status to payment status
+    if (sub.status === 'active' || sub.status === 'trialing') {
+      updateSet.status = sub.status as PaymentStatus;
+    }
+
+    const result = await db
+      .update(payment)
+      .set(updateSet)
       .where(eq(payment.subscriptionId, sub.id))
-      .orderBy(desc(payment.createdAt))
-      .limit(1);
+      .returning({ id: payment.id });
 
-    if (existing.length > 0) {
-      const updateSet: Record<string, unknown> = {
-        updatedAt: new Date(),
-      };
-      if (sub.currentPeriodStartDate) {
-        updateSet.periodStart = sub.currentPeriodStartDate;
-      }
-      if (sub.currentPeriodEndDate) {
-        updateSet.periodEnd = sub.currentPeriodEndDate;
-      }
-      // Map subscription status to payment status
-      if (sub.status === 'active' || sub.status === 'trialing') {
-        updateSet.status = sub.status as PaymentStatus;
-      }
+    this.assertSubscriptionUpdated(result, event.eventType, sub.id);
+    console.log('<< Updated subscription record from subscription.update');
+  }
 
-      await db
-        .update(payment)
-        .set(updateSet)
-        .where(eq(payment.subscriptionId, sub.id));
-      console.log('<< Updated subscription record from subscription.update');
-    } else {
-      console.log('<< No existing record for subscription.update, skipping');
+  private assertSubscriptionUpdated(
+    result: Array<{ id: string }>,
+    eventType: string,
+    subscriptionId: string
+  ): void {
+    if (result.length === 0) {
+      throw new Error(
+        `No payment record found for ${eventType}: ${subscriptionId}`
+      );
     }
   }
 
@@ -785,7 +770,7 @@ export class CreemProvider implements PaymentProvider {
         userId: userId,
         customerId: object.customer?.id ?? '',
         subscriptionId: null,
-        sessionId: event.id,
+        sessionId: this.getCheckoutPaymentReference(event),
         invoiceId: event.id,
         type: PaymentTypes.ONE_TIME,
         scene: PaymentScenes.LIFETIME,
@@ -855,7 +840,7 @@ export class CreemProvider implements PaymentProvider {
         userId: userId,
         customerId: object.customer?.id ?? '',
         subscriptionId: subscriptionId ?? null,
-        sessionId: event.id,
+        sessionId: this.getCheckoutPaymentReference(event),
         invoiceId: event.id,
         type: PaymentTypes.SUBSCRIPTION,
         scene: PaymentScenes.SUBSCRIPTION,
@@ -900,6 +885,19 @@ export class CreemProvider implements PaymentProvider {
   }
 
   /**
+   * Resolve the order-scoped reference generated before hosted checkout.
+   * Older or externally-created checkouts fall back to the Creem event ID.
+   */
+  private getCheckoutPaymentReference(
+    event: CreemCheckoutCompletedEvent
+  ): string {
+    const paymentReference = event.object.metadata?.paymentReference;
+    return typeof paymentReference === 'string' && paymentReference
+      ? paymentReference
+      : event.id;
+  }
+
+  /**
    * Map Creem billing_period to PlanInterval
    *
    * Creem periods: 'every-month', 'every-three-months', 'every-six-months', 'every-year', 'once'
@@ -933,6 +931,7 @@ export class CreemProvider implements PaymentProvider {
       console.log('Updated user with Creem customer ID');
     } catch (error) {
       console.error('Update user with Creem customer ID error:', error);
+      throw error;
     }
   }
 }

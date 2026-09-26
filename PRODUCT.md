@@ -16,7 +16,7 @@ TanStarter is the complete TanStack Start boilerplate for building profitable Sa
 
 ## Positioning
 
-“Ship Faster with TanStack, Cost Less with Cloudflare.” The mechanism a neighboring boilerplate could not truthfully copy: a full-stack TanStack Start + React 19 SaaS with auth (Better Auth), payments (Stripe/Creem), storage (R2), mail, newsletter, blog, dashboard, admin, i18n, and SEO that runs as a single Cloudflare Worker with D1/R2/KV — batteries included, no server to operate, and Workers-scale cost.
+“Ship Faster with TanStack, Cost Less with Cloudflare.” The mechanism a neighboring boilerplate could not truthfully copy: a full-stack TanStack Start + React 19 SaaS with auth (Better Auth), payments (Stripe/Creem/Waffo), storage (R2), mail, newsletter, blog, dashboard, admin, i18n, and SEO that runs as a single Cloudflare Worker with D1/R2/KV — batteries included, no server to operate, and Workers-scale cost.
 
 ## Operating Context
 
@@ -30,11 +30,11 @@ TanStarter is the complete TanStack Start boilerplate for building profitable Sa
 Confirmed capabilities:
 
 - Auth: Better Auth — email/password, Google OAuth, API keys, admin roles, user banning, delete account.
-- Payments: Stripe or Creem selected by `VITE_PAYMENT_PROVIDER`; plans Free, Pro ($9.90/month or $99/year), Lifetime ($199 one-time); checkout, billing portal, and webhooks.
+- Payments: Stripe, Creem, or Waffo selected by `VITE_PAYMENT_PROVIDER`; plans Free, Pro ($9.90/month or $99/year), Lifetime ($199 one-time); checkout, billing portal, and webhooks.
 - Mail: Resend or Cloudflare Email behind a provider abstraction, with React Email templates.
 - Newsletter: Resend or Beehiiv; waitlist page; auto-subscribe after sign-up.
 - Storage: Cloudflare R2 user files with configured allowed types and size limits.
-- AI: TanStack AI, Cloudflare Workers AI, and fal.ai — image captioning and image generation.
+- AI playground: Cloudflare Workers AI (REST) and fal.ai — text summarization, translation, tagline generation, text-to-speech, image captioning, and image generation/editing.
 - Blog: Content Collections (markdown), English/Chinese content, pagination.
 - Dashboard and admin: dashboard stats and charts; settings for profile, security, API keys, files, billing, payment, and notifications; admin user management with a detail drawer.
 - i18n: Paraglide with English and Chinese, URL-based locale strategy.
@@ -43,7 +43,7 @@ Confirmed capabilities:
 
 Confirmed constraints:
 
-- Runs on the Cloudflare Workers runtime: no Node.js-specific APIs. Bindings are `DB` (D1) and `BUCKET` (R2); schemas use Drizzle.
+- Runs on the Cloudflare Workers runtime: no Node.js-specific APIs. Bindings are `DB` (D1), `BUCKET` (R2), and `CACHE` (KV); schemas use Drizzle.
 - Client env vars use the `VITE_` prefix (build-time); server env is validated at runtime with Zod via `@t3-oss/env-core`.
 - File-based routing under `src/routes/`; `src/routeTree.gen.ts` is auto-generated and must never be edited.
 - The LICENSE is a custom TanStarter License (not OSI/MIT): unlimited end products including client work and resale, but no redistribution of template components separately and no competing starter kits; governed by Swiss law, revocable on material breach, liability limited to license fee.
@@ -54,14 +54,14 @@ Confirmed constraints:
 - Name: TanStarter. Tagline: “Ship Faster with TanStack, Cost Less with Cloudflare.”
 - Created by Fox (@indie_maker_fox), founder of TanStarter, MkImage, MkSaaS, and Mkdirs; distributed under the MkFastHQ GitHub org.
 - Public surfaces: tanstarter.dev, demo.tanstarter.dev, docs.tanstarter.dev, YouTube @TanStarter, Discord, support@tanstarter.dev, X @TanStarter.
-- Identity commitments recorded in `docs/DESIGN.md`: brand personality Modern / Professional / Technical; voice direct, confident, and understated; dark-first, ultra-minimal achromatic visual system with Bricolage Grotesque; design references Linear, Vercel, Raycast, and Stripe; explicitly avoids playful/cartoonish, enterprise-heavy, cluttered, and generic Bootstrap-style designs.
+- Identity commitments recorded in `docs/design.md`: brand personality Modern / Professional / Technical; voice direct, confident, and understated; dark-first, ultra-minimal achromatic visual system with a single amber accent and Bricolage Grotesque; design references Linear, Vercel, Raycast, and Stripe; explicitly avoids playful/cartoonish, enterprise-heavy, cluttered, and generic Bootstrap-style designs.
 - Asset names are binding: `/logo.png`, `/logo-dark.png`, `/og.png`, plus favicon set in `public/`.
 
 ## Evidence on Hand
 
 - README.md — positioning, author, links, community, language policy for issues.
-- docs/DESIGN.md — the recorded visual world (dark-first achromatic minimalism, typography, shape, references, anti-references, accessibility principles).
-- docs/ — module docs for ai, auth, cache, db, design, env, locale, mail, newsletter, payment, storage.
+- docs/design.md — the recorded visual world (dark-first achromatic minimalism, typography, shape, references, anti-references, accessibility principles).
+- docs/ — module docs for ai, auth, cache, db, design, env, locale, mail, newsletter, notification, payment, storage.
 - src/config/website.ts — feature flags, providers, pricing, metadata, social links.
 - project.inlang/messages/en.json and zh.json — full site copy in English and Chinese.
 - content/ — blog posts, changelog, and legal pages in en/zh.
@@ -81,6 +81,6 @@ Absent: no customer testimonials, case studies, revenue figures, or benchmark da
 
 ## Accessibility & Inclusion
 
-- docs/DESIGN.md commits to WCAG 2.1 AA, visible focus indicators, keyboard navigability, and sufficient contrast in both themes.
+- docs/design.md commits to WCAG 2.1 AA, visible focus indicators, keyboard navigability, and sufficient contrast in both themes.
 - The UI ships dark, light, and system modes (dark-first) and is localized in English and Chinese via Paraglide.
 - No other product-specific accessibility requirements have been established.

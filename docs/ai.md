@@ -10,7 +10,7 @@ The whole playground lives at **`/ai`** page and is reachable from the navbar **
 
 ```
 src/api/
-└── ai.ts                       # 7 server functions + helpers (runWorkersAi, parseTaglines, base64 utils)
+└── ai.ts                       # 8 server functions + helpers (runWorkersAi, parseTaglines, base64 utils)
 
 src/config/
 └── ai-models.ts                # Central model IDs shared by server functions and UI cards
@@ -41,7 +41,7 @@ src/components/ai/
 
 All three are read in `src/env/server.ts` (Zod-validated via `@t3-oss/env-core`) and accessed inside server functions through `serverEnv`.
 
-> The `@cf/...` Workers AI binding from `wrangler.jsonc` is **not** used here — every Workers AI call goes through the public REST endpoint so the same code works in CI / external runtimes too. Set the secrets with `wrangler secret put CLOUDFLARE_ACCOUNT_ID` (etc.) in production.
+> There is **no** Workers AI binding in `wrangler.jsonc` — every Workers AI call goes through the public REST endpoint so the same code works in CI / external runtimes too. Set the secrets with `wrangler secret put CLOUDFLARE_ACCOUNT_ID` (etc.) in production.
 
 ---
 
@@ -54,8 +54,9 @@ Browser (card) ──▶ TanStack server function ──▶ provider API ──�
                   (createServerFn + Zod)         (Workers AI REST | fal adapter)
 ```
 
-- **Validation** — every server function uses `.inputValidator(zodSchema)` for both type safety and runtime validation (max prompt length, file size cap, language enum, model enum, …).
-- **Model IDs** — runtime model IDs are centralized in `src/config/ai-models.ts` and imported by both server functions and UI cards.
+- **Validation** — every server function uses `.validator(zodSchema)` for both type safety and runtime validation (max prompt length, file size cap, language enum, model enum, …).
+- **No auth, no rate limit** — none of the functions uses `.middleware()`, and the `/ai` route has no guard. Any anonymous visitor can call the paid Workers AI and fal.ai endpoints; add `authApiMiddleware` or a rate limiter if you deploy these demos publicly.
+- **Model IDs** — runtime model IDs are centralized in `src/config/ai-models.ts` and imported by both server functions and UI cards. The translation language list and the TTS speaker list are each defined twice (server schema in `src/api/ai.ts` and the card), so adding a language or voice means editing both places.
 - **Workers AI helper** — `runWorkersAi<TResult>(model, body)` in `src/api/ai.ts` wraps the common JSON request flow (auth headers, `success` / `errors` envelope) so each demo only declares its model + payload.
 - **Binary responses** — TTS (`audio/mpeg`) and CF image gen (binary `image/*`) bypass `runWorkersAi` and base64-encode the body via `arrayBufferToBase64()` so the result can be returned as a `data:` URL the browser renders directly.
 - **Image bytes in / out** — captioning and image-edit accept the user's upload as a base64 string, decoded server-side via `base64ToBytes()` (LLaVA wants `Array.from(uint8)`) or forwarded as a `data:` URI (fal accepts data URIs natively).
@@ -68,13 +69,15 @@ Browser (card) ──▶ TanStack server function ──▶ provider API ──�
 | Export | Provider · Model | Input | Output |
 |--------|------------------|-------|--------|
 | **summarizeText** | Workers AI · `@cf/meta/llama-3.2-3b-instruct` (chat) | `text` (50–500 chars) | `{ summary }` |
-| **translateText** | Workers AI · `@cf/meta/m2m100-1.2b` | `text`, `sourceLang`, `targetLang` (10-language enum) | `{ translatedText }` |
-| **generateTaglines** | Workers AI · `@cf/meta/llama-3.2-3b-instruct` (chat) | `product` description | `{ taglines: string[] }` (parsed numbered list) |
-| **synthesizeSpeech** | Workers AI · `@cf/deepgram/aura-1` | `text`, `speaker` (12 voices) | `{ audioUrl, bytes }` (`data:audio/mpeg;base64,...`) |
-| **captionImage** | Workers AI · `@cf/llava-hf/llava-1.5-7b-hf` | `imageBase64`, `prompt` | `{ description }` |
-| **generateCfImage** | Workers AI · Flux.1 Schnell / SDXL Lightning / DreamShaper 8 LCM | `prompt`, `model` (enum) | `{ imageUrl, model }` (`data:image/...;base64,...`) |
-| **generateAiImage** | fal.ai · Nano Banana / Flux Schnell / GPT Image 2 | `prompt`, `model` (enum) | `{ imageUrl, model }` (fal CDN URL) |
-| **editAiImage** | fal.ai · `fal-ai/nano-banana/edit` | `imageBase64`, `prompt` | `{ imageUrl }` |
+| **translateText** | Workers AI · `@cf/meta/m2m100-1.2b` | `text` (1–1000 chars), `sourceLang`, `targetLang` (10-language enum) | `{ translatedText }` |
+| **generateTaglines** | Workers AI · `@cf/meta/llama-3.2-3b-instruct` (chat) | `product` (10–400 chars) | `{ taglines: string[] }` (parsed numbered list) |
+| **synthesizeSpeech** | Workers AI · `@cf/deepgram/aura-1` | `text` (1–1000 chars), `speaker` (12 voices) | `{ audioUrl, bytes }` (`data:audio/mpeg;base64,...`) |
+| **captionImage** | Workers AI · `@cf/llava-hf/llava-1.5-7b-hf` | `imageBase64` (100–1.4M chars), `prompt` (1–300 chars) | `{ description }` |
+| **generateCfImage** | Workers AI · Flux.1 Schnell / SDXL Lightning / DreamShaper 8 LCM | `prompt` (10–500 chars), `model` (enum) | `{ imageUrl, model }` (`data:image/...;base64,...`) |
+| **generateAiImage** | fal.ai · Nano Banana / Flux Schnell / GPT Image 2 | `prompt` (10–500 chars), `model` (enum) | `{ imageUrl, model }` (fal CDN URL) |
+| **editAiImage** | fal.ai · `fal-ai/nano-banana/edit` | `imageBase64` (100–1.4M chars), `prompt` (5–500 chars) | `{ imageUrl }` |
+
+The server-side image cap is a base64 **string length** limit (1,400,000 characters, ≈1.05 MB decoded). The cards enforce a separate 1,000,000-byte file cap on the client before upload, so the card limit applies first.
 
 All functions throw a descriptive `Error` on missing env, non-2xx responses, or empty payloads — the cards surface the message in the result panel.
 
@@ -115,7 +118,7 @@ Upload a portrait or photo (≤1 MB), pick a prompt preset (caption / detailed d
 - `@cf/bytedance/stable-diffusion-xl-lightning` (Beta, binary `image/png` body)
 - `@cf/lykon/dreamshaper-8-lcm` (photorealistic SD fine-tune)
 
-Demonstrates Workers AI's two response shapes (JSON envelope vs. raw binary). The server function branches on `Content-Type`, base64-encodes the bytes when needed, and always returns a `data:image/...;base64,...` URL the browser can render or download.
+Demonstrates Workers AI's two response shapes (JSON envelope vs. raw binary). The server function branches on `Content-Type`, base64-encodes the bytes when needed, and always returns a `data:image/...;base64,...` URL the browser can render or download. The JSON branch (Flux Schnell) hard-codes `data:image/jpeg`, and the binary branch falls back to `image/jpeg` when the response content type is not `image/*`.
 
 ### 7. Image Generator · fal.ai
 **Card:** `AiImageCard` · **Models:**
@@ -151,5 +154,6 @@ Each preset prompt explicitly tells the model to *keep the original facial featu
 
 - **`@tanstack/ai`**, **`@tanstack/ai-fal`** — image generation adapter for fal.ai (used by `generateAiImage` and `editAiImage`).
 - **`@fal-ai/client`** — transitive dependency of `@tanstack/ai-fal`; queues + polls fal jobs.
+- **`@tanstack/ai-react`** — declared as a dependency but currently unused in `src/`; kept for chat-style integrations.
 
 No Cloudflare AI binding is required (`AI` was removed from `wrangler.jsonc`) — every Workers AI call uses the REST API.

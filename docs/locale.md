@@ -8,6 +8,8 @@ This project uses Paraglide JS for runtime locale support.
 - Additional locale: `zh`
 - Default English URLs are unprefixed: `/about`
 - Chinese URLs use a prefix: `/zh/about`
+- Resolution strategy: `['url', 'cookie', 'baseLocale']` — URL first, then a locale cookie, then the base locale.
+- `/api/*`, `/robots.txt`, `/sitemap.xml`, and `/manifest.json` are excluded from localization (`vite.config.ts` `routeStrategies`).
 
 ## Files
 
@@ -17,8 +19,9 @@ This project uses Paraglide JS for runtime locale support.
 - Project locale helpers: `src/lib/locale.ts`
 - Server middleware wrapper: `src/locale/middleware.ts`
 
-Markdown content stays in the same collection directory. English content uses
-the base filename, while localized variants add the locale before `.md`:
+Markdown content stays in the same collection directory. A file without a
+locale suffix defaults to English; localized variants add the locale before
+`.md` (both `.zh` and an explicit `.en` are recognized):
 
 ```txt
 content/blog/getting-started.md
@@ -29,7 +32,7 @@ content/pages/privacy.md
 content/pages/privacy.zh.md
 ```
 
-`content-collections.ts` strips the `.zh` suffix from the route slug, so
+`content-collections.ts` strips the locale suffix from the route slug, so
 `getting-started.md` and `getting-started.zh.md` both map to `/blog/getting-started`
 under their respective URL locale.
 
@@ -38,12 +41,18 @@ under their respective URL locale.
 ## Commands
 
 ```bash
-pnpm locale:sort      # sort message keys by prefix/name in all locale JSON files
-pnpm locale:check     # verify en/zh key parity and JSON leaf values
+pnpm locale:sort      # sort all message keys alphabetically in both locale JSON files
+pnpm locale:check     # verify en/zh key parity, empty values, and JSON validity of JSON-string messages
 pnpm locale:compile   # compile Paraglide runtime manually
 ```
 
-`pnpm dev` and `pnpm build` also compile the Paraglide runtime via Vite.
+`pnpm dev` and `pnpm build` compile the Paraglide runtime via the Vite plugin;
+`pnpm email:dev` runs `locale:compile` first.
+
+`locale:check` validates JSON syntax only for the keys listed in
+`JSON_MESSAGE_KEYS` in `scripts/check-locale-keys.ts` (`auth_error_codes` and
+the `pricing_plans_*` keys). Add new JSON-string messages to that list so they
+are validated too.
 
 ## Message Access
 

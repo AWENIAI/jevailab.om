@@ -16,9 +16,7 @@ interface EmailLayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * Shared email layout (same structure as MkSaaS).
- */
+/** Shared layout for every transactional email template. */
 export default function EmailLayout({ children }: EmailLayoutProps) {
   const year = new Date().getFullYear();
   return (

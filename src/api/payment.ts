@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { user } from '@/db/auth.schema';
 import { getLocale } from '@/lib/locale';
+import { normalizePaymentReturnUrl } from '@/lib/payment-return-url';
 import { findPlanByPriceId, getAllPricePlans } from '@/lib/price-plan';
 import { Routes } from '@/lib/routes';
 import { getCanonicalUrl } from '@/lib/urls';
@@ -25,8 +26,8 @@ import { z } from 'zod';
 const checkoutSchema = z.object({
   planId: z.string().min(1),
   priceId: z.string().min(1),
-  successUrl: z.url().optional(),
-  cancelUrl: z.url().optional(),
+  successUrl: z.string().trim().min(1).optional(),
+  cancelUrl: z.string().trim().min(1).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   theme: z.enum(['dark', 'light']).optional(),
 });
@@ -44,27 +45,29 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
     const { planId, priceId, successUrl, cancelUrl, metadata, theme } = data;
+    const normalizedSuccessUrl = normalizePaymentReturnUrl(successUrl);
+    const normalizedCancelUrl = normalizePaymentReturnUrl(cancelUrl);
     const locale = getLocale();
     const provider = getPaymentProvider();
     const hostsPostCheckoutPage = provider.hostsPostCheckoutPage === true;
+    const paymentReference = hostsPostCheckoutPage
+      ? crypto.randomUUID()
+      : undefined;
     const billingUrl = getCanonicalUrl(Routes.SettingsBilling);
-    const cancel = cancelUrl ?? billingUrl;
+    const cancel = normalizedCancelUrl ?? billingUrl;
 
     // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
     // then the Payment page polls by sessionId until the webhook writes the DB record.
     // For providers that host their own post-checkout page (Creem, Waffo):
-    // neither replaces URL placeholders and both have their own payment
-    // confirmation page, so the payment page polls the current plan instead.
-    // Routing the return through that page keeps Billing from rendering a
-    // stale plan while the webhook is still in flight. The payment page
-    // treats "callback without session_id" as hosted mode, so only
-    // `callback` is passed here.
+    // neither replaces URL placeholders, so the server generates an
+    // order-scoped reference that is carried through provider metadata and
+    // the webhook-backed payment row.
     const success = hostsPostCheckoutPage
-      ? (successUrl ??
+      ? (normalizedSuccessUrl ??
         getCanonicalUrl(
-          `${Routes.Payment}?callback=${encodeURIComponent(Routes.SettingsBilling)}`
+          `${Routes.Payment}?checkout_id=${paymentReference}&callback=${encodeURIComponent(Routes.SettingsBilling)}`
         ))
-      : (successUrl ??
+      : (normalizedSuccessUrl ??
         getCanonicalUrl(
           `${Routes.Payment}?session_id={CHECKOUT_SESSION_ID}&callback=${Routes.SettingsBilling}`
         ));
@@ -72,6 +75,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       ...metadata,
       userId,
       userName: userRow.name ?? '',
+      ...(paymentReference ? { paymentReference } : {}),
     };
 
     const result = await createCheckout({
@@ -88,7 +92,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
   });
 
 const portalSchema = z.object({
-  returnUrl: z.string().url().optional(),
+  returnUrl: z.string().trim().min(1).optional(),
   locale: z.string().optional(),
 });
 
@@ -97,6 +101,7 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const normalizedReturnUrl = normalizePaymentReturnUrl(data.returnUrl);
     const provider = getPaymentProvider();
     const db = getDb();
     const [row] = await db
@@ -108,7 +113,8 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
       throw new Error('No customer found for user');
     }
     const locale = getLocale();
-    const returnUrl = data.returnUrl ?? getCanonicalUrl(Routes.SettingsBilling);
+    const returnUrl =
+      normalizedReturnUrl ?? getCanonicalUrl(Routes.SettingsBilling);
     const result = await createCustomerPortal({
       customerId: row?.customerId ?? '',
       returnUrl,
@@ -219,8 +225,9 @@ export const getCurrentPlan = createServerFn({ method: 'GET' })
 const checkCompletionSchema = z.object({ sessionId: z.string().min(1) });
 
 /**
- * Check payment completion by Stripe session ID.
- * Used by Stripe flow where the session ID is embedded in the redirect URL.
+ * Check payment completion by an order-scoped checkout reference.
+ * Stripe supplies its Checkout Session ID; hosted providers round-trip the
+ * server-generated payment reference through webhook metadata.
  */
 export const checkPaymentCompletion = createServerFn({ method: 'GET' })
   .validator(checkCompletionSchema)

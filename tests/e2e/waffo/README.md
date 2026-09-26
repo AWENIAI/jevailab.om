@@ -77,8 +77,8 @@ Keep this terminal running for the entire checkout.
 
 ### 4. Register the Waffo Test Mode webhook
 
-The MkFast setup helper requires an explicit Waffo store ID. Register the
-webhook with:
+The setup helper requires an explicit Waffo store ID. Register the webhook
+with:
 
 ```bash
 pnpm tsx scripts/setup-waffo.ts \
@@ -114,13 +114,16 @@ If the temporary URL changes, register the new URL again.
 Open `http://localhost:3000/pricing`, register or sign in with a test account,
 and choose a Waffo product. On the hosted Waffo checkout:
 
-1. For Pro, verify the `7-day free trial` label, then click `Continue`.
+1. For Pro, verify the free-trial label (e.g. `7-day free trial`) if your
+   sandbox product has one configured, then click `Continue`. No plan in
+   `src/config/website.ts` sets `trialPeriodDays`, so the trial length comes
+   from the product's own setting in the Waffo dashboard.
 2. Choose `Credit/Debit Card`.
 3. Select the sandbox `Success` test option.
 4. Click `Subscribe` for Pro or `Pay` for Lifetime.
 5. Click `Done` on Waffo's confirmation page.
-6. Wait for the local payment-processing page to poll the webhook result and
-   return to Billing.
+6. Wait for `/settings/payment?checkout_id=...` to poll the matching
+   webhook-backed payment row and return to Billing.
 
 Verify that:
 
@@ -140,8 +143,8 @@ a duplicate payment row or overwrite subscription lifecycle state.
 ## Automated sandbox test
 
 `pnpm e2e:waffo` validates the required Waffo environment and launches the
-Playwright suite, but it does **not** start the local Worker, Cloudflared, or
-the Waffo webhook registration. The default E2E port is `3018`.
+Playwright suite with an isolated local Worker. It does **not** start
+Cloudflared or register the Waffo webhook. The default E2E port is `3018`.
 
 Put the required sandbox variables in the git-ignored `.env.e2e` file or export
 them in the shell. The runner reads the `e2e` Vite environment:
@@ -156,18 +159,8 @@ WAFFO_MERCHANT_ID=MER_...
 WAFFO_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
-Start the E2E-mode Worker in one terminal. Use the explicit Vite command so
-the mode and port are not overridden by the root `pnpm dev` script:
-
-```bash
-MODE=e2e pnpm exec vite dev \
-  --mode e2e \
-  --host localhost \
-  --port 3018 \
-  --strictPort
-```
-
-In another terminal, start the isolated tunnel:
+Start the isolated tunnel before launching the suite. It can connect before
+Playwright starts the local Worker:
 
 ```bash
 cloudflared --config /dev/null tunnel \
@@ -183,9 +176,13 @@ Register the tunnel URL as a Waffo Test Mode webhook with the same
 pnpm e2e:waffo
 ```
 
-The suite covers monthly and yearly trial subscriptions, Lifetime checkout,
-webhook-backed Billing state, and the accompanying payment event. To run one
-scenario:
+The suite covers monthly and yearly subscriptions (trial if the sandbox
+product enables one), Lifetime checkout, webhook-backed Billing state, and
+the accompanying payment event. To run one scenario:
+
+Waffo sandbox payment processing and webhook delivery can take several
+minutes. The suite keeps each test user until the hosted success page and
+webhook-backed payment row have both completed.
 
 ```bash
 pnpm e2e:waffo -- --grep "monthly subscription"
@@ -207,8 +204,8 @@ WAFFO_E2E_PORT=3028 \
   restart the Worker.
 - Waffo reports an invalid or missing signature: use Cloudflared or another
   HTTPS tunnel that preserves `X-Waffo-Signature`; do not use localtunnel.
-- The setup helper reports a missing store: pass `--store STO_xxx`; MkFast's
-  helper does not auto-discover a store.
+- The setup helper reports a missing store: pass `--store STO_xxx`; the helper
+  does not auto-discover a store.
 - The runner cannot find Waffo credentials: put them in `.env.e2e` or export
   them. `.dev.vars` alone is not loaded by `scripts/run-waffo-e2e.ts`.
 - Checkout succeeds but Billing stays unchanged: keep the Worker and tunnel

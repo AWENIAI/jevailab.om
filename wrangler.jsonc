@@ -58,7 +58,7 @@
    * https://developers.cloudflare.com/workers/runtime-apis/bindings/
    */
   /**
-   * D1: create database with `npx wrangler d1 create mkfast-template`
+   * D1: create a database with `npx wrangler d1 create <DATABASE_NAME>`
    */
   "d1_databases": [
     {
@@ -69,7 +69,7 @@
     }
   ],
   /**
-   * R2: create bucket with `npx wrangler r2 bucket create mkfast-template`
+   * R2: create a bucket with `npx wrangler r2 bucket create <BUCKET_NAME>`
    */
   "r2_buckets": [
     {

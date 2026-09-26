@@ -90,11 +90,25 @@ three-digit CVC such as `123`. Verify that:
 2. The Stripe CLI terminal shows the forwarded events and a successful local
    webhook response.
 3. Billing shows the expected Pro or Lifetime entitlement.
-4. The local D1 payment row eventually becomes paid. Webhook delivery is
-   asynchronous, so allow a few seconds before treating the flow as failed.
+4. The local D1 payment row becomes paid during `invoice.paid`. Webhook delivery
+   is asynchronous, so allow a few seconds before treating the flow as failed.
+
+`invoice.paid` may appear before `checkout.session.completed`. This is an
+expected successful order: the Invoice handler reconstructs the Checkout
+Session and should return HTTP 200 on its first delivery. The payment page may
+continue polling briefly, but it should not need a later Stripe retry. See
+[Payment confirmation and event ordering](../../../docs/payment.md#payment-confirmation-and-event-ordering)
+for the persistence contract.
 
 For the declined-card case, confirm that Checkout remains unsuccessful and no
 paid payment row is created in local D1.
+
+For a real zero-cost Lifetime order, create a one-use 100% off coupon and an
+active promotion code in Stripe Test Mode, then apply that code in hosted
+Checkout. The completed Session and generated Invoice must both have a zero
+amount and no PaymentIntent, while the local D1 row must still become
+`paid=true` from `invoice.paid`. Deactivate the promotion code and delete the
+coupon after the test.
 
 ### 5. Test cancellation and refunds
 
@@ -151,6 +165,19 @@ To run a subset of the specification:
 pnpm e2e:stripe -- --grep "monthly subscription"
 ```
 
+The zero-cost test creates and cleans up its own one-use 100% promotion code.
+To force the exact recovery path where Checkout has not created a local row,
+forward only `invoice.paid` while running that focused test:
+
+```bash
+STRIPE_E2E_EVENTS=invoice.paid \
+  pnpm e2e:stripe -- --grep "zero-cost lifetime"
+```
+
+This is intentionally a focused command. Other sandbox tests require their
+normal Checkout, subscription, cancellation, or refund events and should use
+plain `pnpm e2e:stripe`.
+
 Use `STRIPE_E2E_PORT` to select another isolated port. The Stripe CLI listener
 and the Playwright Worker will use that port together.
 
@@ -167,6 +194,8 @@ and the Playwright Worker will use that port together.
 - Checkout uses the wrong plan: confirm `VITE_PAYMENT_PROVIDER=stripe` and
   that the Price IDs are from the same Test Mode account as the secret key.
 - The browser succeeds but Billing does not update: keep Stripe CLI running,
-  inspect the forwarded event response, and wait for asynchronous D1 updates.
+  inspect the `invoice.paid` response, and query the isolated D1 payment row. A
+  500 response means Stripe API or D1 processing failed and Stripe should retry;
+  a 200 response means the row was created, updated, or safely deduplicated.
 
 Never commit `.env.local`, `.env.e2e`, Stripe secret keys, or webhook secrets.

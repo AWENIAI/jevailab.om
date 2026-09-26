@@ -9,6 +9,8 @@ The project uses **T3 Env** (`@t3-oss/env-core`) for type-safe validation:
 
 **Rule of thumb:** Use **clientEnv** for values inlined at build (public URLs, analytics IDs, feature keys). Use **serverEnv** for secrets and server-only config (API keys, webhook secrets). Deployment target is **Cloudflare Workers**.
 
+> The payment providers (`src/payment/provider/stripe.ts`, `creem.ts`, `waffo.ts`) read their secrets from `process.env` directly instead of `serverEnv`. The variables are still declared in `serverEnv` for validation, and the Stripe and Creem E2E runners inject them through the Cloudflare Vite plugin (`vite.config.ts`).
+
 ---
 
 ## 1. Build-time (clientEnv)
@@ -48,6 +50,8 @@ Values are read by Vite from `.env*` during `pnpm dev` / `pnpm build` and inline
 
 Do **not** put `VITE_*` in Wrangler `vars` or `wrangler secret`—they are build-time only.
 
+Analytics components and the Crisp/client scripts only render when `import.meta.env.PROD` is true, so they stay inactive during `pnpm dev` even when their IDs are set.
+
 ---
 
 ## 2. Runtime (serverEnv)
@@ -63,16 +67,16 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | **Base** | | | |
 | `VITE_BASE_URL` | URL (schema validation at runtime) | No | Default: `http://localhost:3000`; same value as build |
 | **Auth** | | | |
-| `BETTER_AUTH_SECRET` | Better Auth session signing | Yes (prod) | Auth; default only for CLI; [Mail](./mail.md) for verification/reset |
-| `BETTER_AUTH_TRUSTED_ORIGINS` | Better Auth / extension CORS origins | No | Comma-separated origins such as `chrome-extension://<extension-id>` |
+| `BETTER_AUTH_SECRET` | Better Auth session signing | Yes (prod) | Auth. Defaults to the literal `'better-auth-secret'` so CLI tools can run; always set a real secret in every deployed environment |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | Better Auth / extension CORS origins | No | Default `''`. Comma-separated origins such as `chrome-extension://<extension-id>`; `moz-extension://*` trusts any Firefox extension origin. See [Auth](./auth.md#browser-extension-auth) |
 | `GOOGLE_CLIENT_ID` | Google OAuth | No | Auth when Google login enabled |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth | No | Auth when Google login enabled |
-| `GOOGLE_EXTENSION_CLIENT_ID` | Browser extension Google OAuth | No | Chrome Extension OAuth client ID; added as a Google ID-token audience |
+| `GOOGLE_EXTENSION_CLIENT_ID` | Browser extension Google OAuth | No | Added as a Google ID-token audience, required as the tokeninfo `aud` for extension access tokens, and required by `POST /api/auth/extension/google` (returns `503` without it) |
 | **Mail & newsletter (Resend)** | | | |
 | `RESEND_API_KEY` | Resend API | No | [Mail](./mail.md), [Newsletter](./newsletter.md) (when using Resend) |
-| **Mail (Cloudflare Email)** | | | |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | No | [Mail](./mail.md); required when using Cloudflare provider |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | No | [Mail](./mail.md); required when using Cloudflare provider |
+| **Cloudflare API** | | | |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | No | [Mail](./mail.md) (Cloudflare provider), [AI](./ai.md) (Workers AI REST), and drizzle-kit (`drizzle.config.ts`) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | No | Same consumers as `CLOUDFLARE_ACCOUNT_ID`; the token needs Email Send, Workers AI, and D1 permissions for the features you use |
 | **Newsletter (Beehiiv)** | | | |
 | `BEEHIIV_API_KEY` | Beehiiv API | No | Newsletter when provider is Beehiiv |
 | `BEEHIIV_PUBLICATION_ID` | Beehiiv publication | No | Newsletter when provider is Beehiiv |
@@ -85,13 +89,40 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | **Payment (Creem)** | | | |
 | `CREEM_API_KEY` | Creem API key | No | [Payment](./payment.md); required when using Creem |
 | `CREEM_WEBHOOK_SECRET` | Creem webhook signing | No | Payment webhook (Creem) |
-| `CREEM_DEBUG` | Use Creem sandbox API | No | Set to `true` for test mode (`test-api.creem.io`) |
+| `CREEM_DEBUG` | Use Creem sandbox API | No | Set to `true` for test mode (`test-api.creem.io`). `.env.example` ships `CREEM_DEBUG='true'`, so set it to `false` or remove it for production |
 | **Payment (Waffo Pancake)** | | | |
-| `WAFFO_DEBUG` | Accept sandbox webhook events in a production build | No | Set to `true` for smoke-testing prod deployments against a Waffo test merchant; leave unset in real production so `mode: "test"` webhooks are ignored |
+| `WAFFO_DEBUG` | Accept sandbox webhook events in a production build | No | Non-production builds always accept `mode: "test"` events. Set to `true` only for smoke-testing a production build against a Waffo test merchant; leave unset in real production so test webhooks are ignored |
 | `WAFFO_MERCHANT_ID` | Waffo Merchant ID | No | [Payment](./payment.md); required when using Waffo |
 | `WAFFO_PRIVATE_KEY` | Waffo RSA private key | No | [Payment](./payment.md); server-only secret; never expose it client-side or prefix it with `VITE_` |
 | **AI** | | | |
 | `FAL_KEY` | fal.ai API key | No | [AI](../src/api/ai.ts); required for image generation/edit via fal.ai |
+
+### Tooling-only variables
+
+These are read by CLI tools and scripts, not by the Worker.
+
+| Variable | Used by | Notes |
+|----------|---------|-------|
+| `CLOUDFLARE_DATABASE_ID` | `drizzle.config.ts` (`db:generate`, `db:push`, `db:studio:remote`) | D1 database ID; also needs `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` |
+| `WAFFO_STORE_ID` | `scripts/setup-waffo.ts` | Waffo store to configure |
+| `WRANGLER_BIN` | `scripts/sync-d1-remote-to-local.ts` | Override the wrangler binary |
+| `GITHUB_REPOSITORY` | `scripts/sync-github-secrets.ts` | Target `owner/name` when `--repo` is not passed |
+
+### E2E variables
+
+| Variable | Used by | Notes |
+|----------|---------|-------|
+| `PLAYWRIGHT_BASE_URL` | All Playwright configs | Target URL (local server or tunnel) |
+| `PORT` | `playwright.config.ts` | Local E2E port (default `3000`) |
+| `CI` | Playwright configs | Enables retries and the GitHub reporter |
+| `E2E_PERSIST_PATH` | `vite.config.ts`, `scripts/prepare-e2e-state.ts` | Isolated local D1/R2/KV state (must stay inside `.wrangler/`) |
+| `STRIPE_E2E_RUN`, `STRIPE_E2E_WEBHOOK_SECRET`, `STRIPE_E2E_PORT` | `scripts/run-stripe-e2e.ts`, `vite.config.ts` | See [Stripe E2E](../tests/e2e/stripe/README.md) |
+| `CREEM_E2E_RUN`, `CREEM_E2E_PORT` | `scripts/run-creem-e2e.ts`, `vite.config.ts` | See [Creem E2E](../tests/e2e/creem/README.md) |
+| `WAFFO_E2E_PORT` | `scripts/run-waffo-e2e.ts` | See [Waffo E2E](../tests/e2e/waffo/README.md) |
+
+When `STRIPE_E2E_RUN` or `CREEM_E2E_RUN` is `true`, `vite.config.ts` injects the provider secrets into the Worker and falls back to a fixed E2E `BETTER_AUTH_SECRET`.
+
+Vite mode `e2e` (`vite dev --mode e2e`) is not an env variable but changes runtime behavior: it enables the `/api/e2e/users` helper route (dev only, with the hardcoded `x-e2e-secret` header) and disables notifications (`websiteConfig.notification.enable`).
 
 ---
 

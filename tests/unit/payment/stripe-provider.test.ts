@@ -55,9 +55,14 @@ type MockFunction = ReturnType<typeof vi.fn>;
 type StripeClientTestDouble = {
   customers: { list: MockFunction; create: MockFunction };
   checkout: {
-    sessions: { create: MockFunction; retrieve: MockFunction };
+    sessions: {
+      create: MockFunction;
+      retrieve: MockFunction;
+      list: MockFunction;
+    };
   };
   subscriptions: { retrieve: MockFunction };
+  invoices: { retrieve: MockFunction };
   billingPortal: { sessions: { create: MockFunction } };
 };
 
@@ -106,7 +111,9 @@ function configureStripeClient(provider: StripeProvider) {
   client.customers.create = vi.fn();
   client.checkout.sessions.create = vi.fn();
   client.checkout.sessions.retrieve = vi.fn();
+  client.checkout.sessions.list = vi.fn();
   client.subscriptions.retrieve = vi.fn();
+  client.invoices.retrieve = vi.fn();
   client.billingPortal.sessions.create = vi.fn();
   return client;
 }
@@ -321,7 +328,16 @@ describe('Stripe provider lifecycle', () => {
         customer: 'cus_new',
         mode: 'payment',
         allow_promotion_codes: true,
-        invoice_creation: { enabled: true },
+        invoice_creation: {
+          enabled: true,
+          invoice_data: {
+            metadata: {
+              userId: 'user_test',
+              planId: 'lifetime',
+              priceId: 'price_lifetime',
+            },
+          },
+        },
         payment_intent_data: {
           metadata: {
             userId: 'user_test',
@@ -383,6 +399,113 @@ describe('Stripe provider lifecycle', () => {
         type: 'subscription',
         userId: 'user_test',
       })
+    );
+  });
+
+  test('keeps a Stripe-confirmed subscription checkout pending until invoice.paid', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    stripe.subscriptions.retrieve.mockResolvedValue(subscription());
+
+    await dispatch(provider, 'checkout.session.completed', {
+      id: 'cs_test',
+      object: 'checkout.session',
+      customer: 'cus_test',
+      subscription: 'sub_test',
+      invoice: 'in_test',
+      metadata: { userId: 'user_test', priceId: 'price_month' },
+      mode: 'subscription',
+      payment_status: 'paid',
+    });
+
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: false })
+    );
+  });
+
+  test('reconstructs a paid subscription when invoice.paid arrives before checkout', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    configureSelectSequence([[], []]);
+    stripe.subscriptions.retrieve.mockResolvedValue(subscription());
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_test',
+          object: 'checkout.session',
+          customer: 'cus_test',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_month',
+          },
+          mode: 'subscription',
+          subscription: 'sub_test',
+        },
+      ],
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_test',
+      object: 'invoice',
+      customer: 'cus_test',
+      subscription: 'sub_test',
+    });
+
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      subscription: 'sub_test',
+      limit: 10,
+    });
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: 'cus_test',
+        invoiceId: 'in_test',
+        paid: true,
+        priceId: 'price_month',
+        scene: 'subscription',
+        sessionId: 'cs_test',
+        status: 'active',
+        subscriptionId: 'sub_test',
+        type: 'subscription',
+        userId: 'user_test',
+      })
+    );
+  });
+
+  test('makes invoice.paid win when checkout creates the row during reconstruction', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    configureSelectSequence([[], [], [paymentRecord()]]);
+    const update = configureUpdate();
+    stripe.subscriptions.retrieve.mockResolvedValue(subscription());
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_test',
+          customer: 'cus_test',
+          metadata: { userId: 'user_test', priceId: 'price_month' },
+          mode: 'subscription',
+          subscription: 'sub_test',
+        },
+      ],
+    });
+    dbMocks.values.mockRejectedValueOnce(
+      new Error('Failed query: insert into payment', {
+        cause: new Error(
+          'D1_ERROR: UNIQUE constraint failed: payment.invoice_id'
+        ),
+      })
+    );
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_test',
+      object: 'invoice',
+      customer: 'cus_test',
+      subscription: 'sub_test',
+    });
+
+    expect(update.set).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: true, status: 'active' })
     );
   });
 
@@ -469,6 +592,328 @@ describe('Stripe provider lifecycle', () => {
     );
   });
 
+  test('reconstructs a paid lifetime payment when invoice.paid arrives before checkout', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // findPaymentRecord (invoiceId) then the reconstruct sessionId lookup.
+    configureSelectSequence([[], []]);
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: 'in_lifetime',
+      payment_intent: 'pi_lifetime',
+    });
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_lifetime',
+          object: 'checkout.session',
+          customer: 'cus_test',
+          invoice: 'in_lifetime',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+          payment_intent: 'pi_lifetime',
+        },
+      ],
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_lifetime',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      payment_intent: null,
+      subscription: null,
+    });
+
+    expect(stripe.invoices.retrieve).toHaveBeenCalledWith('in_lifetime');
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      payment_intent: 'pi_lifetime',
+      limit: 10,
+    });
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: 'cus_test',
+        invoiceId: 'in_lifetime',
+        paid: true,
+        priceId: 'price_lifetime',
+        scene: 'lifetime',
+        sessionId: 'cs_lifetime',
+        status: 'completed',
+        type: 'one_time',
+        userId: 'user_test',
+      })
+    );
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledWith({
+      amount: 199,
+      customerId: 'cus_test',
+      sessionId: 'cs_lifetime',
+      userName: 'Buyer',
+    });
+  });
+
+  test('reconstructs a zero-cost lifetime payment that has no PaymentIntent', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // findPaymentRecord (invoiceId) then the reconstruct sessionId lookup.
+    configureSelectSequence([[], []]);
+    // A $0 order has no PaymentIntent, so retrieving the invoice still yields
+    // none and the session must be matched by customer + invoice id.
+    stripe.invoices.retrieve.mockResolvedValue({ id: 'in_zero' });
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_zero',
+          object: 'checkout.session',
+          customer: 'cus_test',
+          invoice: 'in_zero',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+          payment_intent: null,
+        },
+      ],
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_zero',
+      object: 'invoice',
+      amount_paid: 0,
+      customer: 'cus_test',
+      payment_intent: null,
+      subscription: null,
+    });
+
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      customer: 'cus_test',
+      limit: 100,
+    });
+    expect(dbMocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: 'cus_test',
+        invoiceId: 'in_zero',
+        paid: true,
+        priceId: 'price_lifetime',
+        scene: 'lifetime',
+        sessionId: 'cs_zero',
+        status: 'completed',
+        type: 'one_time',
+        userId: 'user_test',
+      })
+    );
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledWith({
+      amount: 0,
+      customerId: 'cus_test',
+      sessionId: 'cs_zero',
+      userName: 'Buyer',
+    });
+  });
+
+  test('keeps the reconstructed paid row when checkout arrives afterward', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // findPaymentRecord (invoiceId) then the reconstruct sessionId lookup.
+    configureSelectSequence([[], []]);
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: 'in_lifetime',
+      payment_intent: 'pi_lifetime',
+    });
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_lifetime',
+          customer: 'cus_test',
+          invoice: 'in_lifetime',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+          payment_intent: 'pi_lifetime',
+        },
+      ],
+    });
+    dbMocks.values
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(
+        new Error('D1_ERROR: UNIQUE constraint failed: payment.invoice_id')
+      );
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_lifetime',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      payment_intent: null,
+      subscription: null,
+    });
+    await dispatch(provider, 'checkout.session.completed', {
+      id: 'cs_lifetime',
+      object: 'checkout.session',
+      customer: 'cus_test',
+      invoice: 'in_lifetime',
+      metadata: { userId: 'user_test', priceId: 'price_lifetime' },
+      mode: 'payment',
+      payment_status: 'paid',
+    });
+
+    expect(dbMocks.values).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ paid: true })
+    );
+    expect(dbMocks.values).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ paid: false })
+    );
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledTimes(1);
+  });
+
+  test('updates an existing unpaid lifetime row by sessionId instead of duplicating it', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // findPaymentRecord (invoiceId miss, the checkout row still has a null
+    // invoiceId) then the reconstruct sessionId lookup that finds the row.
+    configureSelectSequence([
+      [],
+      [
+        paymentRecord({
+          type: 'one_time',
+          scene: 'lifetime',
+          subscriptionId: null,
+          invoiceId: null,
+          sessionId: 'cs_lifetime',
+          paid: false,
+        }),
+      ],
+    ]);
+    const update = configureUpdate();
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_lifetime',
+          customer: 'cus_test',
+          invoice: 'in_lifetime',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+          payment_intent: 'pi_lifetime',
+        },
+      ],
+    });
+    stripe.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_lifetime',
+      metadata: { userName: 'Buyer' },
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_lifetime',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      payment_intent: 'pi_lifetime',
+      subscription: null,
+    });
+
+    expect(dbMocks.insert).not.toHaveBeenCalled();
+    expect(update.set).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: true, status: 'completed' })
+    );
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not send the lifetime notification again for a duplicate invoice', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    // First delivery: findPaymentRecord miss, reconstruct sessionId lookup miss,
+    // then insert. Second delivery: findPaymentRecord finds the paid row.
+    configureSelectSequence([
+      [],
+      [],
+      [
+        paymentRecord({
+          type: 'one_time',
+          scene: 'lifetime',
+          subscriptionId: null,
+          invoiceId: 'in_lifetime',
+          paid: true,
+        }),
+      ],
+    ]);
+    configureUpdate();
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: 'in_lifetime',
+      payment_intent: 'pi_lifetime',
+    });
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        {
+          id: 'cs_test',
+          customer: 'cus_test',
+          metadata: {
+            userId: 'user_test',
+            userName: 'Buyer',
+            priceId: 'price_lifetime',
+          },
+          mode: 'payment',
+        },
+      ],
+    });
+    stripe.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_test',
+      metadata: { userName: 'Buyer' },
+    });
+    const invoice = {
+      id: 'in_lifetime',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      payment_intent: null,
+      subscription: null,
+    };
+
+    await dispatch(provider, 'invoice.paid', invoice);
+    await dispatch(provider, 'invoice.paid', invoice);
+
+    expect(providerMocks.sendPaymentNotification).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not notify when another invoice delivery wins the paid transition', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    configureSelect([
+      paymentRecord({
+        type: 'one_time',
+        scene: 'lifetime',
+        subscriptionId: null,
+        paid: false,
+      }),
+    ]);
+    configureUpdate([]);
+    stripe.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_test',
+      metadata: { userName: 'Buyer' },
+    });
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_test',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      subscription: null,
+    });
+
+    expect(providerMocks.sendPaymentNotification).not.toHaveBeenCalled();
+  });
+
   test('updates cancellation state and subscription status from webhook events', async () => {
     const provider = new StripeProvider();
     const update = configureUpdate();
@@ -499,6 +944,41 @@ describe('Stripe provider lifecycle', () => {
     );
   });
 
+  test('persists a subscription price and billing period change', async () => {
+    const provider = new StripeProvider();
+    const update = configureUpdate();
+    const periodStart = 1_756_592_000;
+    const periodEnd = 1_788_128_000;
+
+    await dispatch(
+      provider,
+      'customer.subscription.updated',
+      subscription({
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+        items: {
+          data: [
+            {
+              price: { id: 'price_year' },
+              plan: { interval: 'year' },
+              current_period_start: periodStart,
+              current_period_end: periodEnd,
+            },
+          ],
+        },
+      })
+    );
+
+    expect(update.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        priceId: 'price_year',
+        interval: 'year',
+        periodStart: new Date(periodStart * 1000),
+        periodEnd: new Date(periodEnd * 1000),
+      })
+    );
+  });
+
   test('revokes a lifetime payment after a full charge refund', async () => {
     const provider = new StripeProvider();
     const update = configureUpdate();
@@ -507,12 +987,46 @@ describe('Stripe provider lifecycle', () => {
       id: 'ch_test',
       object: 'charge',
       customer: 'cus_test',
+      invoice: 'in_refunded',
       refunded: true,
     });
 
     expect(update.set).toHaveBeenCalledWith(
-      expect.objectContaining({ paid: false })
+      expect.objectContaining({ paid: false, status: 'canceled' })
     );
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."invoice_id" = ?');
+    expect(query.params).toContain('in_refunded');
+  });
+
+  test('resolves the matching checkout when a refund has no invoice', async () => {
+    const provider = new StripeProvider();
+    const stripe = configureStripeClient(provider);
+    const update = configureUpdate();
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [{ id: 'cs_refunded' }],
+    });
+
+    await dispatch(provider, 'charge.refunded', {
+      id: 'ch_test',
+      object: 'charge',
+      customer: 'cus_test',
+      invoice: null,
+      payment_intent: 'pi_refunded',
+      refunded: true,
+    });
+
+    expect(stripe.checkout.sessions.list).toHaveBeenCalledWith({
+      payment_intent: 'pi_refunded',
+      limit: 1,
+    });
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."session_id" = ?');
+    expect(query.params).toContain('cs_refunded');
   });
 
   test('keeps lifetime access for a partial charge refund', async () => {
@@ -523,9 +1037,40 @@ describe('Stripe provider lifecycle', () => {
       id: 'ch_test',
       object: 'charge',
       customer: 'cus_test',
+      invoice: 'in_test',
       refunded: false,
     });
 
     expect(dbMocks.update).not.toHaveBeenCalled();
+  });
+
+  test('does not reactivate a refunded lifetime payment on invoice replay', async () => {
+    const provider = new StripeProvider();
+    configureStripeClient(provider);
+    configureSelect([
+      paymentRecord({
+        type: 'one_time',
+        scene: 'lifetime',
+        subscriptionId: null,
+        status: 'canceled',
+        paid: false,
+      }),
+    ]);
+    const update = configureUpdate([]);
+
+    await dispatch(provider, 'invoice.paid', {
+      id: 'in_test',
+      object: 'invoice',
+      amount_paid: 19900,
+      customer: 'cus_test',
+      subscription: null,
+    });
+
+    const query = new SQLiteSyncDialect().sqlToQuery(
+      update.where.mock.calls[0][0]
+    );
+    expect(query.sql).toContain('"payment"."status" = ?');
+    expect(query.params).toContain('completed');
+    expect(providerMocks.sendPaymentNotification).not.toHaveBeenCalled();
   });
 });

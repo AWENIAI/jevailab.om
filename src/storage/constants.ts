@@ -14,6 +14,6 @@ export const DEFAULT_ALLOWED_TYPES: string[] = [];
 export const DEFAULT_USER_FILES_FOLDER = 'userfiles';
 
 /**
- * Default parent folder for avatars (e.g. avatars => avatars/{userId}/)
+ * Default public folder for avatars (e.g. avatars => avatars/{uuid}-{filename})
  */
 export const DEFAULT_AVATARS_FOLDER = 'avatars';
