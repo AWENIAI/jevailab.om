@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
+import { renderSitemap } from '@/lib/sitemap';
 import { getSortedPosts } from '@/lib/blog';
 import { websiteConfig } from '@/config/website';
-import {
-  baseLocale,
-  isLocalizedPath,
-  localeConfig,
-  locales,
-  localizeHref,
-} from '@/lib/locale';
+import { locales, type Locale } from '@/lib/locale';
 
 /**
  * Dynamic sitemap.xml
@@ -23,6 +18,8 @@ export const Route = createFileRoute('/sitemap.xml')({
           path: string;
           changefreq?: string;
           priority?: string;
+          lastmod?: string;
+          availableLocales?: Locale[];
         }[] = [
           { path: '/', changefreq: 'daily', priority: '1.0' },
           { path: '/about', changefreq: 'monthly' },
@@ -43,67 +40,36 @@ export const Route = createFileRoute('/sitemap.xml')({
           staticUrls.push({ path: '/pricing', changefreq: 'weekly' });
         }
 
-        const alternates = (path: string) => {
-          if (!isLocalizedPath(path)) {
-            return '';
-          }
-
-          const localeLinks = locales
-            .map((locale) => {
-              const href = `${base}${localizeHref(path, { locale })}`;
-              return `\n    <xhtml:link rel="alternate" hreflang="${localeConfig[locale].hreflang}" href="${href}" />`;
-            })
-            .join('');
-          const defaultHref = `${base}${localizeHref(path, {
-            locale: baseLocale,
-          })}`;
-          return `${localeLinks}\n    <xhtml:link rel="alternate" hreflang="x-default" href="${defaultHref}" />`;
-        };
-
-        const urlEntry = (
-          path: string,
-          opts?: { changefreq?: string; priority?: string; lastmod?: string }
-        ) => {
-          const loc = isLocalizedPath(path)
-            ? localizeHref(path, { locale: baseLocale })
-            : path;
-          const lastmod = opts?.lastmod
-            ? `\n    <lastmod>${opts.lastmod}</lastmod>`
-            : '';
-          const changefreq = opts?.changefreq
-            ? `\n    <changefreq>${opts.changefreq}</changefreq>`
-            : '';
-          const priority = opts?.priority
-            ? `\n    <priority>${opts.priority}</priority>`
-            : '';
-          return `  <url>\n    <loc>${base}${loc}</loc>${alternates(path)}${lastmod}${changefreq}${priority}\n  </url>`;
-        };
-
-        const staticPart = staticUrls
-          .map((u) =>
-            urlEntry(u.path, { changefreq: u.changefreq, priority: u.priority })
-          )
-          .join('\n');
-
-        let blogPart = '';
+        const pages = [...staticUrls];
         if (websiteConfig.blog?.enable) {
-          const posts = getSortedPosts(baseLocale);
-          blogPart = posts
-            .map((p) =>
-              urlEntry(`/blog/${p.slug}`, {
-                changefreq: 'weekly',
-                lastmod: new Date(p.date).toISOString().slice(0, 10),
-              })
-            )
-            .join('\n');
+          const postsBySlug = new Map<
+            string,
+            { availableLocales: Locale[]; lastmod: string }
+          >();
+          for (const locale of locales) {
+            for (const post of getSortedPosts(locale)) {
+              const existing = postsBySlug.get(post.slug);
+              if (existing) {
+                existing.availableLocales.push(locale);
+              } else {
+                postsBySlug.set(post.slug, {
+                  availableLocales: [locale],
+                  lastmod: new Date(post.date).toISOString().slice(0, 10),
+                });
+              }
+            }
+          }
+          for (const [slug, post] of postsBySlug) {
+            pages.push({
+              path: `/blog/${slug}`,
+              changefreq: 'weekly',
+              lastmod: post.lastmod,
+              availableLocales: post.availableLocales,
+            });
+          }
         }
 
-        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${staticPart}
-${blogPart ? `\n${blogPart}` : ''}
-</urlset>`;
+        const sitemap = renderSitemap(base, pages);
 
         return new Response(sitemap, {
           headers: {
