@@ -8,8 +8,19 @@ import { Logo } from '@/components/shared/logo';
 import BuiltWithButton from '@/components/shared/built-with-button';
 import { Link, useLocation } from '@tanstack/react-router';
 import { websiteConfig } from '@/config/website';
+import { getContentHref } from '@/lib/content-links';
+import { getLocale } from '@/lib/locale';
+import { getPathWithLocale } from '@/lib/urls';
+import { Routes } from '@/lib/routes';
+
+const legalPaths = new Set<string>([
+  Routes.CookiePolicy,
+  Routes.PrivacyPolicy,
+  Routes.TermsOfService,
+]);
 export function Footer({ className }: React.HTMLAttributes<HTMLElement>) {
   const pathname = useLocation().pathname;
+  const locale = getLocale();
   const footerLinks = getFooterLinks();
   const socialLinks = getSocialLinks();
   return (
@@ -57,37 +68,51 @@ export function Footer({ className }: React.HTMLAttributes<HTMLElement>) {
                 {section.title}
               </span>
               <ul className="mt-4 list-inside space-y-3">
-                {section.items?.map(
-                  (item) =>
-                    item.href && (
-                      <li key={item.title}>
-                        {item.external ? (
-                          <a
-                            href={item.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-muted-foreground transition-colors duration-150 hover:text-primary focus-visible:text-primary data-[active=true]:font-semibold data-[active=true]:text-primary"
-                          >
-                            {item.title}
-                          </a>
-                        ) : (
-                          <Link
-                            to={item.href}
-                            data-active={
-                              item.href.includes('#')
-                                ? undefined
-                                : isLinkActive(item.href, pathname)
-                                  ? 'true'
-                                  : undefined
-                            }
-                            className="text-sm text-muted-foreground transition-colors duration-150 hover:text-primary focus-visible:text-primary data-[active=true]:font-semibold data-[active=true]:text-primary"
-                          >
-                            {item.title}
-                          </Link>
-                        )}
-                      </li>
-                    )
-                )}
+                {section.items?.map((item) => {
+                  if (!item.href) return null;
+                  const canonicalHref = legalPaths.has(item.href)
+                    ? getContentHref(item.href, locale)
+                    : null;
+                  const fallbackHref =
+                    canonicalHref &&
+                    canonicalHref !== getPathWithLocale(item.href, locale)
+                      ? canonicalHref
+                      : null;
+                  const linkClassName =
+                    'text-sm text-muted-foreground transition-colors duration-150 hover:text-primary focus-visible:text-primary data-[active=true]:font-semibold data-[active=true]:text-primary';
+                  return (
+                    <li key={item.title}>
+                      {item.external ? (
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={linkClassName}
+                        >
+                          {item.title}
+                        </a>
+                      ) : fallbackHref ? (
+                        <a href={fallbackHref} className={linkClassName}>
+                          {item.title}
+                        </a>
+                      ) : (
+                        <Link
+                          to={item.href}
+                          data-active={
+                            item.href.includes('#')
+                              ? undefined
+                              : isLinkActive(item.href, pathname)
+                                ? 'true'
+                                : undefined
+                          }
+                          className={linkClassName}
+                        >
+                          {item.title}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

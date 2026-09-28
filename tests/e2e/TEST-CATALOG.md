@@ -62,6 +62,7 @@ errors or page errors.
 | # | Test name | Flow |
 |---|---|---|
 | 1 | Public pages render successfully | Open `/`, `/pricing`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
+| 1a | Localized content indexing | Blog and legal documents use each available translation as canonical and reciprocal hreflang; sitemap lists each available URL. Missing translations are omitted from sitemap/alternates, and explicit unavailable language URLs redirect to a real version while preserving the query. |
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
 | 3 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls are usable, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
 | 4 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |

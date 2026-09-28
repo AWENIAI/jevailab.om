@@ -1,5 +1,6 @@
 import { Markdown } from '@/components/markdown/markdown';
 import { Card, CardContent } from '@/components/ui/card';
+import { localeConfig } from '@/lib/locale';
 import type { PageDoc } from '@/lib/pages';
 import type { MarkdownResult } from '@/lib/markdown';
 
@@ -13,7 +14,10 @@ export function MarkdownPage({
   const { title, description } = page;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div
+      lang={localeConfig[page.locale].hreflang}
+      className="mx-auto max-w-4xl space-y-8"
+    >
       <div className="space-y-4">
         <h1 className="text-center text-3xl font-bold tracking-tight">
           {title}

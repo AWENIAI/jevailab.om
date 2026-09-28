@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import Container from '@/components/layout/container';
 import { MarkdownPage } from '@/components/page/markdown-page';
-import { getPageBySlug } from '@/lib/pages';
+import { getPageBySlug, getPageLocales } from '@/lib/pages';
 import { renderMarkdown } from '@/lib/markdown';
 import { websiteConfig } from '@/config/website';
 import { seo } from '@/lib/seo';
@@ -18,6 +18,8 @@ export const Route = createFileRoute('/(legals)/privacy')({
     return seo('/privacy', {
       title: `${p.title} | ${websiteConfig.metadata?.name}`,
       description: p.description,
+      canonicalLocale: p.locale,
+      alternateLocales: getPageLocales('privacy'),
     });
   },
   component: PrivacyPage,

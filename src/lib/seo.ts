@@ -1,6 +1,5 @@
 import { websiteConfig } from '@/config/website';
 import {
-  getCanonicalUrl,
   getCanonicalUrlForLocale,
   getOgImage,
   twitterHandleFromUrl,
@@ -11,6 +10,7 @@ import {
   isLocalizedPath,
   localeConfig,
   locales,
+  type Locale,
 } from '@/lib/locale';
 
 /**
@@ -27,25 +27,35 @@ export function seo(
     keywords?: string;
     image?: string;
     type?: 'website' | 'article';
+    canonicalLocale?: Locale;
+    alternateLocales?: readonly Locale[];
   }
 ) {
-  const url = getCanonicalUrl(path);
+  const currentLocale = getLocale();
+  const canonicalLocale = options.canonicalLocale ?? currentLocale;
+  const url = getCanonicalUrlForLocale(path, canonicalLocale);
   const image = options.image ?? getOgImage();
   const localized = isLocalizedPath(path);
-  const alternateLinks = localized
-    ? [
-        ...locales.map((locale) => ({
-          rel: 'alternate',
-          hrefLang: localeConfig[locale].hreflang,
-          href: getCanonicalUrlForLocale(path, locale),
-        })),
-        {
-          rel: 'alternate',
-          hrefLang: 'x-default',
-          href: getCanonicalUrlForLocale(path, baseLocale),
-        },
-      ]
-    : [];
+  const alternateLocales = options.alternateLocales ?? locales;
+  const alternateLinks =
+    localized && currentLocale === canonicalLocale
+      ? [
+          ...alternateLocales.map((locale) => ({
+            rel: 'alternate',
+            hrefLang: localeConfig[locale].hreflang,
+            href: getCanonicalUrlForLocale(path, locale),
+          })),
+          ...(alternateLocales.includes(baseLocale)
+            ? [
+                {
+                  rel: 'alternate',
+                  hrefLang: 'x-default',
+                  href: getCanonicalUrlForLocale(path, baseLocale),
+                },
+              ]
+            : []),
+        ]
+      : [];
 
   return {
     meta: metadata({ ...options, url, image, type: options.type ?? 'website' }),

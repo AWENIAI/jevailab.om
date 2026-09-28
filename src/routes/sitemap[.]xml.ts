@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
 import { renderSitemap } from '@/lib/sitemap';
 import { getSortedPosts } from '@/lib/blog';
+import { getPageLocales } from '@/lib/pages';
 import { websiteConfig } from '@/config/website';
 import { locales, type Locale } from '@/lib/locale';
 
@@ -40,7 +41,14 @@ export const Route = createFileRoute('/sitemap.xml')({
           staticUrls.push({ path: '/pricing', changefreq: 'weekly' });
         }
 
-        const pages = [...staticUrls];
+        const pages = staticUrls.map((page) => ({
+          ...page,
+          availableLocales: ['/terms', '/privacy', '/cookie'].includes(
+            page.path
+          )
+            ? getPageLocales(page.path.slice(1))
+            : undefined,
+        }));
         if (websiteConfig.blog?.enable) {
           const postsBySlug = new Map<
             string,

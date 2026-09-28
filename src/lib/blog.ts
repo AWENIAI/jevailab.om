@@ -44,3 +44,9 @@ export function getPaginatedPosts(page: number): {
     currentPage,
   };
 }
+
+export function getPostLocales(slug: string): Locale[] {
+  return (allBlogs as BlogPost[])
+    .filter((item) => item.slug === slug)
+    .map((item) => item.locale);
+}

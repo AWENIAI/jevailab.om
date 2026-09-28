@@ -14,3 +14,9 @@ export function getPageBySlug(
     pages.find((p) => p.slug === slug && p.locale === baseLocale)
   );
 }
+
+export function getPageLocales(slug: string): Locale[] {
+  return (allPages as PageDoc[])
+    .filter((item) => item.slug === slug)
+    .map((item) => item.locale);
+}

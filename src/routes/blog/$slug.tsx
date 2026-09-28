@@ -4,11 +4,11 @@ import Container from '@/components/layout/container';
 import { Markdown } from '@/components/markdown/markdown';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { getPostBySlug } from '@/lib/blog';
+import { getPostBySlug, getPostLocales } from '@/lib/blog';
 import { renderMarkdown } from '@/lib/markdown';
 import { websiteConfig } from '@/config/website';
-import { getCanonicalUrl, getImageUrl } from '@/lib/urls';
-import { getLocale, localeConfig } from '@/lib/locale';
+import { getCanonicalUrlForLocale, getImageUrl } from '@/lib/urls';
+import { localeConfig } from '@/lib/locale';
 import { seo } from '@/lib/seo';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { formatDate } from '@/lib/formatter';
@@ -28,19 +28,21 @@ export const Route = createFileRoute('/blog/$slug')({
     const description =
       post.description ?? websiteConfig.metadata?.description ?? '';
     const image = post.image ? getImageUrl(post.image) : undefined;
-    const canonicalUrl = getCanonicalUrl(path);
+    const canonicalUrl = getCanonicalUrlForLocale(path, post.locale);
     const metadata = seo(path, {
       title,
       description,
       image,
       type: 'article',
+      canonicalLocale: post.locale,
+      alternateLocales: getPostLocales(params.slug),
     });
     const articleJsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: post.title,
       description,
-      inLanguage: localeConfig[getLocale()].hreflang,
+      inLanguage: localeConfig[post.locale].hreflang,
       ...(image && { image }),
       datePublished: new Date(post.date).toISOString(),
       dateModified: new Date(post.date).toISOString(),
@@ -95,7 +97,7 @@ function BlogPostPage() {
         </Button>
 
         <Card className="px-5 py-8 md:px-10 md:py-12">
-          <article>
+          <article lang={localeConfig[post.locale].hreflang}>
             <div className="mb-4 flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
               <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium capitalize">
                 {post.category}

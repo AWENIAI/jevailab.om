@@ -97,3 +97,35 @@ test.describe('public page smoke coverage', () => {
     expect(await response.json()).toEqual({ message: 'pong' });
   });
 });
+
+test('localized content metadata and sitemap agree', async ({
+  page,
+  request,
+}) => {
+  for (const path of ['/terms', '/blog/getting-started']) {
+    for (const locale of locales) {
+      const localized = localizedPath(path, locale);
+      await page.goto(localized);
+      const canonical = page.locator('link[rel="canonical"]');
+      await expect(canonical).toHaveAttribute(
+        'href',
+        new RegExp(`${localized}$`)
+      );
+      const alternates = page.locator('link[rel="alternate"][hreflang]');
+      await expect(alternates).toHaveCount(3);
+    }
+  }
+
+  const origin = new URL(page.url()).origin;
+  const response = await request.get('/sitemap.xml');
+  expect(response.ok()).toBe(true);
+  const xml = await response.text();
+  for (const path of [
+    '/terms',
+    '/zh/terms',
+    '/blog/getting-started',
+    '/zh/blog/getting-started',
+  ]) {
+    expect(xml).toContain(`<loc>${origin}${path}</loc>`);
+  }
+});
