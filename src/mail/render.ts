@@ -5,6 +5,7 @@ import ContactMessage from './templates/contact-message';
 import ForgotPassword from './templates/forgot-password';
 import SubscribeNewsletter from './templates/subscribe-newsletter';
 import VerifyEmail from './templates/verify-email';
+import { logOperationalEvent } from '@/lib/observability';
 
 const EmailTemplates = {
   forgotPassword: ForgotPassword,
@@ -39,7 +40,7 @@ export async function renderEmailHtml(email: ReactElement): Promise<string> {
       return reactDomServer.renderToString(email);
     }
   } catch (error) {
-    console.error('[mail] Email rendering failed:', error);
+    logOperationalEvent.error('[mail] Email rendering failed:', error);
     throw error;
   }
   throw new Error('No suitable React DOM server renderer available');

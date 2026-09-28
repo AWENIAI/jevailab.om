@@ -1,3 +1,4 @@
+import { logOperationalEvent } from '@/lib/observability';
 import { websiteConfig } from '@/config/website';
 import { serverEnv } from '@/env/server';
 import { getBaseUrl } from '@/lib/urls';
@@ -19,7 +20,10 @@ async function sendMessage(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    console.error('Failed to send Discord message:', response);
+    logOperationalEvent.error(
+      'Failed to send Discord message:',
+      response.statusText
+    );
   }
 }
 
@@ -68,11 +72,11 @@ export class DiscordProvider implements NotificationProvider {
       };
       if (this.avatarUrl) body.avatar_url = this.avatarUrl;
       await sendMessage(this.webhookUrl, body);
-      console.log(
+      logOperationalEvent.log(
         `Successfully sent Discord notification for user ${userName}`
       );
     } catch (error) {
-      console.error('Failed to send Discord notification:', error);
+      logOperationalEvent.error('Failed to send Discord notification:', error);
     }
   }
 }

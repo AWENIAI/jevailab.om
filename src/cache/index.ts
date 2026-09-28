@@ -1,6 +1,7 @@
 import { websiteConfig } from '@/config/website';
 import { KvCacheProvider } from './provider/kv';
 import type { CacheOptions, CacheProvider, CacheProviderName } from './types';
+import { logOperationalEvent } from '@/lib/observability';
 export { CACHE_TTL } from './constants';
 export { createCacheKey } from './utils';
 
@@ -40,16 +41,16 @@ export async function getOrSetCache<T>({
   try {
     const cached = await provider.getJson<T>(key);
     if (cached !== null) return cached;
-  } catch (error) {
-    console.warn('[cache] read failed', { key, error });
+  } catch {
+    logOperationalEvent.warn('[cache] read failed', key);
   }
 
   const value = await fetcher();
 
   try {
     await provider.setJson(key, value, ttlSeconds);
-  } catch (error) {
-    console.warn('[cache] write failed', { key, error });
+  } catch {
+    logOperationalEvent.warn('[cache] write failed', key);
   }
 
   return value;
@@ -61,8 +62,8 @@ export async function deleteCache(key: string): Promise<void> {
 
   try {
     await provider.delete(key);
-  } catch (error) {
-    console.warn('[cache] delete failed', { key, error });
+  } catch {
+    logOperationalEvent.warn('[cache] delete failed', key);
   }
 }
 
@@ -72,7 +73,7 @@ export async function deleteCacheByPrefix(prefix: string): Promise<void> {
 
   try {
     await provider.deleteByPrefix(prefix);
-  } catch (error) {
-    console.warn('[cache] delete by prefix failed', { prefix, error });
+  } catch {
+    logOperationalEvent.warn('[cache] delete by prefix failed', prefix);
   }
 }

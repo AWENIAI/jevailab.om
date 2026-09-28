@@ -1,3 +1,4 @@
+import { logOperationalEvent } from '@/lib/observability';
 import { serverEnv } from '@/env/server';
 import type {
   NotificationProvider,
@@ -17,7 +18,10 @@ async function sendMessage(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    console.error('Failed to send Feishu message:', response);
+    logOperationalEvent.error(
+      'Failed to send Feishu message:',
+      response.statusText
+    );
   }
 }
 
@@ -45,9 +49,11 @@ export class FeishuProvider implements NotificationProvider {
           text: `🎉 New Purchase\nUsername: ${userName}\nAmount: $${amount.toFixed(2)}\nCustomer ID: ${customerId}\nSession ID: ${sessionId}`,
         },
       });
-      console.log(`Successfully sent Feishu notification for user ${userName}`);
+      logOperationalEvent.log(
+        `Successfully sent Feishu notification for user ${userName}`
+      );
     } catch (error) {
-      console.error('Failed to send Feishu notification:', error);
+      logOperationalEvent.error('Failed to send Feishu notification:', error);
     }
   }
 }

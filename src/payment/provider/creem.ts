@@ -25,6 +25,7 @@ import type {
   PortalResult,
 } from '../types';
 import { PaymentScenes, PaymentTypes, PlanIntervals } from '../types';
+import { logOperationalEvent } from '@/lib/observability';
 
 // ─── Creem Webhook Types ──────────────────────────────────────
 // The core SDK does not include webhook types or verification.
@@ -190,7 +191,7 @@ export class CreemProvider implements PaymentProvider {
         id: checkout.id,
       };
     } catch (error) {
-      console.error('Creem create checkout error:', error);
+      logOperationalEvent.error('Creem create checkout error:', error);
       throw new Error('Failed to create Creem checkout session');
     }
   }
@@ -217,7 +218,7 @@ export class CreemProvider implements PaymentProvider {
         url: links.customerPortalLink,
       };
     } catch (error) {
-      console.error('Creem create customer portal error:', error);
+      logOperationalEvent.error('Creem create customer portal error:', error);
       throw new Error('Failed to create Creem customer portal');
     }
   }
@@ -253,7 +254,7 @@ export class CreemProvider implements PaymentProvider {
 
       const raw = JSON.parse(payload);
       const eventType: string = raw.eventType;
-      console.log(`handle Creem webhook event, type: ${eventType}`);
+      logOperationalEvent.log(`handle Creem webhook event, type: ${eventType}`);
 
       switch (eventType) {
         case 'checkout.completed': {
@@ -317,13 +318,15 @@ export class CreemProvider implements PaymentProvider {
           break;
         }
         default:
-          console.warn(`Unhandled Creem webhook event: ${eventType}`);
+          logOperationalEvent.warn(
+            `Unhandled Creem webhook event: ${eventType}`
+          );
       }
     } catch (error) {
       // Signature failures must reach the route unwrapped so it can answer
       // 400 instead of acknowledging a forged request with 200.
       if (error instanceof InvalidWebhookSignatureError) throw error;
-      console.error('Creem webhook handling error:', error);
+      logOperationalEvent.error('Creem webhook handling error:', error);
       throw new Error('Failed to handle Creem webhook event');
     }
   }
@@ -412,14 +415,14 @@ export class CreemProvider implements PaymentProvider {
   private async onCheckoutCompleted(
     event: CreemCheckoutCompletedEvent
   ): Promise<void> {
-    console.log('>> Handle Creem checkout completed:', event.id);
+    logOperationalEvent.log('>> Handle Creem checkout completed:', event.id);
 
     const { object } = event;
     const isOneTime = object.product.billingType !== 'recurring';
     const userId = this.extractCheckoutUserId(object);
 
     if (!userId) {
-      console.error('<< No userId found in Creem checkout event');
+      logOperationalEvent.error('<< No userId found in Creem checkout event');
       return;
     }
 
@@ -434,7 +437,7 @@ export class CreemProvider implements PaymentProvider {
       await this.createSubscriptionPaymentRecord(event, userId);
     }
 
-    console.log('<< Handle Creem checkout completed success');
+    logOperationalEvent.log('<< Handle Creem checkout completed success');
   }
 
   /**
@@ -451,7 +454,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionPaid(
     event: CreemSubscriptionPaidEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription paid:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription paid:', event.id);
 
     const sub = event.object;
 
@@ -475,7 +478,7 @@ export class CreemProvider implements PaymentProvider {
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
 
-    console.log('<< Handle Creem subscription paid success');
+    logOperationalEvent.log('<< Handle Creem subscription paid success');
   }
 
   /**
@@ -484,7 +487,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionCanceled(
     event: CreemSubscriptionCanceledEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription canceled:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription canceled:', event.id);
 
     const sub = event.object;
 
@@ -500,7 +503,7 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Marked payment record as canceled');
+    logOperationalEvent.log('<< Marked payment record as canceled');
   }
 
   /**
@@ -512,7 +515,10 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionScheduledCancel(
     event: CreemSubscriptionScheduledCancelEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription scheduled cancel:', event.id);
+    logOperationalEvent.log(
+      '>> Handle Creem subscription scheduled cancel:',
+      event.id
+    );
 
     const sub = event.object;
 
@@ -527,7 +533,9 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Marked payment record as scheduled for cancellation');
+    logOperationalEvent.log(
+      '<< Marked payment record as scheduled for cancellation'
+    );
   }
 
   /**
@@ -539,7 +547,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionExpired(
     event: CreemSubscriptionExpiredEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription expired:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription expired:', event.id);
 
     const sub = event.object;
 
@@ -554,14 +562,14 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Marked payment record as past due (expired)');
+    logOperationalEvent.log('<< Marked payment record as past due (expired)');
   }
 
   /** Suspend access after Creem exhausts payment collection attempts. */
   private async onSubscriptionUnpaid(
     event: CreemSubscriptionUnpaidEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription unpaid:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription unpaid:', event.id);
 
     const db = getDb();
     const result = await db
@@ -585,7 +593,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionPastDue(
     event: CreemSubscriptionPastDueEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription past_due:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription past_due:', event.id);
 
     const sub = event.object;
 
@@ -600,7 +608,7 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Marked payment record as past_due');
+    logOperationalEvent.log('<< Marked payment record as past_due');
   }
 
   /**
@@ -612,7 +620,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionTrialing(
     event: CreemSubscriptionTrialingEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription trialing:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription trialing:', event.id);
 
     const sub = event.object;
 
@@ -634,7 +642,7 @@ export class CreemProvider implements PaymentProvider {
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
 
-    console.log('<< Handle Creem subscription trialing success');
+    logOperationalEvent.log('<< Handle Creem subscription trialing success');
   }
 
   /**
@@ -643,7 +651,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionPaused(
     event: CreemSubscriptionPausedEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription paused:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription paused:', event.id);
 
     const sub = event.object;
 
@@ -658,7 +666,7 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Marked payment record as paused');
+    logOperationalEvent.log('<< Marked payment record as paused');
   }
 
   /**
@@ -673,7 +681,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionActive(
     event: CreemSubscriptionActiveEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription active:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription active:', event.id);
 
     const sub = event.object;
 
@@ -691,7 +699,9 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Updated subscription record to active with period dates');
+    logOperationalEvent.log(
+      '<< Updated subscription record to active with period dates'
+    );
   }
 
   /**
@@ -706,7 +716,7 @@ export class CreemProvider implements PaymentProvider {
   private async onSubscriptionUpdate(
     event: CreemSubscriptionUpdateEvent
   ): Promise<void> {
-    console.log('>> Handle Creem subscription update:', event.id);
+    logOperationalEvent.log('>> Handle Creem subscription update:', event.id);
 
     const sub = event.object;
 
@@ -732,7 +742,9 @@ export class CreemProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     this.assertSubscriptionUpdated(result, event.eventType, sub.id);
-    console.log('<< Updated subscription record from subscription.update');
+    logOperationalEvent.log(
+      '<< Updated subscription record from subscription.update'
+    );
   }
 
   private assertSubscriptionUpdated(
@@ -757,7 +769,7 @@ export class CreemProvider implements PaymentProvider {
     event: CreemCheckoutCompletedEvent,
     userId: string
   ): Promise<void> {
-    console.log('>> Create Creem one-time payment record');
+    logOperationalEvent.log('>> Create Creem one-time payment record');
 
     const { object } = event;
     const currentDate = new Date();
@@ -798,13 +810,17 @@ export class CreemProvider implements PaymentProvider {
         amount,
       });
 
-      console.log('<< Created Creem one-time payment record success');
+      logOperationalEvent.log(
+        '<< Created Creem one-time payment record success'
+      );
     } catch (error) {
       if (
         error instanceof Error &&
         error.message.toLowerCase().includes('unique constraint')
       ) {
-        console.log('<< One-time payment record already exists, skipping');
+        logOperationalEvent.log(
+          '<< One-time payment record already exists, skipping'
+        );
         return;
       }
       throw error;
@@ -819,7 +835,9 @@ export class CreemProvider implements PaymentProvider {
     userId: string,
     statusOverride?: PaymentStatus
   ): Promise<void> {
-    console.log('>> Create Creem subscription payment record (checkout)');
+    logOperationalEvent.log(
+      '>> Create Creem subscription payment record (checkout)'
+    );
 
     const { object } = event;
     const currentDate = new Date();
@@ -857,13 +875,17 @@ export class CreemProvider implements PaymentProvider {
         updatedAt: currentDate,
       });
 
-      console.log('<< Created Creem subscription payment record success');
+      logOperationalEvent.log(
+        '<< Created Creem subscription payment record success'
+      );
     } catch (error) {
       if (
         error instanceof Error &&
         error.message.toLowerCase().includes('unique constraint')
       ) {
-        console.log('<< Subscription payment record already exists, skipping');
+        logOperationalEvent.log(
+          '<< Subscription payment record already exists, skipping'
+        );
         return;
       }
       throw error;
@@ -928,9 +950,12 @@ export class CreemProvider implements PaymentProvider {
           updatedAt: new Date(),
         })
         .where(eq(user.id, userId));
-      console.log('Updated user with Creem customer ID');
+      logOperationalEvent.log('Updated user with Creem customer ID');
     } catch (error) {
-      console.error('Update user with Creem customer ID error:', error);
+      logOperationalEvent.error(
+        'Update user with Creem customer ID error:',
+        error
+      );
       throw error;
     }
   }

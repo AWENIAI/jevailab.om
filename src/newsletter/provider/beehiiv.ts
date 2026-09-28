@@ -6,6 +6,7 @@ import type {
   UnsubscribeNewsletterParams,
 } from '@/newsletter/types';
 import { BeehiivClient } from '@beehiiv/sdk';
+import { logOperationalEvent } from '@/lib/observability';
 
 /**
  * Beehiiv newsletter provider
@@ -66,11 +67,11 @@ export class BeehiivNewsletterProvider implements NewsletterProvider {
             }
           );
 
-          console.log('Reactivated subscription', email);
+          logOperationalEvent.log('Reactivated subscription', email);
           return !!updateResult;
         }
 
-        console.log('Subscription already active', email);
+        logOperationalEvent.log('Subscription already active', email);
         return true;
       }
 
@@ -84,14 +85,14 @@ export class BeehiivNewsletterProvider implements NewsletterProvider {
       );
 
       if (!result.data) {
-        console.error('Error creating subscription', email);
+        logOperationalEvent.error('Error creating subscription', email);
         return false;
       }
 
-      console.log('Created new subscription', email);
+      logOperationalEvent.log('Created new subscription', email);
       return true;
     } catch (error) {
-      console.error('Error subscribing to newsletter', error);
+      logOperationalEvent.error('Error subscribing to newsletter', error);
       return false;
     }
   }
@@ -104,7 +105,10 @@ export class BeehiivNewsletterProvider implements NewsletterProvider {
       const subscription = await this.getSubscription(email);
 
       if (!subscription) {
-        console.log('Subscription not found for unsubscribe', email);
+        logOperationalEvent.log(
+          'Subscription not found for unsubscribe',
+          email
+        );
         return true;
       }
 
@@ -117,10 +121,10 @@ export class BeehiivNewsletterProvider implements NewsletterProvider {
         ],
       });
 
-      console.log('Unsubscribed from newsletter', email);
+      logOperationalEvent.log('Unsubscribed from newsletter', email);
       return true;
     } catch (error) {
-      console.error('Error unsubscribing from newsletter', error);
+      logOperationalEvent.error('Error unsubscribing from newsletter', error);
       return false;
     }
   }
@@ -135,15 +139,18 @@ export class BeehiivNewsletterProvider implements NewsletterProvider {
       const subscription = await this.getSubscription(email);
 
       if (!subscription) {
-        console.log('Subscription not found:', email);
+        logOperationalEvent.log('Subscription not found:', email);
         return false;
       }
 
       const isActive = subscription.status === 'active';
-      console.log('Check subscribe status:', { email, status: isActive });
+      logOperationalEvent.log(
+        'Check subscribe status:',
+        `${email} ${isActive}`
+      );
       return isActive;
     } catch (error) {
-      console.error('Error checking subscribe status:', error);
+      logOperationalEvent.error('Error checking subscribe status:', error);
       return false;
     }
   }

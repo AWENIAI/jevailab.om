@@ -5,6 +5,7 @@ import {
   isPaymentEnabled,
 } from '@/payment';
 import { InvalidWebhookSignatureError } from '@/payment/errors';
+import { logOperationalEvent } from '@/lib/observability';
 
 type CreemWebhookDependencies = {
   isPaymentEnabled: () => boolean;
@@ -40,7 +41,7 @@ export async function handleCreemWebhookRequest(
   const payload = await request.text();
   const signature = request.headers.get('creem-signature') ?? '';
   if (!payload || !signature) {
-    console.warn('Creem webhook: missing payload or signature');
+    logOperationalEvent.warn('Creem webhook: missing payload or signature');
     return Response.json(
       { error: 'Missing payload or signature' },
       { status: 400 }
@@ -50,7 +51,7 @@ export async function handleCreemWebhookRequest(
     await dependencies.handleWebhookEvent(payload, signature);
     return Response.json({ received: true }, { status: 200 });
   } catch (err) {
-    console.error('Creem webhook error:', err);
+    logOperationalEvent.error('Creem webhook error:', err);
     if (err instanceof InvalidWebhookSignatureError) {
       return Response.json(
         { error: 'Invalid Creem signature' },

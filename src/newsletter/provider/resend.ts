@@ -6,6 +6,7 @@ import type {
   UnsubscribeNewsletterParams,
 } from '@/newsletter/types';
 import { Resend } from 'resend';
+import { logOperationalEvent } from '@/lib/observability';
 
 /**
  * Resend newsletter provider
@@ -43,12 +44,12 @@ export class ResendNewsletterProvider implements NewsletterProvider {
         unsubscribed: false,
       });
       if (updateResult.error) {
-        console.error('Error updating contact', updateResult.error);
+        logOperationalEvent.error('Error updating contact', updateResult.error);
         return false;
       }
       return true;
     } catch (error) {
-      console.error('Error subscribing newsletter', error);
+      logOperationalEvent.error('Error subscribing newsletter', error);
       return false;
     }
   }
@@ -60,12 +61,15 @@ export class ResendNewsletterProvider implements NewsletterProvider {
         unsubscribed: true,
       });
       if (result.error) {
-        console.error('Error unsubscribing newsletter', result.error);
+        logOperationalEvent.error(
+          'Error unsubscribing newsletter',
+          result.error
+        );
         return false;
       }
       return true;
     } catch (error) {
-      console.error('Error unsubscribing newsletter', error);
+      logOperationalEvent.error('Error unsubscribing newsletter', error);
       return false;
     }
   }
@@ -78,7 +82,7 @@ export class ResendNewsletterProvider implements NewsletterProvider {
       if (result.error) return false;
       return !result.data?.unsubscribed;
     } catch (error) {
-      console.error('Error checking subscribe status', error);
+      logOperationalEvent.error('Error checking subscribe status', error);
       return false;
     }
   }

@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { ResendProvider } from './provider/resend';
 import { CloudflareProvider } from './provider/cloudflare';
+import { logOperationalEvent } from '@/lib/observability';
 
 let mailProvider: MailProvider | null = null;
 
@@ -54,11 +55,11 @@ export async function sendEmail(
         ? await provider.sendTemplate(params)
         : await provider.sendRawEmail(params);
     if (!result.success) {
-      console.error('[mail] Send failed:', result.error);
+      logOperationalEvent.error('[mail] Send failed:', result.error);
     }
     return result;
   } catch (error) {
-    console.error('[mail] Unexpected error:', error);
+    logOperationalEvent.error('[mail] Unexpected error:', error);
     return { success: false, error };
   }
 }

@@ -5,6 +5,7 @@ import {
   isPaymentEnabled,
 } from '@/payment';
 import { InvalidWebhookSignatureError } from '@/payment/errors';
+import { logOperationalEvent } from '@/lib/observability';
 
 type WaffoWebhookDependencies = {
   isPaymentEnabled: () => boolean;
@@ -40,7 +41,7 @@ export async function handleWaffoWebhookRequest(
   const payload = await request.text();
   const signature = request.headers.get('x-waffo-signature') ?? '';
   if (!payload || !signature) {
-    console.warn('Waffo webhook: missing payload or signature');
+    logOperationalEvent.warn('Waffo webhook: missing payload or signature');
     return Response.json(
       { error: 'Missing payload or signature' },
       { status: 400 }
@@ -50,7 +51,7 @@ export async function handleWaffoWebhookRequest(
     await dependencies.handleWebhookEvent(payload, signature);
     return Response.json({ received: true }, { status: 200 });
   } catch (err) {
-    console.error('Waffo webhook error:', err);
+    logOperationalEvent.error('Waffo webhook error:', err);
     if (err instanceof InvalidWebhookSignatureError) {
       return Response.json(
         { error: 'Invalid Waffo signature' },

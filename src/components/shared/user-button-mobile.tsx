@@ -14,6 +14,7 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { UserAvatar } from '@/components/shared/user-avatar';
+import { logOperationalEvent } from '@/lib/observability';
 interface UserButtonMobileProps {
   user: SessionUser;
 }
@@ -34,7 +35,7 @@ export function UserButtonMobile({ user }: UserButtonMobileProps) {
         },
         onError: (err) => {
           toast.error(m.auth_common_logout_failed());
-          console.error(err);
+          logOperationalEvent.error('sign out error:', err);
         },
       },
     });

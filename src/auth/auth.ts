@@ -15,6 +15,7 @@ import { apiKey } from '@better-auth/api-key';
 import { admin, bearer } from 'better-auth/plugins';
 import { google, verifyGoogleIdToken } from 'better-auth/social-providers';
 import * as z from 'zod';
+import { logOperationalEvent } from '@/lib/observability';
 
 const trustedOrigins = getTrustedOrigins(serverEnv.BETTER_AUTH_TRUSTED_ORIGINS);
 
@@ -227,7 +228,7 @@ export const auth = betterAuth({
     // https://www.better-auth.com/docs/reference/options#onapierror
     errorURL: '/auth/error',
     onError: (error, _ctx) => {
-      console.error('auth error:', error);
+      logOperationalEvent.error('auth error:', error);
     },
   },
 });
@@ -248,11 +249,18 @@ async function onCreateUser(user: User) {
   try {
     const subscribed = await subscribe(user.email);
     if (!subscribed) {
-      console.error(`onCreateUser, user ${user.email} failed to subscribe`);
+      logOperationalEvent.error(
+        `onCreateUser, user ${user.email} failed to subscribe`
+      );
     } else {
-      console.log(`onCreateUser, user ${user.email} subscribed to newsletter`);
+      logOperationalEvent.log(
+        `onCreateUser, user ${user.email} subscribed to newsletter`
+      );
     }
   } catch (error) {
-    console.error('onCreateUser, newsletter subscription error:', error);
+    logOperationalEvent.error(
+      'onCreateUser, newsletter subscription error:',
+      error
+    );
   }
 }

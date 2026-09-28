@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { clientEnv } from '@/env/client';
+import { logOperationalEvent } from '@/lib/observability';
 
 /**
  * Crisp chat widget for customer support
@@ -27,7 +28,7 @@ export function CrispChat() {
         Crisp.configure(websiteId);
         configured.current = true;
       } catch (error) {
-        console.error('Failed to initialize Crisp chat:', error);
+        logOperationalEvent.error('Failed to initialize Crisp chat:', error);
       }
     };
 

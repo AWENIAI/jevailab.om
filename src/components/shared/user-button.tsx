@@ -14,6 +14,7 @@ import { UserAvatar } from './user-avatar';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { SessionUser } from '@/auth/types';
+import { logOperationalEvent } from '@/lib/observability';
 interface UserButtonProps {
   user: SessionUser;
 }
@@ -29,7 +30,7 @@ export function UserButton({ user }: UserButtonProps) {
         },
         onError: (err) => {
           toast.error(m.auth_common_logout_failed());
-          console.error('sign out error:', err);
+          logOperationalEvent.error('sign out error:', err);
         },
       },
     });

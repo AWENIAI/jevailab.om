@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { logOperationalEvent } from '@/lib/observability';
 interface CheckoutButtonProps {
   planId: string;
   priceId: string;
@@ -53,7 +54,7 @@ export function CheckoutButton({
         toast.error(m.pricing_checkout_failed());
       }
     } catch (err) {
-      console.error('Checkout error:', err);
+      logOperationalEvent.error('Checkout error:', err);
       toast.error(m.pricing_checkout_failed());
     } finally {
       setIsLoading(false);

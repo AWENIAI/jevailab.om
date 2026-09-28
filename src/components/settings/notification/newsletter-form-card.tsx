@@ -30,6 +30,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { logOperationalEvent } from '@/lib/observability';
 interface NewsletterFormCardProps {
   className?: string;
 }
@@ -68,7 +69,7 @@ export function NewsletterFormCard({ className }: NewsletterFormCardProps) {
         toast.success(m.settings_notification_newsletter_unsubscribe_success());
       }
     } catch (err) {
-      console.error('newsletter subscription error:', err);
+      logOperationalEvent.error('newsletter subscription error:', err);
       const msg =
         err instanceof Error
           ? err.message

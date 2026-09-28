@@ -4,6 +4,7 @@ import { websiteConfig } from '@/config/website';
 import { sendEmail } from '@/mail';
 import { isSubscribed, subscribe, unsubscribe } from '@/newsletter';
 import { z } from 'zod';
+import { logOperationalEvent } from '@/lib/observability';
 
 const emailSchema = z.email('Please enter a valid email address');
 
@@ -32,7 +33,7 @@ export const getNewsletterStatus = createServerFn({ method: 'GET' })
         },
       });
     } catch (error) {
-      console.error('Check newsletter status error:', error);
+      logOperationalEvent.error('Check newsletter status error:', error);
       throw new Error(
         error instanceof Error ? error.message : 'Something went wrong'
       );
@@ -60,11 +61,11 @@ export const subscribeNewsletter = createServerFn({ method: 'POST' })
             context: { email },
           });
         } catch (e) {
-          console.error('Newsletter welcome email error:', e);
+          logOperationalEvent.error('Newsletter welcome email error:', e);
         }
       }
     } catch (error) {
-      console.error('Subscribe newsletter error:', error);
+      logOperationalEvent.error('Subscribe newsletter error:', error);
       throw new Error(
         error instanceof Error ? error.message : 'Something went wrong'
       );
@@ -83,7 +84,7 @@ export const unsubscribeNewsletter = createServerFn({ method: 'POST' })
       }
       await deleteCache(getNewsletterStatusCacheKey(email));
     } catch (error) {
-      console.error('Unsubscribe newsletter error:', error);
+      logOperationalEvent.error('Unsubscribe newsletter error:', error);
       throw new Error(
         error instanceof Error ? error.message : 'Something went wrong'
       );

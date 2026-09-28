@@ -8,6 +8,7 @@ import type {
   SendTemplateParams,
 } from '@/mail/types';
 import { Resend } from 'resend';
+import { logOperationalEvent } from '@/lib/observability';
 
 /**
  * Resend mail provider implementation.
@@ -41,7 +42,7 @@ export class ResendProvider implements MailProvider {
         text: mailTemplate.text,
       });
     } catch (error) {
-      console.error('Error sending template email:', error);
+      logOperationalEvent.error('Error sending template email:', error);
       return { success: false, error };
     }
   }
@@ -49,12 +50,7 @@ export class ResendProvider implements MailProvider {
   async sendRawEmail(params: SendRawEmailParams): Promise<SendEmailResult> {
     const { to, subject, html, text } = params;
     if (!this.from || !to || !subject || !html) {
-      console.warn('Missing required fields for email send', {
-        from: this.from,
-        to,
-        subject,
-        html,
-      });
+      logOperationalEvent.warn('Missing required fields for email send');
       return { success: false, error: 'Missing required fields' };
     }
     try {
@@ -66,12 +62,12 @@ export class ResendProvider implements MailProvider {
         text,
       });
       if (error) {
-        console.error('Error sending email', error);
+        logOperationalEvent.error('Error sending email', error);
         return { success: false, error };
       }
       return { success: true, messageId: data?.id };
     } catch (error) {
-      console.error('Error sending email:', error);
+      logOperationalEvent.error('Error sending email:', error);
       return { success: false, error };
     }
   }

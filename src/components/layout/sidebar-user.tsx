@@ -35,6 +35,7 @@ import { UserAvatar } from '@/components/shared/user-avatar';
 import { authClient } from '@/auth/client';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import { logOperationalEvent } from '@/lib/observability';
 interface SidebarUserProps {
   user: SessionUser;
   className?: string;
@@ -63,7 +64,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
         },
         onError: (err) => {
           toast.error(m.auth_common_logout_failed());
-          console.error('sign out error:', err);
+          logOperationalEvent.error('sign out error:', err);
         },
       },
     });

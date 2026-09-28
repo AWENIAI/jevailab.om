@@ -1,5 +1,6 @@
 // DO NOT DELETE THIS FILE!!!
 // This file is a good smoke test to make sure the custom server entry is working
+import { logOperationalEvent } from '@/lib/observability';
 import handler from '@tanstack/react-start/server-entry';
 import { localeMiddleware } from '@/locale/middleware';
 import { serverEnv } from '@/env/server';
@@ -13,7 +14,9 @@ import {
  * TanStack Start server entry
  * https://github.com/backpine/tanstack-start-on-cloudflare/blob/main/src/server.ts
  */
-console.log("[server-entry]: using custom server entry in 'src/server.ts'");
+logOperationalEvent.info(
+  "[server-entry]: using custom server entry in 'src/server.ts'"
+);
 
 /**
  * CORS support for the browser extension (mkext-template).

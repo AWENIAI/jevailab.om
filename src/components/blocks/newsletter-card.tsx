@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { logOperationalEvent } from '@/lib/observability';
 const schema = z.object({
   email: z.email(m.newsletter_email_invalid()),
 });
@@ -40,7 +41,7 @@ export default function NewsletterCard() {
       form.reset();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : m.newsletter_error();
-      console.error('newsletter subscription error:', errMsg);
+      logOperationalEvent.error('newsletter subscription error:', errMsg);
       setError(errMsg);
       toast.error(errMsg);
     }

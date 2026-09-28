@@ -1,3 +1,4 @@
+import { logOperationalEvent } from '@/lib/observability';
 import { websiteConfig } from '@/config/website';
 import { getTemplate } from '../render';
 import { serverEnv } from '@/env/server';
@@ -49,7 +50,7 @@ export class CloudflareProvider implements MailProvider {
         text: mailTemplate.text,
       });
     } catch (error) {
-      console.error('Error sending template email:', error);
+      logOperationalEvent.error('Error sending template email:', error);
       return { success: false, error };
     }
   }
@@ -57,12 +58,7 @@ export class CloudflareProvider implements MailProvider {
   async sendRawEmail(params: SendRawEmailParams): Promise<SendEmailResult> {
     const { to, subject, html, text } = params;
     if (!this.from || !to || !subject || !html) {
-      console.warn('Missing required fields for email send', {
-        from: this.from,
-        to,
-        subject,
-        html,
-      });
+      logOperationalEvent.warn('Missing required fields for email send');
       return { success: false, error: 'Missing required fields' };
     }
     try {
@@ -91,14 +87,17 @@ export class CloudflareProvider implements MailProvider {
         const errorMsg =
           data.errors?.map((e) => `${e.code}: ${e.message}`).join(', ') ||
           'Unknown error';
-        console.error('Error sending email via Cloudflare:', errorMsg);
+        logOperationalEvent.error(
+          'Error sending email via Cloudflare:',
+          errorMsg
+        );
         return { success: false, error: errorMsg };
       }
 
       const messageId = data.result?.delivered?.[0];
       return { success: true, messageId };
     } catch (error) {
-      console.error('Error sending email via Cloudflare:', error);
+      logOperationalEvent.error('Error sending email via Cloudflare:', error);
       return { success: false, error };
     }
   }

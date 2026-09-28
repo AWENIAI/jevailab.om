@@ -23,6 +23,7 @@ import type {
   PortalResult,
 } from '../types';
 import { PaymentScenes, PaymentTypes, PlanIntervals } from '../types';
+import { logOperationalEvent } from '@/lib/observability';
 
 export const WAFFO_CUSTOMER_PORTAL_URL =
   'https://pancake.waffo.ai/consumer/portal/login';
@@ -170,7 +171,7 @@ export class WaffoProvider implements PaymentProvider {
         throw new InvalidWebhookSignatureError('Waffo');
       }
       if (event.mode !== expectedMode) {
-        console.warn(
+        logOperationalEvent.warn(
           `Skipping Waffo ${event.mode} event in ${expectedMode} runtime: ${event.eventType}`
         );
         return;
@@ -220,10 +221,12 @@ export class WaffoProvider implements PaymentProvider {
           await this.revokeRefundedPayment(event);
           break;
         case WebhookEventType.RefundFailed:
-          console.warn('Waffo refund failed:', event.eventId);
+          logOperationalEvent.warn('Waffo refund failed:', event.eventId);
           break;
         default:
-          console.warn(`Unhandled Waffo webhook event: ${event.eventType}`);
+          logOperationalEvent.warn(
+            `Unhandled Waffo webhook event: ${event.eventType}`
+          );
       }
     } catch (error) {
       // Signature failures must reach the route unwrapped so it can answer
@@ -237,11 +240,11 @@ export class WaffoProvider implements PaymentProvider {
   /**
    * Extract the structured fields Waffo attaches to API errors so operators
    * can tell why a call failed without diffing raw stack traces. Non-SDK
-   * errors fall back to a plain console.error so the shape is unchanged.
+   * errors fall back to a plain string so the shape is unchanged.
    */
   private logError(context: string, error: unknown): void {
     if (error instanceof WaffoPancakeError) {
-      console.error(
+      logOperationalEvent.error(
         `Waffo ${context} error [status=${error.status}]:`,
         error.errors.map((e) => ({
           layer: e.layer,
@@ -251,7 +254,7 @@ export class WaffoProvider implements PaymentProvider {
       );
       return;
     }
-    console.error(`Waffo ${context} error:`, error);
+    logOperationalEvent.error(`Waffo ${context} error:`, error);
   }
 
   /**
@@ -296,7 +299,9 @@ export class WaffoProvider implements PaymentProvider {
     const userId = this.getUserId(data);
     const priceId = this.getPriceId(data);
     if (!userId || !priceId) {
-      console.warn('Waffo one-time event is missing userId or priceId');
+      logOperationalEvent.warn(
+        'Waffo one-time event is missing userId or priceId'
+      );
       return;
     }
     const now = new Date();
@@ -332,7 +337,9 @@ export class WaffoProvider implements PaymentProvider {
       });
     } catch (error) {
       if (this.isUniqueViolation(error)) {
-        console.log('Waffo one-time payment already exists, skipping');
+        logOperationalEvent.log(
+          'Waffo one-time payment already exists, skipping'
+        );
         return;
       }
       throw error;
@@ -344,7 +351,9 @@ export class WaffoProvider implements PaymentProvider {
     const userId = this.getUserId(data);
     const priceId = this.getPriceId(data);
     if (!userId || !priceId) {
-      console.warn('Waffo subscription event is missing userId or priceId');
+      logOperationalEvent.warn(
+        'Waffo subscription event is missing userId or priceId'
+      );
       return;
     }
     const periodStart = this.parseDate(data.currentPeriodStart);
@@ -376,7 +385,9 @@ export class WaffoProvider implements PaymentProvider {
         });
     } catch (error) {
       if (this.isUniqueViolation(error)) {
-        console.log('Waffo subscription payment already exists, skipping');
+        logOperationalEvent.log(
+          'Waffo subscription payment already exists, skipping'
+        );
         return;
       }
       throw error;
@@ -445,7 +456,9 @@ export class WaffoProvider implements PaymentProvider {
       ...(orderId ? [eq(payment.id, orderId)] : []),
     ];
     if (filters.length === 0) {
-      console.warn('Waffo refund event is missing paymentId and orderId');
+      logOperationalEvent.warn(
+        'Waffo refund event is missing paymentId and orderId'
+      );
       return;
     }
     await getDb()

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { logOperationalEvent } from '@/lib/observability';
 interface CustomerPortalButtonProps {
   userId: string;
   returnUrl?: string;
@@ -41,7 +42,7 @@ export function CustomerPortalButton({
         toast.error(m.pricing_customer_portal_failed());
       }
     } catch (err) {
-      console.error('Customer portal error:', err);
+      logOperationalEvent.error('Customer portal error:', err);
       toast.error(m.pricing_customer_portal_failed());
     } finally {
       setIsLoading(false);

@@ -17,6 +17,7 @@ import type {
   PortalResult,
 } from '../types';
 import { PlanIntervals, PaymentScenes, PaymentTypes } from '../types';
+import { logOperationalEvent } from '@/lib/observability';
 
 /**
  * Stripe payment provider implementation
@@ -75,7 +76,7 @@ export class StripeProvider implements PaymentProvider {
         // This can happen when user was created before Stripe integration or data got out of sync
         // Fix the data inconsistency by updating the user's customerId field
         if (!userId) {
-          console.log(
+          logOperationalEvent.log(
             'User exists but missing customerId, fixing data inconsistency'
           );
           await this.updateUserWithCustomerId(customerId, email);
@@ -94,7 +95,7 @@ export class StripeProvider implements PaymentProvider {
 
       return customer.id;
     } catch (error) {
-      console.error('Create or get customer error:', error);
+      logOperationalEvent.error('Create or get customer error:', error);
       throw new Error('Failed to create or get customer');
     }
   }
@@ -122,12 +123,12 @@ export class StripeProvider implements PaymentProvider {
         .returning({ id: user.id });
 
       if (result.length > 0) {
-        console.log('Updated user with customer ID (hidden)');
+        logOperationalEvent.log('Updated user with customer ID (hidden)');
       } else {
-        console.log('No user found with given email');
+        logOperationalEvent.log('No user found with given email');
       }
     } catch (error) {
-      console.error('Update user with customer ID error:', error);
+      logOperationalEvent.error('Update user with customer ID error:', error);
       throw new Error('Failed to update user with customer ID');
     }
   }
@@ -152,11 +153,11 @@ export class StripeProvider implements PaymentProvider {
       if (result.length > 0) {
         return result[0].id;
       }
-      console.warn('No user found with given customerId');
+      logOperationalEvent.warn('No user found with given customerId');
 
       return undefined;
     } catch (error) {
-      console.error('Find user by customer ID error:', error);
+      logOperationalEvent.error('Find user by customer ID error:', error);
       return undefined;
     }
   }
@@ -297,7 +298,7 @@ export class StripeProvider implements PaymentProvider {
         id: session.id,
       };
     } catch (error) {
-      console.error('Create checkout session error:', error);
+      logOperationalEvent.error('Create checkout session error:', error);
       throw new Error('Failed to create checkout session');
     }
   }
@@ -323,7 +324,7 @@ export class StripeProvider implements PaymentProvider {
         url: session.url,
       };
     } catch (error) {
-      console.error('Create customer portal error:', error);
+      logOperationalEvent.error('Create customer portal error:', error);
       throw new Error('Failed to create customer portal');
     }
   }
@@ -345,7 +346,7 @@ export class StripeProvider implements PaymentProvider {
         this.webhookSecret
       );
       const eventType = event.type;
-      console.log(`handle webhook event, type: ${eventType}`);
+      logOperationalEvent.log(`handle webhook event, type: ${eventType}`);
 
       // Handle subscription events
       if (eventType.startsWith('customer.subscription.')) {
@@ -388,7 +389,7 @@ export class StripeProvider implements PaymentProvider {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? `${error.name}: ${error.message}` : 'Unknown';
-      console.error('handle webhook event error:', errorMessage);
+      logOperationalEvent.error('handle webhook event error:', errorMessage);
       if (
         error instanceof Stripe.errors.StripeSignatureVerificationError ||
         (typeof error === 'object' &&
@@ -417,7 +418,7 @@ export class StripeProvider implements PaymentProvider {
         .limit(1);
 
       if (paymentsByInvoice.length > 0) {
-        console.log('Found payment record by invoice ID');
+        logOperationalEvent.log('Found payment record by invoice ID');
         return paymentsByInvoice[0];
       }
     }
@@ -433,12 +434,15 @@ export class StripeProvider implements PaymentProvider {
         .limit(1);
 
       if (paymentsBySubscription.length > 0) {
-        console.log('Found payment record by subscription ID');
+        logOperationalEvent.log('Found payment record by subscription ID');
         return paymentsBySubscription[0];
       }
     }
 
-    console.warn('No payment record found for invoice:', invoice.id);
+    logOperationalEvent.warn(
+      'No payment record found for invoice:',
+      invoice.id
+    );
     return null;
   }
 
@@ -449,13 +453,15 @@ export class StripeProvider implements PaymentProvider {
    * @param invoice Stripe invoice
    */
   private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-    console.log('>> Handle invoice paid, invoiceId:', invoice.id);
+    logOperationalEvent.log('>> Handle invoice paid, invoiceId:', invoice.id);
 
     try {
       const paymentRecord = await this.findPaymentRecord(invoice);
       if (!paymentRecord) {
         await this.reconstructPaidPayment(invoice);
-        console.log('<< Handle invoice paid success after reconstruction');
+        logOperationalEvent.log(
+          '<< Handle invoice paid success after reconstruction'
+        );
         return;
       }
 
@@ -472,11 +478,11 @@ export class StripeProvider implements PaymentProvider {
         await this.updateOneTimePayment(invoice, paymentRecord);
       }
     } catch (error) {
-      console.error('<< Handle invoice paid error:', error);
+      logOperationalEvent.error('<< Handle invoice paid error:', error);
 
       // Check if it's a duplicate invoice error (database constraint violation)
       if (this.isUniqueConstraintError(error)) {
-        console.log('<< Invoice already processed:', invoice.id);
+        logOperationalEvent.log('<< Invoice already processed:', invoice.id);
         return; // Don't throw, this is expected for duplicate processing
       }
 
@@ -484,7 +490,7 @@ export class StripeProvider implements PaymentProvider {
       throw error;
     }
 
-    console.log('<< Handle invoice paid success');
+    logOperationalEvent.log('<< Handle invoice paid success');
   }
 
   /**
@@ -704,7 +710,7 @@ export class StripeProvider implements PaymentProvider {
     invoice: Stripe.Invoice,
     paymentRecord: Payment
   ): Promise<void> {
-    console.log('>> Update subscription payment record');
+    logOperationalEvent.log('>> Update subscription payment record');
 
     try {
       let subscriptionId = invoice.subscription as string | null;
@@ -712,11 +718,16 @@ export class StripeProvider implements PaymentProvider {
       // If invoice.subscription is null, try to use paymentRecord.subscriptionId
       if (!subscriptionId && paymentRecord.subscriptionId) {
         subscriptionId = paymentRecord.subscriptionId;
-        console.log('subscriptionId from paymentRecord:', subscriptionId);
+        logOperationalEvent.log(
+          'subscriptionId from paymentRecord:',
+          subscriptionId
+        );
       }
 
       if (!subscriptionId) {
-        console.warn('<< No subscriptionId found in invoice or paymentRecord');
+        logOperationalEvent.warn(
+          '<< No subscriptionId found in invoice or paymentRecord'
+        );
         return;
       }
 
@@ -728,7 +739,7 @@ export class StripeProvider implements PaymentProvider {
       // Get priceId from subscription items
       const priceId = subscription.items.data[0]?.price.id;
       if (!priceId) {
-        console.warn('<< No priceId found for subscription');
+        logOperationalEvent.warn('<< No priceId found for subscription');
         return;
       }
 
@@ -737,11 +748,13 @@ export class StripeProvider implements PaymentProvider {
 
       // If no userId in metadata (common in renewals), find by customerId
       if (!userId) {
-        console.log('No userId in metadata, finding by customerId');
+        logOperationalEvent.log('No userId in metadata, finding by customerId');
         userId = await this.findUserIdByCustomerId(customerId);
 
         if (!userId) {
-          console.error('<< No userId found, this should not happen');
+          logOperationalEvent.error(
+            '<< No userId found, this should not happen'
+          );
           return;
         }
       }
@@ -779,11 +792,11 @@ export class StripeProvider implements PaymentProvider {
       // Apply any subscription-specific benefits.
       await this.processSubscriptionPurchase(userId, priceId);
     } catch (error) {
-      console.error('<< Update subscription payment error:', error);
+      logOperationalEvent.error('<< Update subscription payment error:', error);
       throw error;
     }
 
-    console.log('<< Update subscription payment record success');
+    logOperationalEvent.log('<< Update subscription payment record success');
   }
 
   /**
@@ -795,10 +808,10 @@ export class StripeProvider implements PaymentProvider {
     _userId: string,
     _priceId: string
   ): Promise<void> {
-    console.log('>> Process subscription purchase');
+    logOperationalEvent.log('>> Process subscription purchase');
 
     // No additional subscription benefits are configured.
-    console.log('<< Process subscription purchase success');
+    logOperationalEvent.log('<< Process subscription purchase success');
   }
 
   /**
@@ -815,7 +828,7 @@ export class StripeProvider implements PaymentProvider {
     invoice: Stripe.Invoice,
     paymentRecord: Payment
   ): Promise<void> {
-    console.log('>> Update one-time payment record');
+    logOperationalEvent.log('>> Update one-time payment record');
 
     try {
       // Update payment record with invoice details
@@ -849,11 +862,11 @@ export class StripeProvider implements PaymentProvider {
         await this.processLifetimePlanPurchase(invoice, paymentRecord, session);
       }
     } catch (error) {
-      console.error('<< Update one-time payment error:', error);
+      logOperationalEvent.error('<< Update one-time payment error:', error);
       throw error;
     }
 
-    console.log('<< Update one-time payment record success');
+    logOperationalEvent.log('<< Update one-time payment record success');
   }
 
   /**
@@ -869,7 +882,7 @@ export class StripeProvider implements PaymentProvider {
         : charge.customer?.id;
 
     if (!customerId || !charge.refunded) {
-      console.warn('<< Ignoring partial or unlinked Stripe refund');
+      logOperationalEvent.warn('<< Ignoring partial or unlinked Stripe refund');
       return;
     }
 
@@ -888,7 +901,9 @@ export class StripeProvider implements PaymentProvider {
       sessionId = sessions.data[0]?.id;
     }
     if (!invoiceId && !sessionId) {
-      console.warn('<< Refund has no matching invoice or checkout session');
+      logOperationalEvent.warn(
+        '<< Refund has no matching invoice or checkout session'
+      );
       return;
     }
 
@@ -914,9 +929,13 @@ export class StripeProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     if (result.length > 0) {
-      console.log('<< Revoked matching lifetime access after Stripe refund');
+      logOperationalEvent.log(
+        '<< Revoked matching lifetime access after Stripe refund'
+      );
     } else {
-      console.warn('<< No lifetime payment found for Stripe refund');
+      logOperationalEvent.warn(
+        '<< No lifetime payment found for Stripe refund'
+      );
     }
   }
 
@@ -931,7 +950,7 @@ export class StripeProvider implements PaymentProvider {
     paymentRecord: Pick<Payment, 'customerId' | 'sessionId'>,
     session: Stripe.Checkout.Session
   ): Promise<void> {
-    console.log('>> Process lifetime plan purchase');
+    logOperationalEvent.log('>> Process lifetime plan purchase');
 
     // Send notification
     const amount = invoice.amount_paid ? invoice.amount_paid / 100 : 0;
@@ -942,7 +961,7 @@ export class StripeProvider implements PaymentProvider {
       amount,
     });
 
-    console.log('<< Process lifetime plan purchase success');
+    logOperationalEvent.log('<< Process lifetime plan purchase success');
   }
 
   /**
@@ -953,7 +972,10 @@ export class StripeProvider implements PaymentProvider {
   private async onCreateSubscription(
     stripeSubscription: Stripe.Subscription
   ): Promise<void> {
-    console.log('Handle subscription creation:', stripeSubscription.id);
+    logOperationalEvent.log(
+      'Handle subscription creation:',
+      stripeSubscription.id
+    );
   }
 
   /**
@@ -973,12 +995,15 @@ export class StripeProvider implements PaymentProvider {
   private async onUpdateSubscription(
     stripeSubscription: Stripe.Subscription
   ): Promise<void> {
-    console.log('>> Handle subscription update:', stripeSubscription.id);
+    logOperationalEvent.log(
+      '>> Handle subscription update:',
+      stripeSubscription.id
+    );
 
     // get priceId from subscription items (this is always available)
     const priceId = stripeSubscription.items.data[0]?.price.id;
     if (!priceId) {
-      console.warn('<< No priceId found for subscription');
+      logOperationalEvent.warn('<< No priceId found for subscription');
       return;
     }
 
@@ -1015,9 +1040,11 @@ export class StripeProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     if (result.length > 0) {
-      console.log('<< Updated payment record for subscription');
+      logOperationalEvent.log('<< Updated payment record for subscription');
     } else {
-      console.warn('<< No payment record found for subscription update');
+      logOperationalEvent.warn(
+        '<< No payment record found for subscription update'
+      );
     }
   }
 
@@ -1034,7 +1061,10 @@ export class StripeProvider implements PaymentProvider {
   private async onDeleteSubscription(
     stripeSubscription: Stripe.Subscription
   ): Promise<void> {
-    console.log('>> Handle subscription deletion:', stripeSubscription.id);
+    logOperationalEvent.log(
+      '>> Handle subscription deletion:',
+      stripeSubscription.id
+    );
 
     const db = getDb();
     const result = await db
@@ -1049,9 +1079,13 @@ export class StripeProvider implements PaymentProvider {
       .returning({ id: payment.id });
 
     if (result.length > 0) {
-      console.log('<< Marked payment record for subscription as canceled');
+      logOperationalEvent.log(
+        '<< Marked payment record for subscription as canceled'
+      );
     } else {
-      console.warn('<< No payment record found for subscription deletion');
+      logOperationalEvent.warn(
+        '<< No payment record found for subscription deletion'
+      );
     }
   }
 
@@ -1063,7 +1097,10 @@ export class StripeProvider implements PaymentProvider {
   private async onCheckoutCompleted(
     session: Stripe.Checkout.Session
   ): Promise<void> {
-    console.log('>> Handle checkout session completion:', session.id);
+    logOperationalEvent.log(
+      '>> Handle checkout session completion:',
+      session.id
+    );
 
     try {
       if (session.mode === 'subscription') {
@@ -1071,15 +1108,21 @@ export class StripeProvider implements PaymentProvider {
       } else if (session.mode === 'payment') {
         await this.createOneTimePaymentRecord(session);
       } else {
-        console.warn('<< Unsupported checkout session mode:', session.mode);
+        logOperationalEvent.warn(
+          '<< Unsupported checkout session mode:',
+          session.mode
+        );
         return;
       }
     } catch (error) {
-      console.error('<< Handle checkout session completion error:', error);
+      logOperationalEvent.error(
+        '<< Handle checkout session completion error:',
+        error
+      );
       throw error;
     }
 
-    console.log('<< Handle checkout session completion success');
+    logOperationalEvent.log('<< Handle checkout session completion success');
   }
 
   /**
@@ -1089,10 +1132,10 @@ export class StripeProvider implements PaymentProvider {
   private async createSubscriptionPaymentRecord(
     session: Stripe.Checkout.Session
   ): Promise<void> {
-    console.log('>> Create subscription payment record');
+    logOperationalEvent.log('>> Create subscription payment record');
 
     if (!session.subscription) {
-      console.warn('<< No subscription found in session');
+      logOperationalEvent.warn('<< No subscription found in session');
       return;
     }
 
@@ -1103,7 +1146,7 @@ export class StripeProvider implements PaymentProvider {
     // Get priceId from subscription items
     const priceId = subscription.items.data[0]?.price.id;
     if (!priceId) {
-      console.warn('<< No priceId found for subscription');
+      logOperationalEvent.warn('<< No priceId found for subscription');
       return;
     }
 
@@ -1112,7 +1155,10 @@ export class StripeProvider implements PaymentProvider {
 
     // No matter user uses coupon code or not, even amount=0, invoice id is available
     const invoiceId: string | null = session.invoice as string | null;
-    console.log('createSubscriptionPaymentRecord, invoiceId:', invoiceId);
+    logOperationalEvent.log(
+      'createSubscriptionPaymentRecord, invoiceId:',
+      invoiceId
+    );
 
     const periodStart = this.getPeriodStart(subscription);
     const periodEnd = this.getPeriodEnd(subscription);
@@ -1155,11 +1201,11 @@ export class StripeProvider implements PaymentProvider {
   private async createOneTimePaymentRecord(
     session: Stripe.Checkout.Session
   ): Promise<void> {
-    console.log('>> Create one-time payment record');
+    logOperationalEvent.log('>> Create one-time payment record');
 
     const priceId = session.metadata?.priceId;
     if (!priceId) {
-      console.warn('<< No priceId found in session metadata');
+      logOperationalEvent.warn('<< No priceId found in session metadata');
       return;
     }
 
@@ -1168,7 +1214,10 @@ export class StripeProvider implements PaymentProvider {
 
     // No matter user uses coupon code or not, even amount=0, invoice id is available
     const invoiceId: string | null = session.invoice as string | null;
-    console.log('createOneTimePaymentRecord, invoiceId:', invoiceId);
+    logOperationalEvent.log(
+      'createOneTimePaymentRecord, invoiceId:',
+      invoiceId
+    );
 
     // One-time checkout purchases map to the lifetime scene.
     const scene = PaymentScenes.LIFETIME;
@@ -1216,12 +1265,14 @@ export class StripeProvider implements PaymentProvider {
         ...paymentData,
       });
 
-      console.log(`<< Created ${recordType} payment record success`);
+      logOperationalEvent.log(
+        `<< Created ${recordType} payment record success`
+      );
       return true;
     } catch (error) {
       // Handle duplicate key constraint violation gracefully
       if (this.isUniqueConstraintError(error)) {
-        console.log(
+        logOperationalEvent.log(
           `<< ${recordType} payment record already exists, skipping creation`
         );
         return false; // The caller may need to make paid=true win the race.
@@ -1302,7 +1353,9 @@ export class StripeProvider implements PaymentProvider {
   private extractSubscriptionId(invoice: Stripe.Invoice): string | null {
     const invoiceSubscription = invoice.subscription;
     if (typeof invoiceSubscription === 'string') {
-      console.log(`invoice.subscription is string: ${invoiceSubscription}`);
+      logOperationalEvent.log(
+        `invoice.subscription is string: ${invoiceSubscription}`
+      );
       return invoiceSubscription;
     }
     if (
@@ -1310,7 +1363,9 @@ export class StripeProvider implements PaymentProvider {
       typeof invoiceSubscription === 'object' &&
       'id' in invoiceSubscription
     ) {
-      console.log(`invoice.subscription is object: ${invoiceSubscription.id}`);
+      logOperationalEvent.log(
+        `invoice.subscription is object: ${invoiceSubscription.id}`
+      );
       return invoiceSubscription.id;
     }
 
@@ -1320,7 +1375,7 @@ export class StripeProvider implements PaymentProvider {
     if (invoiceAny.parent?.subscription_details?.subscription) {
       const subscriptionId =
         invoiceAny.parent.subscription_details.subscription;
-      console.log(
+      logOperationalEvent.log(
         `invoice.parent.subscription_details.subscription is string: ${subscriptionId}`
       );
       return subscriptionId;
@@ -1329,7 +1384,7 @@ export class StripeProvider implements PaymentProvider {
     const lineItems = invoice.lines?.data ?? [];
     for (const lineItem of lineItems) {
       if (typeof lineItem.subscription === 'string') {
-        console.log(
+        logOperationalEvent.log(
           `invoice.lineItem.subscription is string: ${lineItem.subscription}`
         );
         return lineItem.subscription;
@@ -1339,7 +1394,7 @@ export class StripeProvider implements PaymentProvider {
         typeof lineItem.subscription === 'object' &&
         'id' in lineItem.subscription
       ) {
-        console.log(
+        logOperationalEvent.log(
           `invoice.lineItem.subscription is object: ${lineItem.subscription.id}`
         );
         return lineItem.subscription.id;
@@ -1351,14 +1406,14 @@ export class StripeProvider implements PaymentProvider {
       if (lineItemAny.parent?.subscription_item_details?.subscription) {
         const subscriptionId =
           lineItemAny.parent.subscription_item_details.subscription;
-        console.log(
+        logOperationalEvent.log(
           `invoice.lineItem.parent.subscription_item_details.subscription is string: ${subscriptionId}`
         );
         return subscriptionId;
       }
 
       if (typeof lineItem.subscription_item === 'string') {
-        console.log(
+        logOperationalEvent.log(
           `invoice.lineItem.subscription_item is string: ${lineItem.subscription_item}`
         );
         return lineItem.subscription_item;
@@ -1368,7 +1423,7 @@ export class StripeProvider implements PaymentProvider {
         typeof lineItem.subscription_item === 'object' &&
         'id' in lineItem.subscription_item
       ) {
-        console.log(
+        logOperationalEvent.log(
           `invoice.lineItem.subscription_item is object: ${lineItem.subscription_item.id}`
         );
         return lineItem.subscription_item.id;
