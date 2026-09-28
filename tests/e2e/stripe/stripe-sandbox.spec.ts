@@ -132,14 +132,13 @@ function expectBillingPeriodMatches(
   periodEnd: string | number | null,
   subscription: Stripe.Subscription
 ) {
-  const item = subscription.items.data[0];
-  expect(typeof item?.current_period_start).toBe('number');
-  expect(typeof item?.current_period_end).toBe('number');
+  expect(typeof subscription.current_period_start).toBe('number');
+  expect(typeof subscription.current_period_end).toBe('number');
   expect(new Date(periodStart ?? 0).getTime()).toBe(
-    (item?.current_period_start ?? 0) * 1000
+    subscription.current_period_start * 1000
   );
   expect(new Date(periodEnd ?? 0).getTime()).toBe(
-    (item?.current_period_end ?? 0) * 1000
+    subscription.current_period_end * 1000
   );
 }
 
