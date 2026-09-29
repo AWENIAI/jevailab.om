@@ -73,7 +73,7 @@ export default function NewsletterCard() {
                       <Input
                         type="email"
                         placeholder={m.newsletter_placeholder_email()}
-                        className="h-12 rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary focus:border-0.5 focus:border-r-0"
+                        className="h-12 rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input-focus focus-visible:border-r-0"
                         {...field}
                       />
                     </FormControl>

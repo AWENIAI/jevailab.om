@@ -105,6 +105,15 @@ button:focus-visible,
     [class*="has-[[data-slot][aria-invalid=true]]:ring"]:has(
         [data-slot][aria-invalid="true"]
       )
+  ):not(
+    :is(
+        [data-slot="input"]:focus-visible,
+        [data-slot="textarea"]:focus-visible,
+        [data-slot="select-trigger"]:focus-visible,
+        [data-slot="input-group"]:has(
+            [data-slot="input-group-control"]:focus-visible
+          )
+      )
   ) {
   --tw-ring-offset-shadow: 0 0 #0000 !important;
   --tw-ring-shadow: 0 0 #0000 !important;
