@@ -31,19 +31,18 @@ const CF_MODELS: {
 }[] = [
   {
     value: CF_IMAGE_MODELS[0],
-    label: 'Flux.1 Schnell',
-    hint: 'Default · 12B distilled flow transformer',
+    label: 'FLUX.2 Klein 4B',
+    hint: 'Default · Fast generation',
   },
   {
     value: CF_IMAGE_MODELS[1],
-    label: 'SDXL Lightning',
-    hint: 'Lightning-fast 1024px generations',
-    beta: true,
+    label: 'FLUX.2 Klein 9B',
+    hint: 'More detail · 9B model',
   },
   {
     value: CF_IMAGE_MODELS[2],
-    label: 'DreamShaper 8 LCM',
-    hint: 'Photorealistic Stable Diffusion fine-tune',
+    label: 'FLUX.1 Schnell',
+    hint: '12B distilled flow transformer',
   },
 ];
 const CF_MODEL_SELECT_ITEMS = CF_MODELS.map((model) => ({

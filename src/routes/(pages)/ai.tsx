@@ -1,5 +1,6 @@
 import { m } from '@/locale/paraglide/messages';
 import { createFileRoute } from '@tanstack/react-router';
+import { AiDecisionCard } from '@/components/ai/ai-decision-card';
 import Container from '@/components/layout/container';
 import { AiCaptionCard } from '@/components/ai/ai-caption-card';
 import { AiCfImageCard } from '@/components/ai/ai-cf-image-card';
@@ -34,6 +35,9 @@ function AiPage() {
           </p>
         </div>
 
+        <section id="decision-model" className="scroll-mt-20">
+          <AiDecisionCard />
+        </section>
         <section id="text-summarization" className="scroll-mt-20">
           <AiSummarizationCard />
         </section>
