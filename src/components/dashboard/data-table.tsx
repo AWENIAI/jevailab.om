@@ -236,7 +236,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             >
               <SelectValue placeholder="Assign reviewer" />
             </SelectTrigger>
-            <SelectContent align="end">
+            <SelectContent>
               <SelectGroup>
                 <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
                 <SelectItem value="Jamik Tashpulatov">
@@ -477,7 +477,7 @@ export function DataTable({
                     placeholder={table.getState().pagination.pageSize}
                   />
                 </SelectTrigger>
-                <SelectContent side="top">
+                <SelectContent>
                   <SelectGroup>
                     {[10, 20, 30, 40, 50].map((pageSize) => (
                       <SelectItem key={pageSize} value={`${pageSize}`}>

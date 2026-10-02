@@ -41,6 +41,13 @@ export function getNavbarLinks(): MenuItemConfig[] {
     title: m.nav_ai_title(),
     items: [
       {
+        title: m.nav_ai_decision_title(),
+        description: m.nav_ai_decision_description(),
+        href: Routes.AiDecision,
+        icon: IconRoute,
+        external: false,
+      },
+      {
         title: m.nav_ai_summarization_title(),
         description: m.nav_ai_summarization_description(),
         href: Routes.AiSummarization,

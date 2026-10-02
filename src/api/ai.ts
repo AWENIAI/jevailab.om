@@ -4,14 +4,22 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import {
   CF_IMAGE_MODELS,
+  CLEF_MODELS,
   DEFAULT_CF_IMAGE_MODEL,
   DEFAULT_FAL_IMAGE_MODEL,
   FAL_IMAGE_EDIT_MODEL,
   FAL_IMAGE_MODELS,
   OPENAI_IMAGE_MODEL,
   WORKERS_AI_MODELS,
+  TTS_SPEAKERS,
 } from '@/config/ai-models';
 import { serverEnv } from '@/env/server';
+import {
+  chatText,
+  base64ImageUrl,
+  type WorkersAiChatResult,
+} from '@/lib/workers-ai';
+import { CLEF_TICKET_QUESTIONS, clefTicketResultSchema } from '@/lib/clef';
 
 /**
  * AI demo server functions.
@@ -108,21 +116,6 @@ const cfImageGenerationSchema = z.object({
   model: z.enum(CF_IMAGE_MODELS).default(DEFAULT_CF_IMAGE_MODEL),
 });
 
-const TTS_SPEAKERS = [
-  'angus',
-  'asteria',
-  'arcas',
-  'orion',
-  'orpheus',
-  'athena',
-  'luna',
-  'zeus',
-  'perseus',
-  'helios',
-  'hera',
-  'stella',
-] as const;
-
 const ttsSchema = z.object({
   text: z
     .string()
@@ -216,7 +209,7 @@ async function runWorkersAi<TResult>(
 export const summarizeText = createServerFn({ method: 'POST' })
   .validator(summarizationSchema)
   .handler(async ({ data }) => {
-    const result = await runWorkersAi<{ response?: string }>(
+    const result = await runWorkersAi<WorkersAiChatResult>(
       WORKERS_AI_MODELS.summarization,
       {
         messages: [
@@ -230,16 +223,17 @@ export const summarizeText = createServerFn({ method: 'POST' })
             content: `Summarize this text in 1-2 sentences:\n\n${data.text}`,
           },
         ],
+        chat_template_kwargs: { enable_thinking: false },
         max_tokens: 180,
         temperature: 0.2,
       }
     );
 
-    if (!result.response) {
+    if (!chatText(result)) {
       throw new Error('Summarization returned an empty response.');
     }
 
-    return { summary: result.response.trim() };
+    return { summary: chatText(result).trim() };
   });
 
 /**
@@ -275,7 +269,7 @@ export const translateText = createServerFn({ method: 'POST' })
 export const generateTaglines = createServerFn({ method: 'POST' })
   .validator(taglineSchema)
   .handler(async ({ data }) => {
-    const result = await runWorkersAi<{ response?: string }>(
+    const result = await runWorkersAi<WorkersAiChatResult>(
       WORKERS_AI_MODELS.tagline,
       {
         messages: [
@@ -289,16 +283,17 @@ export const generateTaglines = createServerFn({ method: 'POST' })
             content: `Product description: ${data.product}`,
           },
         ],
+        chat_template_kwargs: { enable_thinking: false },
         max_tokens: 300,
         temperature: 0.85,
       }
     );
 
-    if (!result.response) {
+    if (!chatText(result)) {
       throw new Error('Tagline generation returned an empty response.');
     }
 
-    const taglines = parseTaglines(result.response);
+    const taglines = parseTaglines(chatText(result));
     if (taglines.length === 0) {
       throw new Error('Could not parse taglines from model response.');
     }
@@ -422,7 +417,11 @@ export const synthesizeSpeech = createServerFn({ method: 'POST' })
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: data.text, speaker: data.speaker }),
+        body: JSON.stringify({
+          text: data.text,
+          speaker: data.speaker,
+          encoding: 'mp3',
+        }),
       }
     );
 
@@ -478,15 +477,20 @@ export const generateCfImage = createServerFn({ method: 'POST' })
       );
     }
 
+    const multipart = data.model.includes('/flux-2-');
+    const form = new FormData();
+    form.set('prompt', data.prompt);
+    form.set('width', '1024');
+    form.set('height', '1024');
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${data.model}`,
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+          ...(multipart ? {} : { 'Content-Type': 'application/json' }),
         },
-        body: JSON.stringify({ prompt: data.prompt }),
+        body: multipart ? form : JSON.stringify({ prompt: data.prompt }),
       }
     );
 
@@ -515,7 +519,7 @@ export const generateCfImage = createServerFn({ method: 'POST' })
         throw new Error(`Workers AI error: ${message}`);
       }
       return {
-        imageUrl: `data:image/jpeg;base64,${base64}`,
+        imageUrl: base64ImageUrl(base64),
         model: data.model,
       };
     }
@@ -532,42 +536,49 @@ export const generateCfImage = createServerFn({ method: 'POST' })
 
 /**
  * Generate a caption (or answer a custom prompt) for an image using
- * Cloudflare Workers AI LLaVA 1.5 (`WORKERS_AI_MODELS.imageCaption`).
+ * Cloudflare Workers AI Gemma 4 (`WORKERS_AI_MODELS.imageCaption`).
  *
- * The model expects `image` as an array of byte values plus an optional
- * `prompt`; the client uploads a file, base64-encodes it, and we decode +
- * forward the bytes here.
+ * Send the uploaded PNG/JPEG/WebP as a data URL in multimodal messages.
  */
 export const captionImage = createServerFn({ method: 'POST' })
   .validator(captionSchema)
   .handler(async ({ data }) => {
-    const bytes = base64ToBytes(data.imageBase64);
-
-    const result = await runWorkersAi<{ description?: string }>(
+    const imageUrl = base64ImageUrl(data.imageBase64);
+    const result = await runWorkersAi<WorkersAiChatResult>(
       WORKERS_AI_MODELS.imageCaption,
       {
-        image: Array.from(bytes),
-        prompt: data.prompt,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: data.prompt },
+              { type: 'image_url', image_url: { url: imageUrl } },
+            ],
+          },
+        ],
+        chat_template_kwargs: { enable_thinking: false },
         max_tokens: 256,
       }
     );
-
-    if (!result.description) {
+    const description = chatText(result).trim();
+    if (!description)
       throw new Error('Image captioning returned an empty response.');
-    }
-
-    return { description: result.description.trim() };
+    return { description };
   });
 
-/**
- * Decode a base64 string into a Uint8Array. Mirrors the `arrayBufferToBase64`
- * helper above and works in the Workers runtime without Node `Buffer`.
- */
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
+/** Evaluate a support ticket with Clef's three typed decision questions. */
+export const evaluateTicket = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      model: z.enum(CLEF_MODELS),
+      state: z.string().trim().min(10).max(4000),
+    })
+  )
+  .handler(async ({ data }) => {
+    const result = await runWorkersAi<unknown>(`@cf/cloudflare/${data.model}`, {
+      model: data.model,
+      state: data.state,
+      questions: CLEF_TICKET_QUESTIONS,
+    });
+    return clefTicketResultSchema.parse(result);
+  });

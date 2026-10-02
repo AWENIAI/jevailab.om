@@ -12,6 +12,7 @@ export const Routes = {
   Contact: '/contact',
   Waitlist: '/waitlist',
   Ai: '/ai',
+  AiDecision: '/ai#decision-model',
   AiSummarization: '/ai#text-summarization',
   AiTranslation: '/ai#translation',
   AiTagline: '/ai#tagline-generator',

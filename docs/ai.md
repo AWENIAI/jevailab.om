@@ -10,7 +10,11 @@ The whole playground lives at **`/ai`** page and is reachable from the navbar **
 
 ```
 src/api/
-└── ai.ts                       # 8 server functions + helpers (runWorkersAi, parseTaglines, base64 utils)
+└── ai.ts                       # 9 server functions + helpers (runWorkersAi, parseTaglines, base64 utils)
+
+src/lib/
+├── clef.ts                    # Typed decision questions and response validation
+└── workers-ai.ts              # Chat response parsing and image MIME helpers
 
 src/config/
 └── ai-models.ts                # Central model IDs shared by server functions and UI cards
@@ -19,12 +23,13 @@ src/routes/(pages)/
 └── ai.tsx                      # Page that mounts each card inside <section id="..."> for hash-anchor nav
 
 src/components/ai/
-├── ai-summarization-card.tsx   # Text summarization (Llama 3.2 chat)
+├── ai-decision-card.tsx        # Support-ticket decisions (Clef / Clef Flash)
+├── ai-summarization-card.tsx   # Text summarization (Gemma 4 chat)
 ├── ai-translation-card.tsx     # Translation (m2m100, 10 languages)
-├── ai-tagline-card.tsx         # Tagline generator (Llama 3.2 chat)
-├── ai-tts-card.tsx             # Text-to-speech (Deepgram Aura, 12 voices)
-├── ai-caption-card.tsx         # Image-to-text captioning (LLaVA)
-├── ai-cf-image-card.tsx        # Text-to-image · Workers AI (Flux / SDXL / DreamShaper)
+├── ai-tagline-card.tsx         # Tagline generator (Gemma 4 chat)
+├── ai-tts-card.tsx             # Text-to-speech (Deepgram Aura, 8 voices)
+├── ai-caption-card.tsx         # Image-to-text captioning (Gemma 4)
+├── ai-cf-image-card.tsx        # Text-to-image · Workers AI (FLUX.2 / FLUX.1)
 ├── ai-image-card.tsx           # Text-to-image · fal.ai (Gemini / Flux / GPT Image 2)
 └── ai-image-edit-card.tsx      # Image-to-image · fal.ai Gemini edit (Avatar Stylizer)
 ```
@@ -36,7 +41,7 @@ src/components/ai/
 | Source | Key | Description |
 |--------|-----|-------------|
 | Env var | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID — used for all Workers AI REST calls. |
-| Env var | `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers AI: Read** permission. Used for summarization, translation, tagline, TTS, captioning, CF image gen. |
+| Env var | `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers AI: Read** permission. Used for decisions, summarization, translation, tagline, TTS, captioning, CF image gen. |
 | Env var | `FAL_KEY` | fal.ai API key. Used for text-to-image (Gemini / Flux / GPT Image 2) and image-to-image (Gemini edit). |
 
 All three are read in `src/env/server.ts` (Zod-validated via `@t3-oss/env-core`) and accessed inside server functions through `serverEnv`.
@@ -56,10 +61,11 @@ Browser (card) ──▶ TanStack server function ──▶ provider API ──�
 
 - **Validation** — every server function uses `.validator(zodSchema)` for both type safety and runtime validation (max prompt length, file size cap, language enum, model enum, …).
 - **No auth, no rate limit** — none of the functions uses `.middleware()`, and the `/ai` route has no guard. Any anonymous visitor can call the paid Workers AI and fal.ai endpoints; add `authApiMiddleware` or a rate limiter if you deploy these demos publicly.
-- **Model IDs** — runtime model IDs are centralized in `src/config/ai-models.ts` and imported by both server functions and UI cards. The translation language list and the TTS speaker list are each defined twice (server schema in `src/api/ai.ts` and the card), so adding a language or voice means editing both places.
+- **Model IDs** — runtime model IDs are centralized in `src/config/ai-models.ts` and imported by both server functions and UI cards. The translation language list is defined in both the server schema and card. TTS speaker IDs are shared from `src/config/ai-models.ts`.
 - **Workers AI helper** — `runWorkersAi<TResult>(model, body)` in `src/api/ai.ts` wraps the common JSON request flow (auth headers, `success` / `errors` envelope) so each demo only declares its model + payload.
+- **Chat responses** — Gemma 4 demos disable thinking for short responses and read `choices[0].message.content` via `chatText()` in `src/lib/workers-ai.ts`.
 - **Binary responses** — TTS (`audio/mpeg`) and CF image gen (binary `image/*`) bypass `runWorkersAi` and base64-encode the body via `arrayBufferToBase64()` so the result can be returned as a `data:` URL the browser renders directly.
-- **Image bytes in / out** — captioning and image-edit accept the user's upload as a base64 string, decoded server-side via `base64ToBytes()` (LLaVA wants `Array.from(uint8)`) or forwarded as a `data:` URI (fal accepts data URIs natively).
+- **Image bytes in / out** — captioning and image-edit accept the user's upload as a base64 string, forwarded as MIME-aware `data:` URLs in multimodal messages (Gemma 4) or image URLs (fal).
 - **Client downloads** — image cards use `downloadFile()` from `src/lib/download.ts`, which fetches the image into a blob (handles CORS for fal CDN URLs) before clicking a hidden `<a download>` link, so the browser actually saves the file instead of navigating.
 
 ---
@@ -68,12 +74,13 @@ Browser (card) ──▶ TanStack server function ──▶ provider API ──�
 
 | Export | Provider · Model | Input | Output |
 |--------|------------------|-------|--------|
-| **summarizeText** | Workers AI · `@cf/meta/llama-3.2-3b-instruct` (chat) | `text` (50–500 chars) | `{ summary }` |
+| **evaluateTicket** | Workers AI · `@cf/cloudflare/clef` / `@cf/cloudflare/clef-flash` | `state` (10–4000 trimmed chars), `model` (enum) | `{ model, answers, usage }` (validated typed decisions) |
+| **summarizeText** | Workers AI · `@cf/google/gemma-4-26b-a4b-it` (chat) | `text` (50–500 chars) | `{ summary }` |
 | **translateText** | Workers AI · `@cf/meta/m2m100-1.2b` | `text` (1–1000 chars), `sourceLang`, `targetLang` (10-language enum) | `{ translatedText }` |
-| **generateTaglines** | Workers AI · `@cf/meta/llama-3.2-3b-instruct` (chat) | `product` (10–400 chars) | `{ taglines: string[] }` (parsed numbered list) |
-| **synthesizeSpeech** | Workers AI · `@cf/deepgram/aura-1` | `text` (1–1000 chars), `speaker` (12 voices) | `{ audioUrl, bytes }` (`data:audio/mpeg;base64,...`) |
-| **captionImage** | Workers AI · `@cf/llava-hf/llava-1.5-7b-hf` | `imageBase64` (100–1.4M chars), `prompt` (1–300 chars) | `{ description }` |
-| **generateCfImage** | Workers AI · Flux.1 Schnell / SDXL Lightning / DreamShaper 8 LCM | `prompt` (10–500 chars), `model` (enum) | `{ imageUrl, model }` (`data:image/...;base64,...`) |
+| **generateTaglines** | Workers AI · `@cf/google/gemma-4-26b-a4b-it` (chat) | `product` (10–400 chars) | `{ taglines: string[] }` (parsed numbered list) |
+| **synthesizeSpeech** | Workers AI · `@cf/deepgram/aura-2-en` | `text` (1–1000 chars), `speaker` (8 voices) | `{ audioUrl, bytes }` (`data:audio/mpeg;base64,...`) |
+| **captionImage** | Workers AI · `@cf/google/gemma-4-26b-a4b-it` | `imageBase64` (100–1.4M chars), `prompt` (1–300 chars) | `{ description }` |
+| **generateCfImage** | Workers AI · FLUX.2 Klein 4B / Klein 9B / FLUX.1 Schnell | `prompt` (10–500 chars), `model` (enum) | `{ imageUrl, model }` (`data:image/...;base64,...`) |
 | **generateAiImage** | fal.ai · Nano Banana / Flux Schnell / GPT Image 2 | `prompt` (10–500 chars), `model` (enum) | `{ imageUrl, model }` (fal CDN URL) |
 | **editAiImage** | fal.ai · `fal-ai/nano-banana/edit` | `imageBase64` (100–1.4M chars), `prompt` (5–500 chars) | `{ imageUrl }` |
 
@@ -87,40 +94,59 @@ All functions throw a descriptive `Error` on missing env, non-2xx responses, or 
 
 The page renders one section per demo, each wrapped in `<section id="...">` so the AI navbar dropdown can deep-link with hash anchors (e.g. `/ai#tagline-generator`).
 
-### 1. Text Summarization
-**Card:** `AiSummarizationCard` · **Model:** `@cf/meta/llama-3.2-3b-instruct` (Workers AI)
+### 1. Decision
+**Card:** `AiDecisionCard` · **Models:** `@cf/cloudflare/clef` / `@cf/cloudflare/clef-flash` (Workers AI)
+
+At `/ai#decision-model`, choose a model, load an outage/refund/upgrade example,
+or edit the support ticket (10–4000 trimmed characters). `evaluateTicket` sends
+`model`, `state`, and three fixed typed questions through `runWorkersAi`.
+
+The three numbered result cards demonstrate `noul` (urgency probability),
+`choice` (responsible team and per-option probabilities), and `score` (weighted
+customer impact from 0 to 3 with per-level probabilities). The schema and
+response validation live in `src/lib/clef.ts`. Results illustrate predictions;
+submitting a ticket does not route it or perform automated actions. Local
+functional tests mock failures; real provider verification is separate.
+
+API reference: [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
+and [Clef Flash](https://developers.cloudflare.com/workers-ai/models/clef-flash/).
+
+### 2. Text Summarization
+**Card:** `AiSummarizationCard` · **Model:** `@cf/google/gemma-4-26b-a4b-it` (Workers AI)
 
 Paste a long article (50–500 chars), get a concise summary back. Demonstrates a single-shot chat call with `messages: [{ role, content }]` and a system prompt that constrains the response to summary text only.
 
-### 2. Translation
+### 3. Translation
 **Card:** `AiTranslationCard` · **Model:** `@cf/meta/m2m100-1.2b` (Workers AI)
 
 Many-to-many multilingual translation across 10 languages with a swap button. Shows how to declare a `z.enum(...)` schema for both source and target language and a `.refine()` rule preventing same-language translation.
 
-### 3. Tagline Generator (Chat)
-**Card:** `AiTaglineCard` · **Model:** `@cf/meta/llama-3.2-3b-instruct` (Workers AI)
+### 4. Tagline Generator (Chat)
+**Card:** `AiTaglineCard` · **Model:** `@cf/google/gemma-4-26b-a4b-it` (Workers AI)
 
 Single-shot chat call with a system prompt that constrains output to a numbered list of 5 taglines. Shows how to call instruct chat models with `messages: [{ role, content }]` and parse semi-structured text back into JSON via `parseTaglines()`.
 
-### 4. Text to Speech
-**Card:** `AiTtsCard` · **Model:** `@cf/deepgram/aura-1` (Workers AI)
+### 5. Text to Speech
+**Card:** `AiTtsCard` · **Model:** `@cf/deepgram/aura-2-en` (Workers AI)
 
-12 selectable voices (Asteria, Luna, Stella, Athena, Hera, Angus, Arcas, Orion, Orpheus, Perseus, Helios, Zeus). Returns binary MP3 (`Content-Type: audio/mpeg`) which is base64-encoded server-side and served as a `data:audio/mpeg;base64,...` URL into a native `<audio controls>`. Includes a per-character cost preview ($0.015 / 1K chars).
+8 selectable Aura 2 English voices (Asteria, Luna, Athena, Hera, Arcas, Orion, Orpheus, Zeus). Returns binary MP3 (`Content-Type: audio/mpeg`) which is base64-encoded server-side and served as a `data:audio/mpeg;base64,...` URL into a native `<audio controls>`. Includes a per-character cost preview ($0.03 / 1K chars).
 
-### 5. Image Captioning
-**Card:** `AiCaptionCard` · **Model:** `@cf/llava-hf/llava-1.5-7b-hf` (Workers AI)
+### 6. Image Captioning
+**Card:** `AiCaptionCard` · **Model:** `@cf/google/gemma-4-26b-a4b-it` (Workers AI)
 
-Upload a portrait or photo (≤1 MB), pick a prompt preset (caption / detailed description / 5 keywords / objects list) or write your own, and get a description back. The image is decoded with `base64ToBytes()` and sent to LLaVA as `image: Array.from(bytes)` per the model's input schema.
+Upload a portrait or photo (≤1 MB), pick a prompt preset (caption / detailed description / 5 keywords / objects list) or write your own, and get a description back. The image signature determines its PNG/JPEG/WebP MIME type. The data URL and prompt are sent as multimodal messages; the response is read from `choices[0].message.content`.
 
-### 6. Image Generator · Workers AI
+### 7. Image Generator · Workers AI
 **Card:** `AiCfImageCard` · **Models:**
-- `@cf/black-forest-labs/flux-1-schnell` (default, JSON `{ image: base64 }`)
-- `@cf/bytedance/stable-diffusion-xl-lightning` (Beta, binary `image/png` body)
-- `@cf/lykon/dreamshaper-8-lcm` (photorealistic SD fine-tune)
+- `@cf/black-forest-labs/flux-2-klein-4b` (default, fast generation)
+- `@cf/black-forest-labs/flux-2-klein-9b` (larger model)
+- `@cf/black-forest-labs/flux-1-schnell` (previous-generation alternative)
 
-Demonstrates Workers AI's two response shapes (JSON envelope vs. raw binary). The server function branches on `Content-Type`, base64-encodes the bytes when needed, and always returns a `data:image/...;base64,...` URL the browser can render or download. The JSON branch (Flux Schnell) hard-codes `data:image/jpeg`, and the binary branch falls back to `image/jpeg` when the response content type is not `image/*`.
+FLUX.2 uses multipart form data with `prompt`, `width` and `height` (1024).
+FLUX.1 uses JSON input. Both return base64 images; the encoded signature
+selects the correct image MIME type. The helper also supports binary responses.
 
-### 7. Image Generator · fal.ai
+### 8. Image Generator · fal.ai
 **Card:** `AiImageCard` · **Models:**
 - `fal-ai/nano-banana` (default — Google "Nano Banana", ~$0.039 / image)
 - `fal-ai/flux/schnell` (fast & cheap — ~$0.003 / image)
@@ -128,7 +154,7 @@ Demonstrates Workers AI's two response shapes (JSON envelope vs. raw binary). Th
 
 Uses the `@tanstack/ai` + `@tanstack/ai-fal` adapter via `falImage(model, { apiKey })` and `generateImage({ adapter, prompt })`. The adapter polls fal's queue under the hood. Returns the fal-hosted CDN URL.
 
-### 8. Avatar Stylizer (image-to-image)
+### 9. Avatar Stylizer (image-to-image)
 **Card:** `AiImageEditCard` · **Model:** `fal-ai/nano-banana/edit` (fal.ai)
 
 Upload a portrait, pick a style preset (Bobblehead Caricature / Pixar 3D / Anime Portrait) or write a custom prompt, get an identity-preserving stylized version back. Implementation passes the user image as a base64 `data:` URI inside `modelOptions.image_urls` — fal accepts data URIs natively, so no separate upload step is required.

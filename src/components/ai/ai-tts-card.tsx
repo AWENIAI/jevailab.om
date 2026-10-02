@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { WORKERS_AI_MODELS } from '@/config/ai-models';
+import { TTS_SPEAKERS, WORKERS_AI_MODELS } from '@/config/ai-models';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -20,36 +20,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-type Speaker =
-  | 'angus'
-  | 'asteria'
-  | 'arcas'
-  | 'orion'
-  | 'orpheus'
-  | 'athena'
-  | 'luna'
-  | 'zeus'
-  | 'perseus'
-  | 'helios'
-  | 'hera'
-  | 'stella';
-const SPEAKERS: {
-  value: Speaker;
-  label: string;
-}[] = [
-  { value: 'asteria', label: 'Asteria · Female (US)' },
-  { value: 'luna', label: 'Luna · Female (US)' },
-  { value: 'stella', label: 'Stella · Female (US)' },
-  { value: 'athena', label: 'Athena · Female (UK)' },
-  { value: 'hera', label: 'Hera · Female (US)' },
-  { value: 'angus', label: 'Angus · Male (IE)' },
-  { value: 'arcas', label: 'Arcas · Male (US)' },
-  { value: 'orion', label: 'Orion · Male (US)' },
-  { value: 'orpheus', label: 'Orpheus · Male (US)' },
-  { value: 'perseus', label: 'Perseus · Male (US)' },
-  { value: 'helios', label: 'Helios · Male (UK)' },
-  { value: 'zeus', label: 'Zeus · Male (US)' },
-];
+type Speaker = (typeof TTS_SPEAKERS)[number];
+const SPEAKERS = TTS_SPEAKERS.map((value) => ({
+  value,
+  label: value.charAt(0).toUpperCase() + value.slice(1),
+}));
 export function AiTtsCard() {
   const [text, setText] = useState<string>(m.ai_page_tts_sample());
   const [speaker, setSpeaker] = useState<Speaker>('asteria');
@@ -122,7 +97,7 @@ export function AiTtsCard() {
             />
             <p className="text-xs text-muted-foreground">
               {text.length} characters · ~$
-              {((text.length / 1000) * 0.015).toFixed(4)}{' '}
+              {((text.length / 1000) * 0.03).toFixed(4)}{' '}
               {m.ai_page_tts_cost_suffix()}
             </p>
             <Button
