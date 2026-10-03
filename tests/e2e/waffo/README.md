@@ -215,3 +215,13 @@ WAFFO_E2E_PORT=3028 \
   the new URL and the `/api/webhooks/waffo` suffix.
 
 Never commit `.env.local`, `.env.e2e`, `.dev.vars`, or the Waffo private key.
+
+## Worker environment isolation
+
+The payment runner uses the shared `scripts/run-payment-e2e.ts` helper and
+`vite.payment-e2e.config.ts`. Only the selected provider's credentials are
+injected into the local Worker; the developer's `.dev.vars` is excluded.
+Stripe uses the webhook secret returned by its listener. Temporary Worker
+configuration is removed when Playwright exits, including failure or interruption.
+Run the suite through `pnpm e2e:waffo` rather than launching its
+Playwright config directly.

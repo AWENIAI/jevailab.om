@@ -30,7 +30,7 @@ export default defineConfig({
         'VITE_PAYMENT_PROVIDER=waffo',
         'BETTER_AUTH_SECRET=e2e-better-auth-secret-at-least-32-characters',
         [
-          'pnpm exec vite dev --mode e2e',
+          'pnpm exec vite dev --config vite.payment-e2e.config.ts --mode e2e',
           '--host localhost',
           `--port ${port}`,
           '--strictPort',

@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { loadEnv } from 'vite';
+import { runPaymentE2E } from './run-payment-e2e';
 
 const port = Number(process.env.STRIPE_E2E_PORT ?? 3019);
 const baseURL = `http://127.0.0.1:${port}`;
@@ -107,32 +108,12 @@ async function run() {
   const webhookSecret = await waitForWebhookSecret(listener);
   console.log('Stripe sandbox listener is ready');
 
-  const playwright = spawn(
-    'pnpm',
-    [
-      'exec',
-      'playwright',
-      'test',
-      '--config',
-      'playwright.stripe.config.ts',
-      ...process.argv.slice(2).filter((argument) => argument !== '--'),
-    ],
-    {
-      env: {
-        ...runtimeEnv,
-        PLAYWRIGHT_BASE_URL: baseURL,
-        STRIPE_E2E_PORT: String(port),
-        STRIPE_E2E_WEBHOOK_SECRET: webhookSecret,
-      },
-      stdio: 'inherit',
-    }
-  );
-
-  const exitCode = await new Promise<number>((resolve, reject) => {
-    playwright.once('error', reject);
-    playwright.once('exit', (code) => resolve(code ?? 1));
+  process.exitCode = await runPaymentE2E('stripe', {
+    ...runtimeEnv,
+    PLAYWRIGHT_BASE_URL: baseURL,
+    STRIPE_E2E_PORT: String(port),
+    STRIPE_WEBHOOK_SECRET: webhookSecret,
   });
-  process.exitCode = exitCode;
 }
 
 process.once('SIGINT', () => {

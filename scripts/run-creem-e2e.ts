@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
 import { loadEnv } from 'vite';
+import { runPaymentE2E } from './run-payment-e2e';
 
 /**
  * Bootstrap for `pnpm e2e:creem`.
@@ -16,7 +16,6 @@ const fileEnv = loadEnv('e2e', process.cwd(), '');
 const runtimeEnv = {
   ...process.env,
   ...fileEnv,
-  CREEM_E2E_RUN: 'true',
   CREEM_DEBUG: 'true',
   PLAYWRIGHT_BASE_URL: baseURL,
   VITE_BASE_URL: baseURL,
@@ -57,24 +56,8 @@ console.log(
 console.log(`Playwright base URL: ${baseURL}`);
 console.log('');
 
-const playwright = spawn(
-  'pnpm',
-  [
-    'exec',
-    'playwright',
-    'test',
-    '--config',
-    'playwright.creem.config.ts',
-    ...process.argv.slice(2).filter((argument) => argument !== '--'),
-  ],
-  {
-    env: runtimeEnv,
-    stdio: 'inherit',
-  }
-);
-
-const exitCode = await new Promise<number>((resolve, reject) => {
-  playwright.once('error', reject);
-  playwright.once('exit', (code) => resolve(code ?? 1));
+process.exitCode = await runPaymentE2E('creem', {
+  ...runtimeEnv,
+  PLAYWRIGHT_BASE_URL: baseURL,
+  CREEM_E2E_PORT: String(port),
 });
-process.exitCode = exitCode;
