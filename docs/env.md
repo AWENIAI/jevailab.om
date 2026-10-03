@@ -116,11 +116,16 @@ These are read by CLI tools and scripts, not by the Worker.
 | `PORT` | `playwright.config.ts` | Local E2E port (default `3000`) |
 | `CI` | Playwright configs | Enables retries and the GitHub reporter |
 | `E2E_PERSIST_PATH` | `vite.config.ts`, `scripts/prepare-e2e-state.ts` | Isolated local D1/R2/KV state (must stay inside `.wrangler/`) |
-| `STRIPE_E2E_RUN`, `STRIPE_E2E_WEBHOOK_SECRET`, `STRIPE_E2E_PORT` | `scripts/run-stripe-e2e.ts`, `vite.config.ts` | See [Stripe E2E](../tests/e2e/stripe/README.md) |
-| `CREEM_E2E_RUN`, `CREEM_E2E_PORT` | `scripts/run-creem-e2e.ts`, `vite.config.ts` | See [Creem E2E](../tests/e2e/creem/README.md) |
+| `STRIPE_E2E_PORT` | `scripts/run-stripe-e2e.ts` | See [Stripe E2E](../tests/e2e/stripe/README.md) |
+| `CREEM_E2E_PORT` | `scripts/run-creem-e2e.ts` | See [Creem E2E](../tests/e2e/creem/README.md) |
 | `WAFFO_E2E_PORT` | `scripts/run-waffo-e2e.ts` | See [Waffo E2E](../tests/e2e/waffo/README.md) |
 
-When `STRIPE_E2E_RUN` or `CREEM_E2E_RUN` is `true`, `vite.config.ts` injects the provider secrets into the Worker and falls back to a fixed E2E `BETTER_AUTH_SECRET`.
+All three payment runners use `scripts/run-payment-e2e.ts` and
+`vite.payment-e2e.config.ts` to inject only the selected provider credentials
+and a fixed E2E `BETTER_AUTH_SECRET`. Stripe injects the webhook secret returned
+by its CLI listener. An isolated temporary Worker configuration excludes the
+developer's `.dev.vars` and is removed when Playwright exits. The regular
+`vite.config.ts` contains no payment-specific test configuration.
 
 Vite mode `e2e` (`vite dev --mode e2e`) is not an env variable but changes runtime behavior: it enables the `/api/e2e/users` helper route (dev only, with the hardcoded `x-e2e-secret` header) and disables notifications (`websiteConfig.notification.enable`).
 

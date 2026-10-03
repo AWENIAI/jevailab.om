@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
 import { loadEnv } from 'vite';
+import { runPaymentE2E } from './run-payment-e2e';
 
 /**
  * Bootstrap for `pnpm e2e:waffo`.
@@ -52,28 +52,8 @@ console.log('     subscribed to order.completed + subscription.* + refund.*');
 console.log(`Playwright base URL: ${baseURL}`);
 console.log('');
 
-const playwright = spawn(
-  'pnpm',
-  [
-    'exec',
-    'playwright',
-    'test',
-    '--config',
-    'playwright.waffo.config.ts',
-    ...process.argv.slice(2).filter((argument) => argument !== '--'),
-  ],
-  {
-    env: {
-      ...runtimeEnv,
-      PLAYWRIGHT_BASE_URL: baseURL,
-      WAFFO_E2E_PORT: String(port),
-    },
-    stdio: 'inherit',
-  }
-);
-
-const exitCode = await new Promise<number>((resolve, reject) => {
-  playwright.once('error', reject);
-  playwright.once('exit', (code) => resolve(code ?? 1));
+process.exitCode = await runPaymentE2E('waffo', {
+  ...runtimeEnv,
+  PLAYWRIGHT_BASE_URL: baseURL,
+  WAFFO_E2E_PORT: String(port),
 });
-process.exitCode = exitCode;

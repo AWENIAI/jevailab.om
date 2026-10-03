@@ -189,3 +189,13 @@ Dashboard webhook must target that same port.
   the local Worker.
 
 Never commit `.env.local`, `.env.e2e`, Creem API keys, or webhook secrets.
+
+## Worker environment isolation
+
+The payment runner uses the shared `scripts/run-payment-e2e.ts` helper and
+`vite.payment-e2e.config.ts`. Only the selected provider's credentials are
+injected into the local Worker; the developer's `.dev.vars` is excluded.
+Stripe uses the webhook secret returned by its listener. Temporary Worker
+configuration is removed when Playwright exits, including failure or interruption.
+Run the suite through `pnpm e2e:creem` rather than launching its
+Playwright config directly.

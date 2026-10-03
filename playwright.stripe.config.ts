@@ -31,10 +31,8 @@ export default defineConfig({
         `VITE_BASE_URL=${baseURL}`,
         'VITE_PAYMENT_PROVIDER=stripe',
         'BETTER_AUTH_SECRET=e2e-better-auth-secret-at-least-32-characters',
-        'STRIPE_E2E_RUN=true',
-        'CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false',
         [
-          'pnpm exec vite dev --mode e2e',
+          'pnpm exec vite dev --config vite.payment-e2e.config.ts --mode e2e',
           '--host 127.0.0.1',
           `--port ${port}`,
           '--strictPort',

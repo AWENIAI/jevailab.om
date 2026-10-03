@@ -199,3 +199,13 @@ and the Playwright Worker will use that port together.
   a 200 response means the row was created, updated, or safely deduplicated.
 
 Never commit `.env.local`, `.env.e2e`, Stripe secret keys, or webhook secrets.
+
+## Worker environment isolation
+
+The payment runner uses the shared `scripts/run-payment-e2e.ts` helper and
+`vite.payment-e2e.config.ts`. Only the selected provider's credentials are
+injected into the local Worker; the developer's `.dev.vars` is excluded.
+Stripe uses the webhook secret returned by its listener. Temporary Worker
+configuration is removed when Playwright exits, including failure or interruption.
+Run the suite through `pnpm e2e:stripe` rather than launching its
+Playwright config directly.
