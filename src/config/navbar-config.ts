@@ -14,6 +14,7 @@ import {
   IconPhotoEdit,
   IconPhotoScan,
   IconRoute,
+  IconSearch,
   IconShieldCheck,
   IconSparkles,
   IconWand,
@@ -40,6 +41,13 @@ export function getNavbarLinks(): MenuItemConfig[] {
   links.push({
     title: m.nav_ai_title(),
     items: [
+      {
+        title: m.nav_ai_web_search_title(),
+        description: m.nav_ai_web_search_description(),
+        href: Routes.AiWebSearch,
+        icon: IconSearch,
+        external: false,
+      },
       {
         title: m.nav_ai_decision_title(),
         description: m.nav_ai_decision_description(),

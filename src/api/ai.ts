@@ -1,3 +1,4 @@
+import { webSearchInputSchema, webSearchResultSchema } from '@/lib/web-search';
 import { generateImage } from '@tanstack/ai';
 import { falImage } from '@tanstack/ai-fal';
 import { createServerFn } from '@tanstack/react-start';
@@ -581,4 +582,38 @@ export const evaluateTicket = createServerFn({ method: 'POST' })
       questions: CLEF_TICKET_QUESTIONS,
     });
     return clefTicketResultSchema.parse(result);
+  });
+
+export const searchWeb = createServerFn({ method: 'POST' })
+  .validator(webSearchInputSchema)
+  .handler(async ({ data }) => {
+    const accountId = serverEnv.CLOUDFLARE_ACCOUNT_ID;
+    const token = serverEnv.CLOUDFLARE_API_TOKEN;
+    if (!accountId || !token) {
+      throw new Error('Missing Cloudflare credentials for web search.');
+    }
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/websearch/`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...data,
+          limit: 5,
+          options: { gateway: { id: 'default' } },
+        }),
+        signal: AbortSignal.timeout(30_000),
+      }
+    );
+    if (!response.ok) {
+      throw new Error(
+        response.status === 402
+          ? 'Web search requires AI Gateway credits or a configured provider key.'
+          : `Web search request failed (${response.status}). Please try again.`
+      );
+    }
+    return webSearchResultSchema.parse(await response.json());
   });

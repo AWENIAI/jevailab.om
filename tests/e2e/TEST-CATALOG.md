@@ -386,3 +386,7 @@ AI model refresh: summaries, taglines and captions use Gemma 4 chat-completion r
   sender: immediate success, recovery on the third attempt, persistent failure,
   wrong-password boundary, and uniform password-reset responses for unknown users
   and failed delivery. No external mail provider is invoked.
+
+## Web search demo
+
+At `/ai#web-search`, load one of three query presets or enter a query, select Ceramic.ai, Exa or Linkup, and search. Empty input disables submission. Results expose source links and descriptions; changing input/provider clears stale output. Provider failures allow retry. Local UI tests intercept server-function requests; live provider evidence is separate.

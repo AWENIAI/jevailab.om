@@ -1,3 +1,4 @@
+import { AiWebSearchCard } from '@/components/ai/ai-web-search-card';
 import { m } from '@/locale/paraglide/messages';
 import { createFileRoute } from '@tanstack/react-router';
 import { AiDecisionCard } from '@/components/ai/ai-decision-card';
@@ -35,6 +36,9 @@ function AiPage() {
           </p>
         </div>
 
+        <section id="web-search" className="scroll-mt-20">
+          <AiWebSearchCard />
+        </section>
         <section id="decision-model" className="scroll-mt-20">
           <AiDecisionCard />
         </section>
