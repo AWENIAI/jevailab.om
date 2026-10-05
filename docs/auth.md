@@ -138,3 +138,16 @@ The template supports `mkext-template` (Chrome and Firefox) with bearer tokens i
 ## Database tables
 
 Better Auth tables are defined in **`src/db/auth.schema.ts`**: `user` (with `role`, `banned`, `banReason`, `banExpires`, `normalizedEmail`, `customerId`), `session`, `account`, `verification`, `apikey`. `customerId` is declared in `additionalFields` so it survives `pnpm auth:schema:generate`. Schema is merged in `src/db/schema.ts`. Migrations and Drizzle usage are described in the [DB module](./db.md).
+
+## Authentication email failures
+
+- Verification and reset emails try up to 3 times, 250 ms apart, using the same
+  link (`MAX_SEND_ATTEMPTS` in `src/auth/send-auth-email.ts`).
+- Signup success does not guarantee email delivery. Signup and unverified-login
+  forms offer resend; failed delivery returns 503, while acceptance starts a
+  60-second cooldown (`RESEND_COOLDOWN_SECONDS` in the resend component).
+- Password reset returns the same response for missing accounts and send failure.
+- Worker logs record `auth.mail.accepted`, `auth.mail.attempt_failed` and
+  `auth.mail.delivery_failed`, without recipients, links or raw provider errors.
+- Local `--mode e2e` uses test mail only. Verify real-provider delivery and email
+  links separately before release.

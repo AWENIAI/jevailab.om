@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { getDb } from '@/db';
 import { sendEmail } from '@/mail';
+import { sendAuthEmail } from '@/auth/send-auth-email';
 import { subscribe } from '@/newsletter';
 import { getBaseUrl } from '@/lib/urls';
 import { serverEnv } from '@/env/server';
@@ -129,11 +130,14 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     // https://www.better-auth.com/docs/authentication/email-password#forget-password
     sendResetPassword: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        template: 'forgotPassword',
-        context: { url, name: user.name ?? '' },
-      });
+      await sendAuthEmail(
+        {
+          to: user.email,
+          template: 'forgotPassword',
+          context: { url, name: user.name ?? '' },
+        },
+        sendEmail
+      );
     },
   },
   emailVerification: {
@@ -141,11 +145,14 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     // https://www.better-auth.com/docs/authentication/email-password#require-email-verification
     sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        template: 'verifyEmail',
-        context: { url, name: user.name ?? '' },
-      });
+      await sendAuthEmail(
+        {
+          to: user.email,
+          template: 'verifyEmail',
+          context: { url, name: user.name ?? '' },
+        },
+        sendEmail
+      );
     },
     sendOnSignIn: true,
   },
@@ -237,6 +244,7 @@ export const auth = betterAuth({
  * Runs after a new user is created. Auto-subscribes to newsletter when enabled.
  */
 async function onCreateUser(user: User) {
+  if (import.meta.env.DEV && import.meta.env.MODE === 'e2e') return;
   const newsletterConfig = websiteConfig.newsletter;
   if (
     !user.email ||

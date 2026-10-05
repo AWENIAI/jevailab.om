@@ -42,7 +42,7 @@ export class ResendProvider implements MailProvider {
         text: mailTemplate.text,
       });
     } catch (error) {
-      logOperationalEvent.error('Error sending template email:', error);
+      logOperationalEvent.error('mail.template_failed');
       return { success: false, error };
     }
   }
@@ -62,12 +62,12 @@ export class ResendProvider implements MailProvider {
         text,
       });
       if (error) {
-        logOperationalEvent.error('Error sending email', error);
+        logOperationalEvent.error('mail.provider_rejected');
         return { success: false, error };
       }
       return { success: true, messageId: data?.id };
     } catch (error) {
-      logOperationalEvent.error('Error sending email:', error);
+      logOperationalEvent.error('mail.provider_failed');
       return { success: false, error };
     }
   }

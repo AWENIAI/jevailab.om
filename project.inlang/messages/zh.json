@@ -770,5 +770,11 @@
   "ai_decision_impact_none": "无影响",
   "ai_decision_impact_minor": "轻微 · 有替代方案",
   "ai_decision_impact_major": "较大 · 部分客户受阻",
-  "ai_decision_impact_critical": "严重 · 所有客户受阻"
+  "ai_decision_impact_critical": "严重 · 所有客户受阻",
+  "auth_verification_resend": "重新发送",
+  "auth_verification_requested": "请检查邮箱",
+  "auth_verification_send_failed": "发送失败，请重试",
+  "auth_verification_required": "请先验证邮箱",
+  "auth_verification_sending": "发送中…",
+  "auth_verification_cooldown": "{seconds} 秒后重发"
 }

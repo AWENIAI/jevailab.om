@@ -126,3 +126,73 @@ test.describe('authentication and protected routes', () => {
     await expect(userDrawer).toBeHidden();
   });
 });
+
+test('offers verification recovery after registration and unverified login', async ({
+  page,
+  request,
+}) => {
+  const user = createE2EUser();
+  await page.goto('/auth/register');
+  await page.waitForLoadState('networkidle');
+  await page.locator('input[name="name"]').fill(user.name);
+  await page.locator('input[name="email"]').fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  // Retain the registered address even if the user edits the form afterward.
+  await page.locator('input[name="email"]').fill('e2e-edited@example.test');
+  const resend = page.waitForResponse((r) =>
+    r.url().includes('/send-verification-email')
+  );
+  await page.getByTestId('auth-resend-verification').click();
+  const response = await resend;
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON().email).toBe(user.email);
+  await expect(page.getByTestId('auth-resend-verification')).toBeDisabled();
+  await page.goto('/auth/login');
+  await page.waitForLoadState('networkidle');
+  await page.locator('input[name="email"]').fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
+  const login = page.waitForResponse((r) => r.url().includes('/sign-in/email'));
+  await page.locator('form button[type="submit"]').click();
+  expect((await login).status()).toBe(403);
+  await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  expect(await (await request.get('/api/auth/get-session')).json()).toBeNull();
+});
+
+test('keeps verification resend available after a delivery error', async ({
+  page,
+  request,
+}) => {
+  const user = await registerE2EUser(request);
+  await updateE2EUser(request, { email: user.email, emailVerified: false });
+  await page.goto('/auth/login');
+  await page.waitForLoadState('networkidle');
+  await page.locator('input[name="email"]').fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  await page.route('**/api/auth/send-verification-email', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'AUTH_EMAIL_SEND_FAILED',
+        message: 'Delivery unavailable',
+      }),
+    })
+  );
+  const failed = page.waitForResponse((r) =>
+    r.url().includes('/send-verification-email')
+  );
+  await page.getByTestId('auth-resend-verification').click();
+  expect((await failed).status()).toBe(503);
+  await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  await page.unroute('**/api/auth/send-verification-email');
+  const recovered = page.waitForResponse((r) =>
+    r.url().includes('/send-verification-email')
+  );
+  await page.getByTestId('auth-resend-verification').click();
+  expect((await recovered).status()).toBe(200);
+  await expect(page.getByTestId('auth-resend-verification')).toBeDisabled();
+});

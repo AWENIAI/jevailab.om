@@ -375,3 +375,14 @@ The Playwright suite does not yet cover:
 At `/ai#decision-model`, select Clef or Clef Flash, load a support-ticket preset or enter a ticket, and submit it. The selected model receives the state and three typed questions; the page displays urgency, team probabilities and severity. Empty input disables submission; provider failures are surfaced and the user can retry. Local UI tests mock the server-function response; live Workers AI verification is separate.
 
 AI model refresh: summaries, taglines and captions use Gemma 4 chat-completion responses; speech uses Aura 2 supported voices and MP3; FLUX.2 image generation uses multipart input. The model picker uses the shared Select controls. Verify real provider output separately from deterministic local tests.
+
+### Authentication mail recovery
+
+- Registration success exposes verification resend; an unverified credential
+  login exposes the same recovery control without granting a session.
+- Resend uses the existing verification endpoint, remains available after a
+  delivery failure, and prevents repeated clicks for 60 seconds after acceptance.
+- Local unit integration exercises the installed auth handler with a fake mail
+  sender: immediate success, recovery on the third attempt, persistent failure,
+  wrong-password boundary, and uniform password-reset responses for unknown users
+  and failed delivery. No external mail provider is invoked.

@@ -2,7 +2,6 @@ import { getAuthErrorMessage } from '@/lib/locale';
 import { m } from '@/locale/paraglide/messages';
 import { AuthCard } from '@/components/auth/auth-card';
 import { FormError } from '@/components/shared/form-error';
-import { FormSuccess } from '@/components/shared/form-success';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -22,6 +21,7 @@ import { IconEye, IconEyeOff, IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { ResendVerificationButton } from './resend-verification-button';
 import { SocialLoginButton } from './social-login-button';
 interface RegisterFormProps {
   callbackUrl?: string;
@@ -40,6 +40,7 @@ export function RegisterForm({
   const [error, setError] = useState<string | undefined>(undefined);
   const [success, setSuccess] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const credentialLoginEnabled =
     websiteConfig.auth?.enableCredentialLogin ?? true;
@@ -69,7 +70,10 @@ export function RegisterForm({
           setSuccess('');
         },
         onResponse: () => setIsPending(false),
-        onSuccess: () => setSuccess(m.auth_register_check_email()),
+        onSuccess: () => {
+          setVerificationEmail(values.email);
+          setSuccess(m.auth_register_check_email());
+        },
         onError: (ctx) => {
           setError(getAuthErrorMessage(ctx.error));
         },
@@ -166,7 +170,14 @@ export function RegisterForm({
               />
             </div>
             <FormError message={error} />
-            <FormSuccess message={success} />
+
+            {success && (
+              <ResendVerificationButton
+                email={verificationEmail}
+                initialMessage={m.auth_register_check_email()}
+                callbackUrl={callbackUrl}
+              />
+            )}
             <Button
               disabled={isPending}
               size="lg"

@@ -770,5 +770,11 @@
   "ai_decision_impact_none": "No impact",
   "ai_decision_impact_minor": "Minor · workaround available",
   "ai_decision_impact_major": "Major · some customers blocked",
-  "ai_decision_impact_critical": "Critical · all customers blocked"
+  "ai_decision_impact_critical": "Critical · all customers blocked",
+  "auth_verification_resend": "Resend email",
+  "auth_verification_requested": "Check your inbox",
+  "auth_verification_send_failed": "Couldn’t send. Try again.",
+  "auth_verification_required": "Verify your email to continue",
+  "auth_verification_sending": "Sending…",
+  "auth_verification_cooldown": "Resend in {seconds}s"
 }

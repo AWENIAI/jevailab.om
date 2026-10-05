@@ -45,6 +45,13 @@ export function getMailProvider(): MailProvider {
 export async function sendEmail(
   params: SendTemplateParams | SendRawEmailParams
 ): Promise<SendEmailResult> {
+  // Local E2E must never contact an external mail provider.
+  if (import.meta.env.DEV && import.meta.env.MODE === 'e2e') {
+    return {
+      success: /^e2e-.*@example\.test$/.test(params.to),
+      error: 'Local test mail only',
+    };
+  }
   if (!websiteConfig.mail?.enable) {
     return { success: false, error: 'Mail feature is disabled' };
   }
@@ -55,11 +62,11 @@ export async function sendEmail(
         ? await provider.sendTemplate(params)
         : await provider.sendRawEmail(params);
     if (!result.success) {
-      logOperationalEvent.error('[mail] Send failed:', result.error);
+      logOperationalEvent.error('mail.send_failed');
     }
     return result;
   } catch (error) {
-    logOperationalEvent.error('[mail] Unexpected error:', error);
+    logOperationalEvent.error('mail.unexpected_error');
     return { success: false, error };
   }
 }

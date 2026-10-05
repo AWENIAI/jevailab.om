@@ -50,7 +50,7 @@ export class CloudflareProvider implements MailProvider {
         text: mailTemplate.text,
       });
     } catch (error) {
-      logOperationalEvent.error('Error sending template email:', error);
+      logOperationalEvent.error('mail.template_failed');
       return { success: false, error };
     }
   }
@@ -87,17 +87,14 @@ export class CloudflareProvider implements MailProvider {
         const errorMsg =
           data.errors?.map((e) => `${e.code}: ${e.message}`).join(', ') ||
           'Unknown error';
-        logOperationalEvent.error(
-          'Error sending email via Cloudflare:',
-          errorMsg
-        );
+        logOperationalEvent.error('mail.provider_rejected');
         return { success: false, error: errorMsg };
       }
 
       const messageId = data.result?.delivered?.[0];
       return { success: true, messageId };
     } catch (error) {
-      logOperationalEvent.error('Error sending email via Cloudflare:', error);
+      logOperationalEvent.error('mail.provider_failed');
       return { success: false, error };
     }
   }

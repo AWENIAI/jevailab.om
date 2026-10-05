@@ -24,6 +24,7 @@ import { IconEye, IconEyeOff, IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { ResendVerificationButton } from './resend-verification-button';
 import { SocialLoginButton } from './social-login-button';
 interface LoginFormProps {
   className?: string;
@@ -46,6 +47,7 @@ export function LoginForm({
   const [error, setError] = useState<string | undefined>(undefined);
   const [success, setSuccess] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const credentialLoginEnabled =
     websiteConfig.auth?.enableCredentialLogin ?? false;
@@ -73,6 +75,7 @@ export function LoginForm({
           setIsPending(true);
           setError('');
           setSuccess('');
+          setVerificationEmail('');
         },
         onResponse: () => setIsPending(false),
         onSuccess: () => {
@@ -80,6 +83,9 @@ export function LoginForm({
         },
         onError: (ctx) => {
           setError(getAuthErrorMessage(ctx.error));
+          if (ctx.error.code === 'EMAIL_NOT_VERIFIED') {
+            setVerificationEmail(values.email);
+          }
         },
       }
     );
@@ -165,8 +171,19 @@ export function LoginForm({
                 )}
               />
             </div>
-            <FormError message={error || urlError || undefined} />
+            <FormError
+              message={
+                verificationEmail ? undefined : error || urlError || undefined
+              }
+            />
             <FormSuccess message={success} />
+            {verificationEmail && (
+              <ResendVerificationButton
+                email={verificationEmail}
+                initialMessage={m.auth_verification_required()}
+                callbackUrl={callbackUrl}
+              />
+            )}
             <Button
               disabled={isPending}
               size="lg"
