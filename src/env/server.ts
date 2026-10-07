@@ -10,7 +10,18 @@ export const serverEnv = createEnv({
     VITE_BASE_URL: z.url().default('http://localhost:3000'),
 
     // Auth (Better Auth)
-    BETTER_AUTH_SECRET: z.string().default('better-auth-secret'),
+    // The default keeps CLI tooling (auth:schema:generate) and local/E2E runs
+    // working without a secret, but a production Worker must never boot with
+    // it: the session signing key would be a value published in this repo.
+    BETTER_AUTH_SECRET: z
+      .string()
+      .default('better-auth-secret')
+      .refine(
+        (value) =>
+          process.env.NODE_ENV !== 'production' ||
+          (value !== 'better-auth-secret' && value.length >= 32),
+        'BETTER_AUTH_SECRET must be a unique value of at least 32 characters in production.'
+      ),
     BETTER_AUTH_TRUSTED_ORIGINS: z.string().default(''),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
