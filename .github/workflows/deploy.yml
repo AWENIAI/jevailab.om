@@ -54,13 +54,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint and unit tests
-        run: pnpm check
-
+      # Build generates the locale modules required by tests, plus content
+      # collection and route types required by the type check.
       - name: Build
         run: pnpm build
 
-      # Build generates the locale, content collection, and route types.
+      - name: Lint and unit tests
+        run: pnpm check
+
       - name: Type check
         run: pnpm exec tsc --noEmit
 

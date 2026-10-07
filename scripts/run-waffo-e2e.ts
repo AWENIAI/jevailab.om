@@ -22,7 +22,7 @@ const port = Number(process.env.WAFFO_E2E_PORT ?? 3018);
 // default flow works without overriding PLAYWRIGHT_BASE_URL.
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
 const fileEnv = loadEnv('e2e', process.cwd(), '');
-const runtimeEnv = {
+const runtimeEnv: NodeJS.ProcessEnv = {
   ...process.env,
   ...fileEnv,
   VITE_PAYMENT_PROVIDER: 'waffo',

@@ -13,7 +13,7 @@ import { runPaymentE2E } from './run-payment-e2e';
 const port = Number(process.env.CREEM_E2E_PORT ?? 3021);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
 const fileEnv = loadEnv('e2e', process.cwd(), '');
-const runtimeEnv = {
+const runtimeEnv: NodeJS.ProcessEnv = {
   ...process.env,
   ...fileEnv,
   CREEM_DEBUG: 'true',

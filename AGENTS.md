@@ -22,7 +22,7 @@ pnpm e2e:production         # Smoke-test a deployed site (tests/e2e/production)
 pnpm e2e:stripe             # Stripe Test Mode suite (see tests/e2e/stripe/README.md)
 pnpm e2e:creem              # Creem sandbox suite (see tests/e2e/creem/README.md)
 pnpm e2e:waffo              # Waffo sandbox suite (see tests/e2e/waffo/README.md)
-pnpm verify:upgrade         # check + build + e2e + e2e:production
+pnpm verify:upgrade         # build + check + e2e + e2e:production
 
 pnpm lint                   # Biome lint + format with auto-fix
 pnpm check                  # Biome check (read-only) + Vitest unit tests

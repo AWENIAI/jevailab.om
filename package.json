@@ -15,7 +15,7 @@
     "e2e:ui": "playwright test --ui",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:upgrade": "pnpm check && pnpm build && pnpm e2e && pnpm e2e:production",
+    "verify:upgrade": "pnpm build && pnpm check && pnpm e2e && pnpm e2e:production",
     "knip": "knip",
     "check": "biome check && vitest run",
     "lint": "biome check --write .",
