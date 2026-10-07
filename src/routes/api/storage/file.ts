@@ -59,7 +59,6 @@ export const Route = createFileRoute('/api/storage/file')({
             'image/webp',
             'image/bmp',
             'image/x-icon',
-            'image/svg+xml',
             'application/pdf',
           ];
           const isPublicFile = fileRecord?.isPublic === true || isPublicKey;
