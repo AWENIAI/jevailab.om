@@ -54,8 +54,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint and unit tests
+        run: pnpm check
+
       - name: Build
         run: pnpm build
 
+      # Build generates the locale, content collection, and route types.
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
       - name: Deploy to Cloudflare Workers
-        run: pnpx wrangler deploy
+        run: pnpm exec wrangler deploy
