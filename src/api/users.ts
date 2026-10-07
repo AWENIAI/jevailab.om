@@ -59,8 +59,8 @@ export const listUsers = createServerFn({ method: 'GET' })
       const pattern = `%${escaped}%`;
       conditions.push(
         or(
-          sql`lower(${user.name}) like lower(${pattern})`,
-          sql`lower(${user.email}) like lower(${pattern})`
+          sql`lower(${user.name}) like lower(${pattern}) escape '\\'`,
+          sql`lower(${user.email}) like lower(${pattern}) escape '\\'`
         )!
       );
     }

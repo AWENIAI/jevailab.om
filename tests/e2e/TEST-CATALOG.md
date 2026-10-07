@@ -109,6 +109,14 @@ console errors or page errors.
 | 1 | Protected pages render successfully | Sign in as an admin E2E user, then open `/dashboard`, `/admin/users`, `/settings/profile`, `/settings/security`, `/settings/apikeys`, `/settings/files`, `/settings/billing`, `/settings/payment`, `/settings/notifications` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
 | 2 | Collapsed sidebar persists across protected route groups | Collapse the desktop sidebar, navigate from Dashboard to Profile and Security, then return to Dashboard. Verify the sidebar remains collapsed after every route transition. |
 
+### Admin user search
+
+**File:** `specs/admin-users-search.spec.ts` | **Priority:** P1
+
+An admin searches seeded names containing `_`, `%`, and backslashes, then
+searches by email. Verify matching users appear and wildcard-like decoys do not.
+Verify ordinary case-insensitive substring search still works.
+
 ## 4. Profile Settings
 
 **File:** `specs/settings-profile.spec.ts` | **Priority:** P1

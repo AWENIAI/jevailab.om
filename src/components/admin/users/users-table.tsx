@@ -353,6 +353,7 @@ export function UsersTable({
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative">
             <Input
+              data-testid="admin-users-search"
               placeholder={m.admin_users_search()}
               value={search}
               onChange={(e) => {
