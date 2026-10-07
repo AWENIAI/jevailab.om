@@ -119,6 +119,14 @@ Verify ordinary case-insensitive substring search still works.
 
 ## 4. Profile Settings
 
+### Newsletter ownership
+
+**File:** `tests/unit/newsletter-security.test.ts` | **Priority:** P0
+
+Subscription status and unsubscribe require a verified session. Client-supplied
+email addresses cannot select another user's subscription; operations and cache
+invalidation use the authenticated user's database email.
+
 **File:** `specs/settings-profile.spec.ts` | **Priority:** P1
 
 Verifies the signed-in profile update flow.

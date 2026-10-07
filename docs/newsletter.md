@@ -83,16 +83,16 @@ Providers throw from the constructor when their API key is missing, and return `
 
 | Server function | Input | Behavior |
 |-----------------|--------|----------|
-| `getNewsletterStatus` (GET) | `{ email }` | Returns `{ subscribed }` from cache, or calls `isSubscribed(email)` and caches it for 10 minutes. |
+| `getNewsletterStatus` (GET) | None | Verified session required; returns cached status for the current user's database email, or queries the provider and caches it for 10 minutes. |
 | `subscribeNewsletter` (POST) | `{ email }` | `subscribe(email)` → deletes status cache → if `mail.fromEmail` is set, waits 3 seconds and sends the `subscribeNewsletter` email (errors logged). |
-| `unsubscribeNewsletter` (POST) | `{ email }` | `unsubscribe(email)` → deletes status cache. |
+| `unsubscribeNewsletter` (POST) | None | Verified session required; unsubscribes the current user's database email and deletes its status cache. |
 
 Behavior shared by all three:
 
-- The email is validated with `z.email()`, then trimmed and lowercased.
+- Emails are trimmed and lowercased. Public subscribe validates its input with `z.email()`.
 - When the newsletter is disabled they throw `Error('Newsletter is disabled')` (a server-function error, not an HTTP 400).
 - When the provider returns `false`, subscribe/unsubscribe throw `'Failed to subscribe to the newsletter'` / `'Failed to unsubscribe from the newsletter'`. Errors are rethrown as `Error(message)`.
-- **No auth middleware.** They accept any email from the caller, so anyone can check or unsubscribe an arbitrary address. If that matters for your product, add `authApiMiddleware` to the status/unsubscribe functions and use the session email instead of the input.
+- Status and unsubscribe use `authApiMiddleware` and resolve the email by the authenticated user ID. Client-supplied email addresses cannot select another subscription. Public subscribe continues to accept a validated email.
 
 Caveat: provider errors in `isSubscribed` resolve to `false`, and that `false` is cached for 10 minutes.
 

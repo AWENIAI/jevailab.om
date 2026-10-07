@@ -13,7 +13,7 @@ export const newsletterKeys = {
 export function useNewsletterStatus(email: string | undefined) {
   return useQuery({
     queryKey: newsletterKeys.status(email ?? ''),
-    queryFn: () => getNewsletterStatus({ data: { email: email! } }),
+    queryFn: () => getNewsletterStatus(),
     enabled: !!email,
     staleTime: 5 * 60 * 1000,
   });
@@ -32,7 +32,7 @@ export function useSubscribeNewsletter() {
 export function useUnsubscribeNewsletter() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (email: string) => unsubscribeNewsletter({ data: { email } }),
+    mutationFn: (_email: string) => unsubscribeNewsletter(),
     onSuccess: (_, email) => {
       queryClient.invalidateQueries({ queryKey: newsletterKeys.status(email) });
     },

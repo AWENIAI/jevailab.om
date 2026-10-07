@@ -1,6 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
 import { CACHE_TTL, createCacheKey, deleteCache, getOrSetCache } from '@/cache';
 import { websiteConfig } from '@/config/website';
+import { getDb } from '@/db';
+import { user } from '@/db/auth.schema';
+import { authApiMiddleware } from '@/middlewares/auth-middleware';
+import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/mail';
 import { isSubscribed, subscribe, unsubscribe } from '@/newsletter';
 import { z } from 'zod';
@@ -18,11 +22,21 @@ function getNewsletterStatusCacheKey(email: string): string {
   return createCacheKey('newsletter:status', email.trim().toLowerCase());
 }
 
+async function getUserEmail(userId: string): Promise<string> {
+  const [record] = await getDb()
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  if (!record?.email) throw new Error('User email not found');
+  return record.email.trim().toLowerCase();
+}
+
 export const getNewsletterStatus = createServerFn({ method: 'GET' })
-  .validator(z.object({ email: emailSchema }))
-  .handler(async ({ data }) => {
+  .middleware([authApiMiddleware])
+  .handler(async ({ context }) => {
     ensureNewsletterEnabled();
-    const email = data.email.trim().toLowerCase();
+    const email = await getUserEmail(context.userId);
     try {
       return getOrSetCache({
         key: getNewsletterStatusCacheKey(email),
@@ -73,10 +87,10 @@ export const subscribeNewsletter = createServerFn({ method: 'POST' })
   });
 
 export const unsubscribeNewsletter = createServerFn({ method: 'POST' })
-  .validator(z.object({ email: emailSchema }))
-  .handler(async ({ data }) => {
+  .middleware([authApiMiddleware])
+  .handler(async ({ context }) => {
     ensureNewsletterEnabled();
-    const email = data.email.trim().toLowerCase();
+    const email = await getUserEmail(context.userId);
     try {
       const ok = await unsubscribe(email);
       if (!ok) {
