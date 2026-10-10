@@ -30,7 +30,7 @@ Do not assert wording, layout, dimensions, colors, typography, icons, images,
 CSS classes, or other visual styling in functional E2E tests.
 
 E2E tests are intentionally local-first. CI should continue to prefer fast
-checks such as `pnpm check` and `pnpm build` unless a separate E2E environment is
+checks such as `pnpm lint` and `pnpm test` unless a separate E2E environment is
 explicitly provisioned.
 
 ## Test Harness
@@ -44,8 +44,11 @@ explicitly provisioned.
 Playwright starts Vite on the configured `PORT` and points both Wrangler
 migrations and the Cloudflare Vite plugin at the same isolated local state.
 This keeps E2E data separate from the developer's `.wrangler/state` database.
-`pnpm e2e:production` builds the app and runs a smaller smoke suite against
-Cloudflare Vite preview so production SSR and API output are covered too.
+`pnpm check` runs lint, unit tests (including locale generation), the production
+build, type checking, and the local E2E suite.
+`pnpm check:production` (also available as `pnpm e2e:production`) separately
+builds the app and runs a smaller smoke suite against local Cloudflare Vite preview so production SSR and API output are covered too.
+It does not deploy the application or test a live site.
 
 The test-only API is disabled unless Vite is running locally with
 `import.meta.env.DEV === true`, `MODE=e2e`, and the request includes the
@@ -209,7 +212,7 @@ Stripe.
 `tests/unit/payment/stripe-provider.test.ts`, and
 `tests/unit/payment/stripe-webhook-route.test.ts`
 
-Runs inside `pnpm check` with Stripe SDK-generated test signatures. It verifies
+Runs inside `pnpm test` with Stripe SDK-generated test signatures. It verifies
 invalid signatures, checkout creation for subscription and Lifetime prices,
 Customer Portal parameters, subscription and one-time `invoice.paid` handling,
 renewal lookup by subscription ID, cancellation/deletion, refund access
@@ -308,7 +311,7 @@ uses an email magic-link flow and its renewal lifecycle is time-dependent.
 **File:** `tests/e2e/waffo/waffo-sandbox.spec.ts` | **Priority:** P1
 
 Run the focused suite with `pnpm e2e:waffo`. The unit boundary
-(`tests/unit/payment/waffo-provider.test.ts`) already runs in `pnpm check` and
+(`tests/unit/payment/waffo-provider.test.ts`) already runs in `pnpm test` and
 covers checkout mapping, order completion, subscription lifecycle changes,
 renewal period advancement, and refund handling.
 

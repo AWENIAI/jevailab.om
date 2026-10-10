@@ -54,16 +54,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build generates the locale modules required by tests, plus content
-      # collection and route types required by the type check.
+      - name: Lint
+        run: pnpm lint
+
+      # The test command generates the locale modules required by unit tests.
+      - name: Unit tests
+        run: pnpm test
+
       - name: Build
         run: pnpm build
 
-      - name: Lint and unit tests
-        run: pnpm check
-
+      # Build generates content collection and TanStack Start route types.
       - name: Type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm typecheck
 
       - name: Deploy to Cloudflare Workers
         run: pnpm exec wrangler deploy

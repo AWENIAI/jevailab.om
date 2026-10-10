@@ -18,14 +18,16 @@ pnpm test:watch             # Vitest in watch mode
 pnpm e2e                    # Run local Playwright E2E tests (tests/e2e/specs)
 pnpm e2e:ui                 # Run Playwright E2E in UI mode
 pnpm e2e:install            # Install Playwright browser binaries
-pnpm e2e:production         # Smoke-test a deployed site (tests/e2e/production)
+pnpm e2e:production         # Local production Worker preview smoke tests
 pnpm e2e:stripe             # Stripe Test Mode suite (see tests/e2e/stripe/README.md)
 pnpm e2e:creem              # Creem sandbox suite (see tests/e2e/creem/README.md)
 pnpm e2e:waffo              # Waffo sandbox suite (see tests/e2e/waffo/README.md)
-pnpm verify:upgrade         # build + check + e2e + e2e:production
+pnpm check                  # Local lint, unit tests, build, types, and E2E
+pnpm check:production       # Separate local production Worker preview smoke
 
-pnpm lint                   # Biome lint + format with auto-fix
-pnpm check                  # Biome check (read-only) + Vitest unit tests
+pnpm lint                   # Biome lint + format check (read-only)
+pnpm typecheck              # TypeScript check (run after build)
+pnpm fix                    # Biome lint + format with auto-fix
 pnpm format                 # Biome format only
 pnpm knip                   # Find unused exports/dependencies
 
@@ -137,7 +139,10 @@ Avoid Node.js-specific APIs — this runs on Cloudflare Workers runtime, not Nod
 Vitest runs `tests/unit/**/*.test.ts` in a Node environment (`vitest.config.ts`,
 `@` alias to `src`). Use unit tests for pure logic and provider/webhook
 behavior (auth token handling, trusted origins, payment providers, webhook
-routes, return-URL normalization). `pnpm check` runs them together with Biome.
+routes, return-URL normalization). `pnpm test` generates locale modules before
+running Vitest; `pnpm check` includes lint, unit tests, build, type checking, and
+local E2E. Production-mode preview smoke tests run separately with
+`pnpm check:production`.
 
 ## E2E Testing
 

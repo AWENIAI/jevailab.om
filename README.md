@@ -4,6 +4,23 @@ Ship Faster with TanStack, Cost Less with Cloudflare
 
 TanStarter is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, payments, storage, email, newsletter, blog, dashboard, i18n, SEO and more, fully deployed on Cloudflare Workers.
 
+## Validation
+
+```bash
+pnpm check                  # Complete local validation
+pnpm check:production       # Separate local production Worker preview smoke
+pnpm lint                   # Read-only lint and formatting checks
+pnpm fix                    # Fix formatting and auto-fixable lint issues
+pnpm format                 # Format files only
+pnpm test                   # Generate locale modules and run unit tests
+pnpm typecheck              # Check types after build
+```
+
+`check` runs lint, unit tests, build, type checking, and local Playwright E2E.
+`check:production` separately builds and tests the production Worker in local
+preview. Neither command deploys or tests a live site. Use `fix` or `format` to
+modify files; `lint` only checks them. Run `lint` and `test` for quick checks.
+
 ## Author
 
 This project is created by [Fox](https://x.com/indie_maker_fox), the founder of [TanStarter](https://tanstarter.dev), [MkImage](https://mkimage.ai), [MkSaaS](https://mksaas.com) and [Mkdirs](https://mkdirs.com).

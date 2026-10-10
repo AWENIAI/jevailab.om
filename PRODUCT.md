@@ -22,7 +22,7 @@ TanStarter is the complete TanStack Start boilerplate for building profitable Sa
 
 - Buyer workflow: start at the docs site, clone or generate from the template, configure `.env` (build-time `VITE_` client vars; runtime server bindings/secrets), run `pnpm dev` on port 3000, customize `src/config/website.ts`, apply D1 migrations with `pnpm db:migrate:local|remote`, and ship with `pnpm deploy`.
 - Supporting surfaces: website tanstarter.dev, demo demo.tanstarter.dev, docs docs.tanstarter.dev, video tutorials on YouTube (@TanStarter), Discord community (mksaas.link/discord), support at support@tanstarter.dev.
-- Quality workflow: local-first Playwright E2E under `tests/e2e/` with the acceptance checklist in TEST-CATALOG.md; `pnpm verify:upgrade` gates releases. The E2E helper API only works in local Vite DEV with `MODE=e2e` and a matching secret.
+- Quality workflow: local-first Playwright E2E under `tests/e2e/` with the acceptance checklist in TEST-CATALOG.md; `pnpm check` runs complete local validation; `pnpm check:production` separately runs production-mode Worker smoke tests in local preview. Neither command deploys or tests a live site. The E2E helper API only works in local Vite DEV with `MODE=e2e` and a matching secret.
 - The template is the upstream for the MkFastHQ product family; sibling checkouts (e.g. mkfast-app, mkfast-website) sync from it while preserving their own branding and product behavior.
 
 ## Capabilities and Constraints
