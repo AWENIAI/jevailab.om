@@ -1,3 +1,4 @@
+import { pageStructuredData } from '@/lib/structured-data';
 import { websiteConfig } from '@/config/website';
 import {
   getCanonicalUrlForLocale,
@@ -60,6 +61,12 @@ export function seo(
   return {
     meta: metadata({ ...options, url, image, type: options.type ?? 'website' }),
     links: [{ rel: 'canonical', href: url }, ...alternateLinks],
+    scripts: pageStructuredData(path, {
+      url,
+      title: options.title,
+      description: options.description,
+      locale: canonicalLocale,
+    }),
   };
 }
 

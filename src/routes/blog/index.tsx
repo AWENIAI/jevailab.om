@@ -5,6 +5,7 @@ import { BlogGrid } from '@/components/blog/blog-grid';
 import { BlogPagination } from '@/components/blog/blog-pagination';
 import { getPaginatedPosts } from '@/lib/blog';
 import { websiteConfig } from '@/config/website';
+import { jsonLdScript, pageStructuredData } from '@/lib/structured-data';
 import { seo } from '@/lib/seo';
 import { getCanonicalUrlForLocale } from '@/lib/urls';
 import { getLocale, localeConfig } from '@/lib/locale';
@@ -57,6 +58,7 @@ export const Route = createFileRoute('/blog/')({
     const blogJsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Blog',
+      '@id': `${canonicalHref}#blog`,
       name: m.blog_title(),
       description: m.blog_description(),
       url: canonicalHref,
@@ -69,10 +71,13 @@ export const Route = createFileRoute('/blog/')({
         ...metadata.links.filter((link) => link.rel !== 'canonical'),
       ],
       scripts: [
-        {
-          type: 'application/ld+json',
-          children: JSON.stringify(blogJsonLd),
-        },
+        ...pageStructuredData(path, {
+          url: canonicalHref,
+          title: `${m.blog_title()}${pageSuffix} | ${websiteConfig.metadata?.name}`,
+          description: m.blog_description(),
+          locale: getLocale(),
+        }),
+        jsonLdScript(blogJsonLd),
       ],
     };
   },

@@ -9,6 +9,10 @@ import { renderMarkdown } from '@/lib/markdown';
 import { websiteConfig } from '@/config/website';
 import { getCanonicalUrlForLocale, getImageUrl } from '@/lib/urls';
 import { localeConfig } from '@/lib/locale';
+import {
+  jsonLdScript,
+  organizationStructuredData,
+} from '@/lib/structured-data';
 import { seo } from '@/lib/seo';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { formatDate } from '@/lib/formatter';
@@ -39,41 +43,23 @@ export const Route = createFileRoute('/blog/$slug')({
     });
     const articleJsonLd = {
       '@context': 'https://schema.org',
-      '@type': 'Article',
+      '@type': 'BlogPosting',
       headline: post.title,
       description,
       inLanguage: localeConfig[post.locale].hreflang,
       ...(image && { image }),
       datePublished: new Date(post.date).toISOString(),
-      dateModified: new Date(post.date).toISOString(),
       url: canonicalUrl,
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': canonicalUrl,
+        '@id': `${canonicalUrl}#webpage`,
       },
-      author: {
-        '@type': 'Organization',
-        name: websiteConfig.metadata?.name ?? '',
-      },
-      publisher: {
-        '@type': 'Organization',
-        name: websiteConfig.metadata?.name ?? '',
-        logo: {
-          '@type': 'ImageObject',
-          url: getImageUrl(
-            websiteConfig.metadata?.images?.logoLight ?? '/logo.png'
-          ),
-        },
-      },
+      author: organizationStructuredData(post.locale),
+      publisher: organizationStructuredData(post.locale),
     };
     return {
       ...metadata,
-      scripts: [
-        {
-          type: 'application/ld+json',
-          children: JSON.stringify(articleJsonLd),
-        },
-      ],
+      scripts: [...metadata.scripts, jsonLdScript(articleJsonLd)],
     };
   },
   component: BlogPostPage,
