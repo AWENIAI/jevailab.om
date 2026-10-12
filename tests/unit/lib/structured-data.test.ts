@@ -8,7 +8,7 @@ vi.mock('@/config/website', () => ({
 }));
 vi.mock('@/lib/urls', () => ({
   getCanonicalUrlForLocale: (path: string, locale: string) =>
-    `https://example.com${locale === 'zh' ? '/zh' : ''}${path}`,
+    `https://example.com${locale === 'en' ? '/en' : ''}${path}`,
   getImageUrl: (path: string) => `https://example.com${path}`,
 }));
 vi.mock('@/lib/locale', () => ({
@@ -27,12 +27,12 @@ describe('structured data', () => {
 
   it('uses the resolved canonical locale and pagination URL', () => {
     const [script] = pageStructuredData('/blog', {
-      url: 'https://example.com/zh/blog?page=2',
+      url: 'https://example.com/blog?page=2',
       title: 'Blog',
       locale: 'zh',
     });
     const graph = JSON.parse(script.children)['@graph'];
-    expect(graph[2].url).toBe('https://example.com/zh/blog?page=2');
+    expect(graph[2].url).toBe('https://example.com/blog?page=2');
     expect(graph[2].inLanguage).toBe('zh-CN');
     expect(graph[2].isPartOf['@id']).toBe(graph[1]['@id']);
     expect(graph[1].publisher['@id']).toBe(graph[0]['@id']);

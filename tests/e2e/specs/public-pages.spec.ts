@@ -122,9 +122,9 @@ test('localized content metadata and sitemap agree', async ({
   const xml = await response.text();
   for (const path of [
     '/terms',
-    '/zh/terms',
+    '/en/terms',
     '/blog/getting-started',
-    '/zh/blog/getting-started',
+    '/en/blog/getting-started',
   ]) {
     expect(xml).toContain(`<loc>${origin}${path}</loc>`);
   }

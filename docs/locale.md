@@ -4,10 +4,10 @@ This project uses Paraglide JS for runtime locale support.
 
 ## Locales
 
-- Base locale: `en`
-- Additional locale: `zh`
-- Default English URLs are unprefixed: `/about`
-- Chinese URLs use a prefix: `/zh/about`
+- Base locale: `zh`
+- Additional locale: `en`
+- Default Chinese URLs are unprefixed: `/about`
+- English URLs use a prefix: `/en/about`
 - Resolution strategy: `['url', 'cookie', 'baseLocale']` — URL first, then a locale cookie, then the base locale.
 - `/api/*`, `/robots.txt`, `/sitemap.xml`, and `/manifest.json` are excluded from localization (`vite.config.ts` `routeStrategies`).
 

@@ -35,8 +35,8 @@ export function getCanonicalUrlForLocale(path: string, locale: Locale): string {
 
 /**
  * Get the path with the current or provided locale applied.
- * e.g. getPathWithLocale('/dashboard', 'zh') => '/zh/dashboard'
- * e.g. getPathWithLocale('/dashboard', 'en') => '/dashboard'
+ * e.g. getPathWithLocale('/dashboard', 'zh') => '/dashboard'
+ * e.g. getPathWithLocale('/dashboard', 'en') => '/en/dashboard'
  */
 export function getPathWithLocale(
   path: string,

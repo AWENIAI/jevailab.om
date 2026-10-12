@@ -20,8 +20,12 @@ export function getAvailableLocales(path: string): Locale[] | undefined {
   const prefix = legalSlug ? '../../content/pages' : '../../content/blog';
   const files = legalSlug ? pageFiles : blogFiles;
   return locales.filter((locale) => {
-    const suffix = locale === baseLocale ? '' : `.${locale}`;
-    return `${prefix}/${slug}${suffix}.md` in files;
+    const named = `${prefix}/${slug}.${locale}.md`;
+    const unsuffixed = `${prefix}/${slug}.md`;
+    // Markdown without a locale suffix is English, matching
+    // `getLocaleSlug()` in content-collections.ts.
+    if (named in files) return true;
+    return locale === 'en' && unsuffixed in files;
   });
 }
 

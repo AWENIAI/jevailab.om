@@ -11,7 +11,8 @@ export function getPageBySlug(
   const pages = allPages as PageDoc[];
   return (
     pages.find((p) => p.slug === slug && p.locale === locale) ??
-    pages.find((p) => p.slug === slug && p.locale === baseLocale)
+    pages.find((p) => p.slug === slug && p.locale === baseLocale) ??
+    pages.find((p) => p.slug === slug)
   );
 }
 

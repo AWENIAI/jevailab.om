@@ -24,7 +24,8 @@ export function getPostBySlug(
   const posts = allBlogs as BlogPost[];
   return (
     posts.find((p) => p.slug === slug && p.locale === locale) ??
-    posts.find((p) => p.slug === slug && p.locale === baseLocale)
+    posts.find((p) => p.slug === slug && p.locale === baseLocale) ??
+    posts.find((p) => p.slug === slug)
   );
 }
 

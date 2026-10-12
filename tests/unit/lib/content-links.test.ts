@@ -9,25 +9,23 @@ const onlyChinese = () => ['zh'] as const;
 
 describe('content links for missing translations', () => {
   it('links to the available source document', () => {
-    expect(getContentHref('/terms', 'zh', onlyEnglish())).toBe('/terms');
-    expect(getContentHref('/blog/post', 'en', onlyChinese())).toBe(
-      '/zh/blog/post'
-    );
+    expect(getContentHref('/terms', 'zh', onlyEnglish())).toBe('/en/terms');
+    expect(getContentHref('/blog/post', 'en', onlyChinese())).toBe('/blog/post');
   });
 
   it('redirects missing localized content while leaving available and unrelated URLs alone', () => {
-    expect(getUnavailableContentRedirect('/zh/blog/post', onlyEnglish)).toBe(
+    expect(getUnavailableContentRedirect('/en/blog/post', onlyChinese)).toBe(
       '/blog/post'
     );
-    expect(getUnavailableContentRedirect('/zh/terms', onlyEnglish)).toBe(
+    expect(getUnavailableContentRedirect('/en/terms', onlyChinese)).toBe(
       '/terms'
     );
     expect(
-      getUnavailableContentRedirect('/zh/privacy', onlyChinese)
+      getUnavailableContentRedirect('/en/privacy', onlyEnglish)
     ).toBeNull();
     expect(
-      getUnavailableContentRedirect('/zh/about', () => undefined)
+      getUnavailableContentRedirect('/en/about', () => undefined)
     ).toBeNull();
-    expect(getUnavailableContentRedirect('/terms', onlyChinese)).toBeNull();
+    expect(getUnavailableContentRedirect('/terms', onlyEnglish)).toBeNull();
   });
 });

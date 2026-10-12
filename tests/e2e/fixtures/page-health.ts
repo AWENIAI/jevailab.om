@@ -31,8 +31,8 @@ export function installPageHealthMonitor(page: Page): PageHealthMonitor {
 }
 
 export function localizedPath(path: string, locale: LocaleMode) {
-  if (locale === 'en') return path;
-  return path === '/' ? '/zh' : `/zh${path}`;
+  if (locale === 'zh') return path;
+  return path === '/' ? '/en' : `/en${path}`;
 }
 
 export async function expectHealthyPage(
