@@ -85,9 +85,9 @@ export const websiteConfig: WebsiteConfig = {
   },
   mail: {
     enable: true,
-    provider: 'cloudflare',
-    fromEmail: 'TanStarter <support@tanstarter.dev>',
-    supportEmail: 'TanStarter <support@tanstarter.dev>',
+    provider: 'resend',
+    fromEmail: 'jevailab <support@jevailab.com>',
+    supportEmail: 'jevailab <support@jevailab.com>',
   },
   newsletter: {
     enable: true,

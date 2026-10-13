@@ -40,8 +40,8 @@
     "db:sync:local": "tsx scripts/sync-d1-remote-to-local.ts",
     "db:admin:local": "tsx scripts/set-admin.ts --local",
     "db:admin:remote": "tsx scripts/set-admin.ts --remote",
-    "db:migrate:local": "wrangler d1 migrations apply $(tsx scripts/get-db-name.ts) --local",
-    "db:migrate:remote": "wrangler d1 migrations apply $(tsx scripts/get-db-name.ts) --remote"
+    "db:migrate:local": "tsx scripts/migrate-d1.ts --local",
+    "db:migrate:remote": "tsx scripts/migrate-d1.ts --remote"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -50,7 +50,7 @@
     "@cloudflare/vite-plugin": "^1.47.0",
     "@fontsource/bricolage-grotesque": "^5.2.10",
     "@hookform/resolvers": "^5.2.2",
-    "@inlang/paraglide-js": "^2.20.0",
+    "@inlang/paraglide-js": "^2.27.0",
     "@libsql/client": "^0.15.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-email/components": "^1.0.7",

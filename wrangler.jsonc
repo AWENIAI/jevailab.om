@@ -63,8 +63,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "mkfast-template",
-      "database_id": "dc34f04a-3445-4b5c-bf61-c4ec2328e239",
+      "database_name": "ai-image",
+      "database_id": "9bbd9ba6-7fe5-46d8-8d39-57e1ca3202d9",
       "migrations_dir": "./src/db/migrations"
     }
   ],
@@ -73,7 +73,7 @@
    */
   "r2_buckets": [
     {
-      "bucket_name": "mkfast-template",
+      "bucket_name": "ai-image",
       "binding": "BUCKET"
     }
   ],
