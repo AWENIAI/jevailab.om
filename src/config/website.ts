@@ -70,8 +70,8 @@ export const websiteConfig: WebsiteConfig = {
   social: {
     github: 'https://github.com/MkFastHQ',
     discord: 'https://mksaas.link/discord',
-    twitter: 'https://x.com/TanStarter',
-    youtube: 'https://www.youtube.com/@TanStarter',
+    twitter: 'https://x.com/AWEN',
+    youtube: 'https://www.youtube.com/@AWEN',
   },
   auth: {
     enable: true,

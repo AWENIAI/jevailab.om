@@ -4,7 +4,7 @@ This file provides guidance to Code Agents (Codex, Cursor, etc.) when working wi
 
 ## Project Overview
 
-**TanStarter** (mkfast-template) — a full-stack SaaS boilerplate built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem / Waffo), email (Resend / Cloudflare Email), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
+**AWEN** (mkfast-template) — a full-stack SaaS boilerplate built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem / Waffo), email (Resend / Cloudflare Email), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
 
 ## Commands
 

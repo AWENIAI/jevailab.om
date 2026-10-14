@@ -1,12 +1,12 @@
-# TanStarter
+# AWEN
 
 Ship Faster with TanStack, Cost Less with Cloudflare
 
-TanStarter is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, payments, storage, email, newsletter, blog, dashboard, i18n, SEO and more, fully deployed on Cloudflare Workers.
+AWEN is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, payments, storage, email, newsletter, blog, dashboard, i18n, SEO and more, fully deployed on Cloudflare Workers.
 
 ## Author
 
-This project is created by [Fox](https://x.com/indie_maker_fox), the founder of [TanStarter](https://tanstarter.dev), [MkImage](https://mkimage.ai), [MkSaaS](https://mksaas.com) and [Mkdirs](https://mkdirs.com).
+This project is created by [Fox](https://x.com/indie_maker_fox), the founder of [AWEN](https://tanstarter.dev), [MkImage](https://mkimage.ai), [MkSaaS](https://mksaas.com) and [Mkdirs](https://mkdirs.com).
 
 ## Documentation
 
@@ -19,7 +19,7 @@ If you found anything that could be improved, please let me know.
 - 🔥 website: [tanstarter.dev](https://tanstarter.dev)
 - 🌐 demo: [demo.tanstarter.dev](https://demo.tanstarter.dev)
 - 📚 documentation: [docs.tanstarter.dev](https://docs.tanstarter.dev)
-- 📹 video tutorials: [youtube@TanStarter](https://www.youtube.com/@TanStarter)
+- 📹 video tutorials: [youtube@AWEN](https://www.youtube.com/@AWEN)
 
 ## Notice
 

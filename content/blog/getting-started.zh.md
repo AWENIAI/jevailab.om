@@ -1,12 +1,12 @@
 ---
 title: 快速开始
-description: 设置并运行 TanStarter 模板的快速指南。
+description: 设置并运行 AWEN 模板的快速指南。
 date: 2026-02-12
 category: 指南
 image: /images/blog-get-started.webp
 ---
 
-这篇文章会带你了解如何运行和定制 TanStarter 模板。
+这篇文章会带你了解如何运行和定制 AWEN 模板。
 
 ## 前置条件
 

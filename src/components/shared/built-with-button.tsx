@@ -13,8 +13,8 @@ export default function BuiltWithButton() {
       )}
     >
       <span>Built with</span>
-      <img src="/tanstarter.png" alt="TanStarter" className="size-5" />
-      <span className="font-semibold">TanStarter</span>
+      <img src="/tanstarter.png" alt="AWEN" className="size-5" />
+      <span className="font-semibold">AWEN</span>
     </a>
   );
 }
