@@ -29,6 +29,13 @@
   // Whether Wrangler should keep variables configured in the dashboard on deploy
   "keep_vars": true,
 
+  // Public production runtime values. Secrets are configured separately with
+  // `wrangler secret put` and must never be added here.
+  "vars": {
+    "VITE_BASE_URL": "https://jevailab.com",
+    "BETTER_AUTH_TRUSTED_ORIGINS": "https://jevailab.com"
+  },
+
   // Enables automatically ingest, store, filter, and analyze logging data emitted from Cloudflare Workers
   "observability": {
     "logs": {
