@@ -11,6 +11,7 @@
     "e2e:stripe": "tsx scripts/run-stripe-e2e.ts",
     "e2e:creem": "tsx scripts/run-creem-e2e.ts",
     "e2e:waffo": "tsx scripts/run-waffo-e2e.ts",
+    "waffo:setup-products": "tsx scripts/create-waffo-test-products.ts",
     "e2e:install": "playwright install",
     "e2e:ui": "playwright test --ui",
     "test": "pnpm locale:compile && vitest run",
