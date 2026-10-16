@@ -46,7 +46,7 @@ export function Navbar({ scroll = true }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky inset-x-0 top-0 z-40 py-4 transition-all duration-300',
+        'sticky inset-x-0 top-0 z-50 bg-transparent py-4 transition-all duration-300',
         showBarBg && 'border-b'
       )}
     >

@@ -5,25 +5,31 @@ import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Routes } from '@/lib/routes';
-import { useResolvedTheme } from '@/components/theme/theme-provider';
+import AiImageCreatorSection from '@/components/blocks/ai-image-creator';
+import FloatingGallery from '@/components/blocks/floating-gallery';
 export default function HeroSection() {
-  const isDark = useResolvedTheme() === 'dark';
-
   return (
-    <section id="hero" className="overflow-hidden">
+    <section
+      id="hero"
+      className="relative -mt-[4.25rem] overflow-hidden pt-[4.25rem]"
+    >
+      <FloatingGallery />
       {/* background, warm-tinted light blobs on top of the hero section */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 isolate hidden opacity-65 contain-strict lg:block"
+        className="pointer-events-none absolute inset-0 isolate hidden opacity-65 contain-strict lg:block"
       >
         <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,oklch(0.85_0.04_55/.12)_0,oklch(0.7_0.02_45/.04)_50%,transparent_80%)]" />
         <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,oklch(0.88_0.05_38/.1)_0,oklch(0.6_0.02_38/.03)_80%,transparent_100%)] [translate:5%_-50%]" />
         <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,oklch(0.9_0.03_65/.08)_0,oklch(0.65_0.015_50/.03)_80%,transparent_100%)]" />
       </div>
 
-      <div className="relative pt-12">
+      <div
+        className="pointer-events-none relative z-10 pt-12"
+        style={{ zIndex: 10 }}
+      >
         <Container className="px-6">
-          <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
+          <div className="pointer-events-auto text-center sm:mx-auto lg:mr-auto lg:mt-0">
             {/* introduction */}
             <a
               href="https://x.com/tanstarter"
@@ -47,12 +53,12 @@ export default function HeroSection() {
             </a>
 
             {/* title */}
-            <h1 className="animate-fade-up delay-1 mt-8 text-balance text-3xl font-bold sm:text-4xl md:text-5xl lg:mt-16 xl:text-[4rem]">
+            <h1 className="animate-fade-up delay-1 mt-8 text-balance text-3xl font-bold drop-shadow-[0_4px_18px_rgb(0_0_0_/_0.75)] sm:text-4xl md:text-5xl lg:mt-16 xl:text-[4rem]">
               {m.home_hero_title()}
             </h1>
 
             {/* description */}
-            <p className="animate-fade-up delay-2 mx-auto mt-6 max-w-5xl text-balance text-base text-muted-foreground sm:mt-8 sm:text-lg">
+            <p className="animate-fade-up delay-2 mx-auto mt-6 max-w-5xl text-balance text-base text-muted-foreground drop-shadow-[0_3px_14px_rgb(0_0_0_/_0.75)] sm:mt-8 sm:text-lg">
               {m.home_hero_description()}
             </p>
 
@@ -82,20 +88,8 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* images */}
-          <div className="animate-fade-up delay-4 relative overflow-hidden px-2 my-8 sm:my-12 md:my-16">
-            <div className="inset-shadow-2xs ring-muted/50 dark:inset-shadow-white/20 bg-muted/50 relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-black/15 ring-1">
-              <img
-                className="bg-muted/50 relative rounded-2xl w-full"
-                src={isDark ? '/images/music.webp' : '/images/music-light.webp'}
-                alt={m.block_hero_image_alt({
-                  mode: isDark ? 'dark' : 'light',
-                })}
-                fetchPriority="high"
-                width={2796}
-                height={2008}
-              />
-            </div>
+          <div className="pointer-events-auto animate-fade-up delay-4">
+            <AiImageCreatorSection />
           </div>
         </Container>
       </div>

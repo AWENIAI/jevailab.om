@@ -15,6 +15,15 @@ import {
   TTS_SPEAKERS,
 } from '@/config/ai-models';
 import { serverEnv } from '@/env/server';
+import { authApiMiddleware } from '@/middlewares/auth-middleware';
+import {
+  getAvailableKieImageAspectRatios,
+  getKieImageCreditCost,
+  KIE_IMAGE_ASPECT_RATIOS,
+  KIE_IMAGE_BACKGROUNDS,
+  KIE_IMAGE_RESOLUTIONS,
+  toKieImageInput,
+} from '@/lib/kie-image';
 import {
   chatText,
   base64ImageUrl,
@@ -135,6 +144,28 @@ const imageEditSchema = z.object({
     .string()
     .min(5, 'Please provide a longer prompt.')
     .max(500, 'Prompt is too long, please keep it under 500 characters.'),
+});
+
+const kieImageGenerationSchema = z
+  .object({
+    prompt: z.string().trim().min(1).max(20_000),
+    resolution: z.enum(KIE_IMAGE_RESOLUTIONS),
+    aspectRatio: z.enum(KIE_IMAGE_ASPECT_RATIOS),
+    background: z.enum(KIE_IMAGE_BACKGROUNDS),
+    count: z.number().int().min(1).max(9),
+  })
+  .refine(
+    (data) =>
+      getAvailableKieImageAspectRatios(data.resolution).includes(
+        data.aspectRatio
+      ),
+    {
+      message: 'The selected aspect ratio is not available at this resolution.',
+    }
+  );
+
+const kieImageStatusSchema = z.object({
+  ticket: z.string().min(20).max(4_000),
 });
 
 const captionSchema = z.object({
@@ -391,6 +422,211 @@ export const editAiImage = createServerFn({ method: 'POST' })
     }
 
     return { imageUrl };
+  });
+
+const KIE_API_BASE_URL = 'https://api.kie.ai';
+const KIE_IMAGE_MODEL = 'gpt-image-2-text-to-image';
+const KIE_TICKET_TTL_MS = 20 * 60 * 1_000;
+
+type KieApiResponse<T> = {
+  code?: number;
+  msg?: string;
+  data?: T;
+};
+
+type KieTaskRecord = {
+  taskId?: string;
+  state?: 'waiting' | 'queuing' | 'generating' | 'success' | 'fail';
+  resultJson?: string | null;
+  failMsg?: string | null;
+  progress?: number | null;
+};
+
+type KieTicketPayload = {
+  exp: number;
+  taskIds: string[];
+  userId: string;
+};
+
+function getKieApiKey(): string {
+  const apiKey = serverEnv.KIE_API_KEY?.trim();
+  if (!apiKey) throw new Error('KIE_API_KEY is not configured.');
+  return apiKey;
+}
+
+async function kieRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${KIE_API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${getKieApiKey()}`,
+      ...(init?.headers ?? {}),
+    },
+    signal: AbortSignal.timeout(30_000),
+  });
+  const payload = (await response
+    .json()
+    .catch(() => null)) as KieApiResponse<T> | null;
+  if (!response.ok || !payload || payload.code !== 200 || !payload.data) {
+    throw new Error(payload?.msg?.trim() || 'Kie image request failed.');
+  }
+  return payload.data;
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function fromBase64Url(value: string): Uint8Array {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+  return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return new Uint8Array(bytes).buffer;
+}
+
+async function createKieTicket(payload: KieTicketPayload): Promise<string> {
+  const body = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const signingKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(getKieApiKey()),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign('HMAC', signingKey, new TextEncoder().encode(body))
+  );
+  return `${body}.${toBase64Url(signature)}`;
+}
+
+async function readKieTicket(
+  ticket: string,
+  userId: string
+): Promise<KieTicketPayload> {
+  const [body, signature] = ticket.split('.');
+  if (!body || !signature) throw new Error('Invalid generation ticket.');
+  const signingKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(getKieApiKey()),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  const valid = await crypto.subtle.verify(
+    'HMAC',
+    signingKey,
+    toArrayBuffer(fromBase64Url(signature)),
+    new TextEncoder().encode(body)
+  );
+  if (!valid) throw new Error('Invalid generation ticket.');
+  const payload = JSON.parse(
+    new TextDecoder().decode(fromBase64Url(body))
+  ) as KieTicketPayload;
+  if (
+    payload.userId !== userId ||
+    payload.exp <= Date.now() ||
+    !Array.isArray(payload.taskIds) ||
+    payload.taskIds.length === 0
+  ) {
+    throw new Error('This generation ticket has expired.');
+  }
+  return payload;
+}
+
+function getKieResultUrls(resultJson: string | null | undefined): string[] {
+  if (!resultJson) return [];
+  try {
+    const parsed = JSON.parse(resultJson) as { resultUrls?: unknown };
+    return Array.isArray(parsed.resultUrls)
+      ? parsed.resultUrls.filter(
+          (url): url is string => typeof url === 'string'
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Submit one to nine GPT Image 2 tasks. Kie bills one task per image. */
+export const createKieImageGeneration = createServerFn({ method: 'POST' })
+  .validator(kieImageGenerationSchema)
+  .middleware([authApiMiddleware])
+  .handler(async ({ data, context }) => {
+    const input = toKieImageInput(data);
+    const created = await Promise.allSettled(
+      Array.from({ length: data.count }, async () => {
+        const result = await kieRequest<{ taskId?: string }>(
+          '/api/v1/jobs/createTask',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: KIE_IMAGE_MODEL, input }),
+          }
+        );
+        if (!result.taskId) throw new Error('Kie did not return a task ID.');
+        return result.taskId;
+      })
+    );
+    const taskIds = created.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : []
+    );
+    if (taskIds.length === 0) {
+      const firstFailure = created.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected'
+      );
+      throw (
+        firstFailure?.reason ?? new Error('Could not start image generation.')
+      );
+    }
+
+    return {
+      createdCount: taskIds.length,
+      requestedCredits: getKieImageCreditCost(data.resolution, taskIds.length),
+      ticket: await createKieTicket({
+        userId: context.userId,
+        taskIds,
+        exp: Date.now() + KIE_TICKET_TTL_MS,
+      }),
+    };
+  });
+
+/** Query only task IDs bound to the authenticated user's short-lived ticket. */
+export const getKieImageGenerationStatus = createServerFn({ method: 'POST' })
+  .validator(kieImageStatusSchema)
+  .middleware([authApiMiddleware])
+  .handler(async ({ data, context }) => {
+    const ticket = await readKieTicket(data.ticket, context.userId);
+    const tasks = await Promise.all(
+      ticket.taskIds.map(async (taskId) => {
+        const task = await kieRequest<KieTaskRecord>(
+          `/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`
+        );
+        return {
+          taskId,
+          state: task.state ?? 'waiting',
+          progress: task.progress ?? undefined,
+          resultUrls: getKieResultUrls(task.resultJson),
+          error:
+            task.state === 'fail'
+              ? task.failMsg || 'Generation failed.'
+              : undefined,
+        };
+      })
+    );
+    return {
+      tasks,
+      complete: tasks.every(
+        (task) => task.state === 'success' || task.state === 'fail'
+      ),
+    };
   });
 
 /**

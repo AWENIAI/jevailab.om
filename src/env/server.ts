@@ -60,6 +60,13 @@ export const serverEnv = createEnv({
 
     // AI image generation (fal.ai)
     FAL_KEY: z.string().optional(),
+
+    // AI image generation (Kie GPT Image 2)
+    KIE_API_KEY: z.string().optional(),
+
+    // This local-only switch is intentionally separate from payment debug
+    // flags and must never enable production generation.
+    IMAGE_CREATOR_DEV_MODERATION_MOCK: z.enum(['true', 'false']).optional(),
   },
   runtimeEnv: process.env,
 });
