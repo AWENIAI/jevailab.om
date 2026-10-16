@@ -64,6 +64,11 @@ export const serverEnv = createEnv({
     // AI image generation (Kie GPT Image 2)
     KIE_API_KEY: z.string().optional(),
 
+    // Image content review (SeeAPI nsfw-filter). This must remain server-only.
+    SEEAPI_API_KEY: z.string().optional(),
+    SEEAPI_NSFW_THRESHOLD_OFFSET: z.string().optional(),
+    SEEAPI_NSFW_STRICT_SPECIAL_CARE: z.enum(['true', 'false']).optional(),
+
     // This local-only switch is intentionally separate from payment debug
     // flags and must never enable production generation.
     IMAGE_CREATOR_DEV_MODERATION_MOCK: z.enum(['true', 'false']).optional(),

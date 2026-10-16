@@ -30,6 +30,7 @@ import {
   type WorkersAiChatResult,
 } from '@/lib/workers-ai';
 import { CLEF_TICKET_QUESTIONS, clefTicketResultSchema } from '@/lib/clef';
+import { getRuntimeModerationProvider } from '@/lib/image-creator/moderation.server';
 
 /**
  * AI demo server functions.
@@ -609,15 +610,36 @@ export const getKieImageGenerationStatus = createServerFn({ method: 'POST' })
         const task = await kieRequest<KieTaskRecord>(
           `/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`
         );
+        const resultUrls = getKieResultUrls(task.resultJson);
+        const reviewedUrls = await Promise.all(
+          resultUrls.map(async (sourceUrl, index) => {
+            const moderation = await getRuntimeModerationProvider().review({
+              kind: 'generated_image',
+              jobId: taskId,
+              outputId: `${taskId}:${index}`,
+              sourceUrl,
+            });
+            return moderation.decision === 'approved'
+              ? { sourceUrl }
+              : { sourceUrl: undefined, moderation };
+          })
+        );
+        const withheld = reviewedUrls.find(
+          (item) => item.sourceUrl === undefined
+        );
         return {
           taskId,
           state: task.state ?? 'waiting',
           progress: task.progress ?? undefined,
-          resultUrls: getKieResultUrls(task.resultJson),
+          resultUrls: reviewedUrls.flatMap((item) =>
+            item.sourceUrl ? [item.sourceUrl] : []
+          ),
           error:
             task.state === 'fail'
               ? task.failMsg || 'Generation failed.'
-              : undefined,
+              : withheld
+                ? 'Generated output is withheld pending content review.'
+                : undefined,
         };
       })
     );

@@ -3,8 +3,6 @@ import Container from '@/components/layout/container';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
-import { IconArrowRight } from '@tabler/icons-react';
-import { Routes } from '@/lib/routes';
 import AiImageCreatorSection from '@/components/blocks/ai-image-creator';
 import FloatingGallery from '@/components/blocks/floating-gallery';
 export default function HeroSection() {
@@ -30,54 +28,32 @@ export default function HeroSection() {
       >
         <Container className="px-6">
           <div className="pointer-events-auto text-center sm:mx-auto lg:mr-auto lg:mt-0">
-            {/* introduction */}
-            <a
-              href="https://x.com/tanstarter"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="animate-fade-up delay-0 hover:bg-muted group mx-auto flex w-fit items-center gap-2 rounded-full border border-border p-1 pl-4 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:rounded-full"
-            >
-              <span className="text-foreground text-sm font-medium">
-                {m.home_hero_introduction()}
-              </span>
-              <div className="size-6 overflow-hidden rounded-full bg-muted duration-500">
-                <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                  <span className="flex size-6">
-                    <IconArrowRight className="m-auto size-3 text-foreground" />
-                  </span>
-                  <span className="flex size-6">
-                    <IconArrowRight className="m-auto size-3 text-foreground" />
-                  </span>
-                </div>
-              </div>
-            </a>
-
             {/* title */}
-            <h1 className="animate-fade-up delay-1 mt-8 text-balance text-3xl font-bold drop-shadow-[0_4px_18px_rgb(0_0_0_/_0.75)] sm:text-4xl md:text-5xl lg:mt-16 xl:text-[4rem]">
+            <h1 className="animate-fade-up delay-1 mt-8 text-balance text-3xl font-bold sm:text-4xl md:text-5xl lg:mt-16 xl:text-[4rem]">
               {m.home_hero_title()}
             </h1>
 
             {/* description */}
-            <p className="animate-fade-up delay-2 mx-auto mt-6 max-w-5xl text-balance text-base text-muted-foreground drop-shadow-[0_3px_14px_rgb(0_0_0_/_0.75)] sm:mt-8 sm:text-lg">
+            <p className="animate-fade-up delay-2 mx-auto mt-6 max-w-5xl text-balance text-base text-muted-foreground sm:mt-8 sm:text-lg">
               {m.home_hero_description()}
             </p>
 
             {/* action buttons */}
             <div className="animate-fade-up delay-3 mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-12 sm:gap-4">
               <div className="bg-foreground/10 rounded-xl">
-                <Link
-                  to={Routes.Login}
+                <a
+                  href="#create"
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'h-10.5 rounded-xl px-5 text-base'
                   )}
                 >
                   <span className="text-nowrap">{m.home_hero_primary()}</span>
-                </Link>
+                </a>
               </div>
               <Link
                 to="/"
-                hash="pricing"
+                hash="gallery"
                 className={cn(
                   buttonVariants({ size: 'lg', variant: 'outline' }),
                   'h-10.5 rounded-xl px-5'

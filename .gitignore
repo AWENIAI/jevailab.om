@@ -56,3 +56,4 @@ logs/security/
 # Playwright
 playwright-report
 test-results
+.tmp-qa

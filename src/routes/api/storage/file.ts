@@ -7,6 +7,7 @@ import { userFiles } from '@/db/app.schema';
 import { getFile } from '@/storage';
 import { isPublicFolder } from '@/storage/utils';
 import { ConfigurationError } from '@/storage/types';
+import { verifySeeApiReviewUrl } from '@/lib/image-creator/seeapi-review-url.server';
 
 /**
  * Serves a file by key via the storage provider (same-origin proxy URL).
@@ -23,6 +24,11 @@ export const Route = createFileRoute('/api/storage/file')({
         }
 
         try {
+          const isSeeApiReviewRequest = await verifySeeApiReviewUrl(
+            key,
+            url.searchParams.get('reviewExpires'),
+            url.searchParams.get('reviewToken')
+          );
           const headers = getRequestHeaders();
           const session = await auth.api.getSession({ headers });
           const userId = session?.user?.id;
@@ -39,7 +45,7 @@ export const Route = createFileRoute('/api/storage/file')({
             return new Response('Not Found', { status: 404 });
           }
 
-          if (fileRecord && !fileRecord.isPublic) {
+          if (fileRecord && !fileRecord.isPublic && !isSeeApiReviewRequest) {
             if (!userId || fileRecord.userId !== userId) {
               return new Response('Forbidden', { status: 403 });
             }

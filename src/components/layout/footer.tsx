@@ -1,6 +1,5 @@
 import { m } from '@/locale/paraglide/messages';
 import { getFooterLinks } from '@/config/footer-config';
-import { getSocialLinks } from '@/config/social-config';
 import { isLinkActive } from '@/lib/urls';
 import { cn } from '@/lib/utils';
 import Container from '@/components/layout/container';
@@ -22,7 +21,6 @@ export function Footer({ className }: React.HTMLAttributes<HTMLElement>) {
   const pathname = useLocation().pathname;
   const locale = getLocale();
   const footerLinks = getFooterLinks();
-  const socialLinks = getSocialLinks();
   return (
     <footer className={cn('border-t', className)}>
       <Container className="px-4">
@@ -37,26 +35,6 @@ export function Footer({ className }: React.HTMLAttributes<HTMLElement>) {
             <p className="text-muted-foreground text-base py-2 md:pr-12">
               {m.footer_tagline()}
             </p>
-            <nav
-              aria-label={m.common_social_links()}
-              className="flex items-center gap-4 pt-6"
-            >
-              {socialLinks?.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <a
-                    key={link.title}
-                    href={link.href ?? '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={link.title}
-                    className="inline-flex size-8 items-center justify-center rounded-full border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all duration-200"
-                  >
-                    {Icon ? <Icon className="size-4" /> : null}
-                  </a>
-                );
-              })}
-            </nav>
           </div>
 
           {footerLinks?.map((section) => (

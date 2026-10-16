@@ -113,16 +113,6 @@ export const uploadImageCreatorReference = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     validateReferenceImageMetadata(data.file);
     const moderationProvider = getRuntimeModerationProvider();
-    const availability = await moderationProvider.review({
-      kind: 'reference_image',
-      assetId: 'pending',
-      storageKey: 'pending',
-    });
-    if (availability.decision === 'unavailable') {
-      throw new Error(
-        'Content review is not configured, so reference image upload is temporarily unavailable.'
-      );
-    }
 
     const result = await uploadFile(data.file, data.file.name, data.file.type, {
       folder: 'image-assets',
@@ -140,7 +130,11 @@ export const uploadImageCreatorReference = createServerFn({ method: 'POST' })
     });
     if (moderation.decision !== 'approved') {
       await deleteFile(result.key);
-      throw new Error('The reference image could not pass content review.');
+      throw new Error(
+        moderation.decision === 'unavailable'
+          ? 'The reference image could not be reviewed right now. Please try again later.'
+          : 'The reference image could not pass content review.'
+      );
     }
 
     const now = new Date();
@@ -177,7 +171,13 @@ export const startImageCreatorGeneration = createServerFn({ method: 'POST' })
       kind: 'prompt',
       text: draft.extraPrompt,
     });
-    if (moderation.decision !== 'approved') {
+    // SeeAPI's nsfw-filter is image-only. Keep this typed prompt boundary for
+    // the text provider that will be introduced later, without falsely marking
+    // prompts as reviewed by SeeAPI.
+    if (
+      moderation.decision !== 'approved' &&
+      moderation.reasonCode !== 'SEEAPI_IMAGE_ONLY'
+    ) {
       throw new Error(
         moderation.decision === 'unavailable'
           ? 'Content review is not configured, so image generation is temporarily unavailable.'
