@@ -13,8 +13,19 @@ export type KieCreateTaskInput = {
 
 export type KieTaskRecord = {
   state: 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'REVIEW_REQUIRED';
+  providerState: string | null;
   resultUrls: string[];
   creditsConsumed: number | null;
+  failureCode: string | null;
+  failureMessage: string | null;
+};
+
+export type KieCallbackHint = {
+  taskId: string;
+  providerCode: number | null;
+  providerState: 'success' | 'fail';
+  failureCode: string | null;
+  failureMessage: string | null;
 };
 
 export function buildKieCreateTaskPayload(input: KieCreateTaskInput) {
@@ -61,10 +72,47 @@ function parseResultUrls(resultJson: unknown) {
   }
 }
 
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function readProviderData(payload: unknown) {
+  const root = payload as { code?: unknown; data?: unknown } | null;
+  const data = root?.data as Record<string, unknown> | undefined;
+  return {
+    code: typeof root?.code === 'number' ? root.code : null,
+    data,
+    providerState: readString(data?.state)?.toLowerCase() ?? null,
+    failureCode: readString(data?.failCode),
+    failureMessage: readString(data?.failMsg),
+  };
+}
+
+/**
+ * A webhook is only a signed notification. This intentionally extracts the
+ * minimal terminal hint for audit and queues an authoritative recordInfo
+ * lookup before the task can be settled.
+ */
+export function parseKieCallbackHint(payload: unknown): KieCallbackHint | null {
+  const { code, data, providerState, failureCode, failureMessage } =
+    readProviderData(payload);
+  const taskId = readString(data?.taskId);
+  if (!taskId || (providerState !== 'success' && providerState !== 'fail')) {
+    return null;
+  }
+  return {
+    taskId,
+    providerCode: code,
+    providerState,
+    failureCode,
+    failureMessage,
+  };
+}
+
 export function parseKieTaskRecord(payload: unknown): KieTaskRecord {
-  const data = (payload as { data?: Record<string, unknown> })?.data;
-  const rawState =
-    typeof data?.state === 'string' ? data.state.toLowerCase() : '';
+  const { code, data, providerState, failureCode, failureMessage } =
+    readProviderData(payload);
+  const rawState = providerState ?? '';
   const creditsConsumed =
     typeof data?.creditsConsumed === 'number' &&
     Number.isFinite(data.creditsConsumed)
@@ -73,20 +121,55 @@ export function parseKieTaskRecord(payload: unknown): KieTaskRecord {
   if (rawState === 'success') {
     const resultUrls = parseResultUrls(data?.resultJson);
     return resultUrls.length > 0
-      ? { state: 'SUCCEEDED', resultUrls, creditsConsumed }
-      : { state: 'REVIEW_REQUIRED', resultUrls: [], creditsConsumed };
+      ? {
+          state: 'SUCCEEDED',
+          providerState,
+          resultUrls,
+          creditsConsumed,
+          failureCode,
+          failureMessage,
+        }
+      : {
+          state: 'REVIEW_REQUIRED',
+          providerState,
+          resultUrls: [],
+          creditsConsumed,
+          failureCode,
+          failureMessage,
+        };
   }
-  if (rawState === 'fail' || rawState === 'failed') {
-    return { state: 'FAILED', resultUrls: [], creditsConsumed };
+  if (rawState === 'fail' || rawState === 'failed' || code === 501) {
+    return {
+      state: 'FAILED',
+      providerState,
+      resultUrls: [],
+      creditsConsumed,
+      failureCode,
+      failureMessage,
+    };
   }
   if (
     rawState === 'waiting' ||
     rawState === 'queuing' ||
     rawState === 'generating'
   ) {
-    return { state: 'PROCESSING', resultUrls: [], creditsConsumed };
+    return {
+      state: 'PROCESSING',
+      providerState,
+      resultUrls: [],
+      creditsConsumed,
+      failureCode,
+      failureMessage,
+    };
   }
-  return { state: 'REVIEW_REQUIRED', resultUrls: [], creditsConsumed };
+  return {
+    state: 'REVIEW_REQUIRED',
+    providerState,
+    resultUrls: [],
+    creditsConsumed,
+    failureCode,
+    failureMessage,
+  };
 }
 
 function assertTrustedKieBaseUrl(baseUrl: string) {
@@ -150,6 +233,13 @@ export class MockVideoProvider {
   }
 
   async getTaskRecord(): Promise<KieTaskRecord> {
-    return { state: 'REVIEW_REQUIRED', resultUrls: [], creditsConsumed: null };
+    return {
+      state: 'REVIEW_REQUIRED',
+      providerState: null,
+      resultUrls: [],
+      creditsConsumed: null,
+      failureCode: null,
+      failureMessage: null,
+    };
   }
 }

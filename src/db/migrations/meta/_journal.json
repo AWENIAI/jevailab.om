@@ -57,6 +57,13 @@
       "when": 1792306400000,
       "tag": "0007_video_creator",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792311900000,
+      "tag": "0008_video_creator_kie_callback_audit",
+      "breakpoints": true
     }
   ]
 }

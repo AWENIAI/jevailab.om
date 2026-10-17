@@ -85,14 +85,10 @@ describe('PicVilo homepage content', () => {
       expect(messages.site_description).toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
-      expect.arrayContaining([
-        '/#video',
-        '/#image',
-        '/#gallery',
-        '/#how-it-works',
-        '/#pricing',
-      ])
+      expect.arrayContaining(['/#video', '/#image', '/#pricing'])
     );
+    expect(hrefs).not.toContain('/#gallery');
+    expect(hrefs).not.toContain('/#how-it-works');
     expect(items.some((item) => !item.href && Boolean(item.description))).toBe(
       false
     );

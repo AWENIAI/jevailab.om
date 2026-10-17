@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { serverEnv } from '@/env/server';
 import { logOperationalEvent } from '@/lib/observability';
+import { parseKieCallbackHint } from '@/lib/video-creator/provider';
 import { verifyKieWebhookSignature } from '@/lib/video-creator/security';
 
 type KieWebhookDependencies = {
@@ -11,13 +12,27 @@ type KieWebhookDependencies = {
     timestampSeconds: string;
     signature: string;
   }) => Promise<boolean>;
-  acceptEvent: (input: { taskId: string; eventKey: string }) => Promise<void>;
+  acceptEvent: (input: {
+    taskId: string;
+    eventKey: string;
+    providerCode: number | null;
+    providerState: string | null;
+    failureCode: string | null;
+    failureMessage: string | null;
+  }) => Promise<void>;
 };
 
 const dependencies: KieWebhookDependencies = {
   getWebhookKey: () => serverEnv.KIE_WEBHOOK_HMAC_KEY,
   verify: verifyKieWebhookSignature,
-  acceptEvent: async ({ taskId, eventKey }) => {
+  acceptEvent: async ({
+    taskId,
+    eventKey,
+    providerCode,
+    providerState,
+    failureCode,
+    failureMessage,
+  }) => {
     const [{ getDb }, { videoWebhookInbox }] = await Promise.all([
       import('@/db'),
       import('@/db/video-creator.schema'),
@@ -29,6 +44,10 @@ const dependencies: KieWebhookDependencies = {
         provider: 'kie',
         taskId,
         eventKey,
+        providerCode,
+        providerState,
+        failureCode,
+        failureMessage,
         receivedAt: new Date(),
         state: 'RECEIVED',
       })
@@ -84,9 +103,14 @@ export async function handleKieWebhookRequest(
       { status: 400 }
     );
   }
+  const callbackHint = parseKieCallbackHint(payload);
   await injected.acceptEvent({
     taskId,
     eventKey: `${taskId}:${timestampSeconds}:${signature}`,
+    providerCode: callbackHint?.providerCode ?? null,
+    providerState: callbackHint?.providerState ?? null,
+    failureCode: callbackHint?.failureCode ?? null,
+    failureMessage: callbackHint?.failureMessage ?? null,
   });
   return Response.json({ received: true }, { status: 202 });
 }

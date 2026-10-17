@@ -90,14 +90,14 @@ export default {
   ) {
     context.waitUntil(
       (async () => {
-        const [{ dispatchPendingVideoJobs }, { reconcileVideoWebhookInbox }] =
+        const [{ dispatchPendingVideoJobs }, { reconcileVideoJobs }] =
           await Promise.all([
             import('@/lib/video-creator/dispatcher.server'),
             import('@/lib/video-creator/reconciliation.server'),
           ]);
         const outcomes = await Promise.allSettled([
           dispatchPendingVideoJobs(),
-          reconcileVideoWebhookInbox(),
+          reconcileVideoJobs(),
         ]);
         if (outcomes.some((outcome) => outcome.status === 'rejected')) {
           logOperationalEvent.warn('video background work requires review', {

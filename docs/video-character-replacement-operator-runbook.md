@@ -4,7 +4,7 @@
 
 ## 1. 数据库与模板
 
-先将 `src/db/migrations/0007_video_creator.sql` 应用到目标 D1：
+先将包括 `0007_video_creator.sql` 与 `0008_video_creator_kie_callback_audit.sql` 在内的全部迁移应用到目标 D1：
 
 ```powershell
 pnpm db:migrate:remote
@@ -68,7 +68,7 @@ VIDEO_REPLACEMENT_QUOTE_TTL_SECONDS=300
 https://你的正式域名/api/webhooks/kie
 ```
 
-仅使用 HTTPS。回调会先验证 `X-Webhook-Timestamp` 与 `X-Webhook-Signature`，然后写入 inbox。定时任务每两分钟处理 outbox/inbox；任何验签失败、转存失败或供应商状态不确定都会进入人工复核，不会自动重发或重复扣费。
+仅使用 HTTPS。回调会先验证 `X-Webhook-Timestamp` 与 `X-Webhook-Signature`，然后写入 inbox，并保存供应商 `code`、终态 `state` 与失败信息用于审计。定时任务每两分钟先处理 inbox，再对已知且仍在 `SUBMITTED` / `PROCESSING` 的供应商任务查询 `recordInfo`，防止回调遗漏；查询不会创建新任务。结算只相信 `recordInfo`，任何验签失败、转存失败或供应商状态不确定都会进入人工复核，不会自动重发或重复扣费。
 
 ## 5. 发布前检查
 

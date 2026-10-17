@@ -9,13 +9,13 @@ import type { MenuItemConfig } from '../types';
 export function getNavbarLinks(): MenuItemConfig[] {
   return [
     {
-      title: m.picvilo_nav_gallery(),
-      href: '/#gallery',
+      title: m.picvilo_nav_video_title(),
+      href: '/#video',
       external: false,
     },
     {
-      title: m.picvilo_nav_how_it_works(),
-      href: '/#how-it-works',
+      title: m.picvilo_nav_image_title(),
+      href: '/#image',
       external: false,
     },
     {

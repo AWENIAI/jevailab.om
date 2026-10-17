@@ -6,11 +6,12 @@
 
 - 只在服务端调用 `https://api.kie.ai/api/v1/jobs/createTask`；浏览器不会得到 Kie Key，也不能提交任意上游 URL。
 - 创建任务只有在 HTTP 成功、响应 `code=200` 且存在 `data.taskId` 时才标记为已提交；网络异常、超时或不完整响应统一进入 `REVIEW_REQUIRED`，不会自动重发。
-- Webhook 仅快速验签并写入 inbox。验签内容为 `taskId + "." + timestamp` 的 HMAC-SHA256 Base64，时间窗口为 300 秒，并使用常量时间比较。
-- 结算不相信 webhook body：后台通过 `recordInfo` 复核任务状态，只有视频转存到私有对象存储后才 capture；明确失败时 release；未知状态保持人工复核。
+- Webhook 仅快速验签并写入 inbox。验签内容为 `taskId + "." + timestamp` 的 HMAC-SHA256 Base64，时间窗口为 300 秒，并使用常量时间比较。回调中的 `code`、`state`、失败码与失败信息仅作审计记录，不直接改变余额。
+- 回调收到 `success` 或 `fail` 后，定时任务会以 Kie `recordInfo` 为最终依据复核状态。只有视频转存到私有对象存储后才 capture；明确失败时 release；未知状态保持人工复核。
+- 若回调延迟或遗漏，定时任务只会查询已有 `provider_task_id` 且仍为 `SUBMITTED` / `PROCESSING` 的任务；它不会重新创建供应商任务，也不会重复扣费。Kie 返回的原始状态会保留用于排障。
 - Seedance 请求固定为单图、单已授权模板视频、`generate_audio=false`、`web_search=false`、`nsfw_checker=true`；Wan 请求同样固定 `nsfw_checker=true`。
 
-官方依据：[Kie Webhook verification](https://docs.kie.ai/common-api/webhook-verification)、[Kie task detail](https://docs.kie.ai/market/common/get-task-detail)。
+官方依据：[Kie Webhook verification](https://docs.kie.ai/common-api/webhook-verification)、[Kie task detail](https://docs.kie.ai/market/common/get-task-detail)、[Kie AI Video callbacks](https://docs.kie.ai/runway-api/generate-ai-video-callbacks)。
 
 ## 尚未进行真实供应商验证
 

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   buildKieCreateTaskPayload,
+  parseKieCallbackHint,
   parseKieTaskRecord,
 } from '@/lib/video-creator/provider';
 
@@ -69,6 +70,56 @@ describe('Kie video provider payloads', () => {
           }),
         },
       })
-    ).toEqual({ state: 'PROCESSING', resultUrls: [], creditsConsumed: null });
+    ).toMatchObject({
+      state: 'PROCESSING',
+      providerState: 'waiting',
+      resultUrls: [],
+      creditsConsumed: null,
+    });
+  });
+
+  test('keeps the documented queued states and provider metadata for audit', () => {
+    expect(
+      parseKieTaskRecord({
+        code: 200,
+        data: {
+          state: 'generating',
+          creditsConsumed: 12,
+        },
+      })
+    ).toMatchObject({
+      state: 'PROCESSING',
+      providerState: 'generating',
+      creditsConsumed: 12,
+    });
+  });
+
+  test('treats Kie failure callbacks as a non-billable failure hint', () => {
+    expect(
+      parseKieCallbackHint({
+        code: 501,
+        data: {
+          taskId: 'task_failed',
+          state: 'fail',
+          failCode: 'CONTENT_POLICY',
+          failMsg: 'Rejected by upstream moderation',
+        },
+      })
+    ).toEqual({
+      taskId: 'task_failed',
+      providerCode: 501,
+      providerState: 'fail',
+      failureCode: 'CONTENT_POLICY',
+      failureMessage: 'Rejected by upstream moderation',
+    });
+  });
+
+  test('does not trust a callback with an unrecognized terminal state', () => {
+    expect(
+      parseKieCallbackHint({
+        code: 200,
+        data: { taskId: 'task_unknown', state: 'complete-ish' },
+      })
+    ).toBeNull();
   });
 });

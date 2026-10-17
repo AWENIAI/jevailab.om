@@ -13,7 +13,12 @@ import { KieVideoProvider } from './provider';
 
 export async function dispatchPendingVideoJobs(limit = 3) {
   const flags = getVideoFeatureFlags();
-  if (!flags.enabled || !flags.providerSendEnabled || !flags.liveTestEnabled) {
+  if (
+    !flags.enabled ||
+    !flags.providerSendEnabled ||
+    !flags.liveTestEnabled ||
+    !serverEnv.KIE_API_KEY
+  ) {
     return { dispatched: 0, skipped: 'disabled' as const };
   }
   const db = getDb();
@@ -37,7 +42,7 @@ export async function dispatchPendingVideoJobs(limit = 3) {
     .limit(Math.max(1, Math.min(limit, 3)));
 
   const provider = new KieVideoProvider(
-    serverEnv.KIE_API_KEY ?? '',
+    serverEnv.KIE_API_KEY,
     serverEnv.KIE_API_BASE_URL
   );
   let dispatched = 0;
