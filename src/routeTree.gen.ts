@@ -52,6 +52,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiE2eUsersRouteImport } from './routes/api/e2e/users'
 import { Route as ApiStorageFileRouteImport } from './routes/api/storage/file'
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
+import { Route as ApiWebhooksKieRouteImport } from './routes/api/webhooks/kie'
 import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
 import { Route as ApiWebhooksWaffoRouteImport } from './routes/api/webhooks/waffo'
 import { Route as ApiAuthExtensionGoogleRouteImport } from './routes/api/auth/extension/google'
@@ -271,6 +272,11 @@ const ApiWebhooksCreemRoute = ApiWebhooksCreemRouteImport.update({
   path: '/api/webhooks/creem',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksKieRoute = ApiWebhooksKieRouteImport.update({
+  id: '/api/webhooks/kie',
+  path: '/api/webhooks/kie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebhooksStripeRoute = ApiWebhooksStripeRouteImport.update({
   id: '/api/webhooks/stripe',
   path: '/api/webhooks/stripe',
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/kie': typeof ApiWebhooksKieRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
   '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/kie': typeof ApiWebhooksKieRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
   '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/kie': typeof ApiWebhooksKieRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
   '/api/auth/extension/google': typeof ApiAuthExtensionGoogleRoute
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/api/e2e/users'
     | '/api/storage/file'
     | '/api/webhooks/creem'
+    | '/api/webhooks/kie'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
     | '/api/auth/extension/google'
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/api/e2e/users'
     | '/api/storage/file'
     | '/api/webhooks/creem'
+    | '/api/webhooks/kie'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
     | '/api/auth/extension/google'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/api/e2e/users'
     | '/api/storage/file'
     | '/api/webhooks/creem'
+    | '/api/webhooks/kie'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
     | '/api/auth/extension/google'
@@ -601,6 +613,7 @@ export interface RootRouteChildren {
   ApiE2eUsersRoute: typeof ApiE2eUsersRoute
   ApiStorageFileRoute: typeof ApiStorageFileRoute
   ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
+  ApiWebhooksKieRoute: typeof ApiWebhooksKieRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
   ApiWebhooksWaffoRoute: typeof ApiWebhooksWaffoRoute
   ApiAuthExtensionGoogleRoute: typeof ApiAuthExtensionGoogleRoute
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksCreemRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/kie': {
+      id: '/api/webhooks/kie'
+      path: '/api/webhooks/kie'
+      fullPath: '/api/webhooks/kie'
+      preLoaderRoute: typeof ApiWebhooksKieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/webhooks/stripe': {
       id: '/api/webhooks/stripe'
       path: '/api/webhooks/stripe'
@@ -1029,6 +1049,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiE2eUsersRoute: ApiE2eUsersRoute,
   ApiStorageFileRoute: ApiStorageFileRoute,
   ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
+  ApiWebhooksKieRoute: ApiWebhooksKieRoute,
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
   ApiWebhooksWaffoRoute: ApiWebhooksWaffoRoute,
   ApiAuthExtensionGoogleRoute: ApiAuthExtensionGoogleRoute,

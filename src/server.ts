@@ -83,4 +83,28 @@ export default {
 
     return response;
   },
+  async scheduled(
+    _event: ScheduledEvent,
+    _env: Env,
+    context: ExecutionContext
+  ) {
+    context.waitUntil(
+      (async () => {
+        const [{ dispatchPendingVideoJobs }, { reconcileVideoWebhookInbox }] =
+          await Promise.all([
+            import('@/lib/video-creator/dispatcher.server'),
+            import('@/lib/video-creator/reconciliation.server'),
+          ]);
+        const outcomes = await Promise.allSettled([
+          dispatchPendingVideoJobs(),
+          reconcileVideoWebhookInbox(),
+        ]);
+        if (outcomes.some((outcome) => outcome.status === 'rejected')) {
+          logOperationalEvent.warn('video background work requires review', {
+            reason: 'video_worker_rejected',
+          });
+        }
+      })()
+    );
+  },
 };

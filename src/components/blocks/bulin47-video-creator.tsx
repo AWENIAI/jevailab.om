@@ -1,11 +1,16 @@
 'use client';
 
 import { authClient } from '@/auth/client';
+import {
+  getVideoCreatorJob,
+  quoteVideoCreatorDraft,
+  startVideoCreatorGeneration,
+  uploadVideoCreatorReference,
+} from '@/api/video-creator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   canGenerateBulinVideo,
-  getBulinVideoCredits,
   type BulinVideoModel,
   type BulinVideoResolution,
 } from '@/lib/video-creator/ui-state';
@@ -21,7 +26,7 @@ import {
   IconVolume,
   IconVolumeOff,
 } from '@tabler/icons-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type CreatorLocale = 'zh' | 'en';
 
@@ -34,12 +39,16 @@ function getExampleLabel(index: number, locale: CreatorLocale) {
 }
 
 const models: Array<{ id: BulinVideoModel; label: string; note: string }> = [
-  { id: 'standard', label: 'Standard', note: 'Seedance 2.0 Mini' },
-  { id: 'fast', label: 'Fast', note: 'Seedance 2.0 Fast' },
-  { id: 'pro', label: 'Pro', note: 'Seedance 2.0' },
-  { id: 'ultra', label: 'Ultra', note: 'Seedance 2.5' },
-  { id: 'wan', label: 'Wan', note: 'Wan 3.0 Video' },
-  { id: 'wan-prime', label: 'Wan Prime', note: 'Wan 3.0 Video Prime' },
+  {
+    id: 'bytedance/seedance-2-mini',
+    label: 'Seedance 2.0 Mini',
+    note: 'Reference-video creation',
+  },
+  {
+    id: 'wan/2-2-animate-replace',
+    label: 'Wan Animate',
+    note: 'Authorized-template creation',
+  },
 ];
 
 const ButtonChoice = ({
@@ -76,11 +85,30 @@ export function Bulin47VideoCreator() {
   const [unmutedExampleId, setUnmutedExampleId] = useState<string | null>(null);
   const [photo, setPhoto] = useState<File>();
   const [photoPreview, setPhotoPreview] = useState<string>();
-  const [model, setModel] = useState<BulinVideoModel>('standard');
+  const [model, setModel] = useState<BulinVideoModel>(
+    'bytedance/seedance-2-mini'
+  );
   const [resolution, setResolution] = useState<BulinVideoResolution>('720p');
-  const [duration, setDuration] = useState<12 | 15>(12);
-  const [format, setFormat] = useState<'match' | '16:9' | '9:16'>('9:16');
   const [submitMessage, setSubmitMessage] = useState<string>();
+  const [uploadedAssetId, setUploadedAssetId] = useState<string>();
+  const [authorizationAccepted, setAuthorizationAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [quoteMessage, setQuoteMessage] = useState<string>();
+  const [quote, setQuote] = useState<{
+    quoteId: string;
+    creditUnits: number;
+    credits: number;
+    paidAvailableUnits: number;
+    templateSeconds: number;
+    outputSeconds: number;
+    aspectRatio: string;
+  }>();
+  const [job, setJob] = useState<{
+    id: string;
+    status: string;
+    errorCode: string | null;
+    output: { id: string; mediaType: string | null; mediaUrl: string } | null;
+  }>();
 
   useEffect(() => {
     if (!photo) {
@@ -106,26 +134,145 @@ export function Bulin47VideoCreator() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const credits = useMemo(
-    () => getBulinVideoCredits({ model, resolution, duration }),
-    [duration, model, resolution]
-  );
+  useEffect(() => {
+    let current = true;
+    setQuote(undefined);
+    setQuoteMessage(undefined);
+    if (!session?.user) {
+      return () => {
+        current = false;
+      };
+    }
+    void quoteVideoCreatorDraft({
+      data: { templateId: selectedExample, model, resolution },
+    })
+      .then((nextQuote) => {
+        if (current) {
+          setQuote(nextQuote);
+          setQuoteMessage(undefined);
+        }
+      })
+      .catch(() => {
+        if (current) {
+          setQuote(undefined);
+          setQuoteMessage(
+            copy(
+              locale,
+              '当前没有可用的已授权视频示例，请在完成模板授权与启用后再创建。',
+              'There is no enabled authorized video example yet. Complete template authorization and enable it before creating.'
+            )
+          );
+        }
+      });
+    return () => {
+      current = false;
+    };
+  }, [locale, model, resolution, selectedExample, session?.user?.id]);
+
+  useEffect(() => {
+    const jobId = job?.id;
+    const jobStatus = job?.status;
+    if (
+      !jobId ||
+      !jobStatus ||
+      ['SUCCEEDED', 'FAILED', 'REVIEW_REQUIRED', 'CANCELLED'].includes(
+        jobStatus
+      )
+    ) {
+      return;
+    }
+    let current = true;
+    const refresh = async () => {
+      try {
+        const latest = await getVideoCreatorJob({ data: { jobId } });
+        if (current) setJob(latest);
+      } catch {
+        // The visible job status remains the last server-confirmed state. A
+        // transient read failure must never trigger a new provider request.
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 8_000);
+    return () => {
+      current = false;
+      window.clearInterval(timer);
+    };
+  }, [job?.id, job?.status]);
+
+  const credits = quote?.credits;
+  const creditsLabel = credits === undefined ? '—' : String(credits);
   const canGenerate = canGenerateBulinVideo({
     isSignedIn: Boolean(session?.user),
     hasPhoto: Boolean(photo),
-    isSubmitting: false,
+    authorizationAccepted,
+    hasCurrentQuote: Boolean(quote),
+    isSubmitting,
   });
   const activeModel = models.find((item) => item.id === model) ?? models[0];
 
-  function handleGenerate() {
-    if (!canGenerate) return;
-    setSubmitMessage(
-      copy(
-        locale,
-        '视频生成接口尚未接入。你的图片仍保留在当前浏览器中，未发送任何生成请求。',
-        'Video generation is not connected yet. Your image remains in this browser and no request was sent.'
-      )
-    );
+  async function handleGenerate() {
+    if (!canGenerate || !quote) return;
+    if (!photo) return;
+    setIsSubmitting(true);
+    setSubmitMessage(undefined);
+    try {
+      let assetId = uploadedAssetId;
+      if (!assetId) {
+        const form = new FormData();
+        form.set('file', photo);
+        form.set('authorizationAccepted', 'true');
+        const uploaded = await uploadVideoCreatorReference({ data: form });
+        assetId = uploaded.assetId;
+        setUploadedAssetId(assetId);
+      }
+      const nextQuote = await quoteVideoCreatorDraft({
+        data: { templateId: selectedExample, model, resolution },
+      });
+      setQuote(nextQuote);
+      if (nextQuote.paidAvailableUnits < nextQuote.creditUnits) {
+        setSubmitMessage(
+          copy(
+            locale,
+            '付费视频积分不足，无法创建任务。',
+            'There are not enough paid video credits to create this job.'
+          )
+        );
+        return;
+      }
+      const started = await startVideoCreatorGeneration({
+        data: {
+          quoteId: nextQuote.quoteId,
+          assetId,
+          authorizationAccepted: true,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      setSubmitMessage(
+        copy(
+          locale,
+          `任务已创建：${started.jobId}`,
+          `Job created: ${started.jobId}`
+        )
+      );
+      setJob({
+        id: started.jobId,
+        status: started.status,
+        errorCode: null,
+        output: null,
+      });
+    } catch (error) {
+      setSubmitMessage(
+        error instanceof Error
+          ? error.message
+          : copy(
+              locale,
+              '无法创建视频任务。',
+              'Unable to create the video job.'
+            )
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function playPreview(exampleId: string) {
@@ -319,6 +466,9 @@ export function Bulin47VideoCreator() {
                     const file = event.target.files?.[0];
                     if (file) {
                       setPhoto(file);
+                      setUploadedAssetId(undefined);
+                      setQuote(undefined);
+                      setQuoteMessage(undefined);
                       setSubmitMessage(undefined);
                     }
                   }}
@@ -346,21 +496,21 @@ export function Bulin47VideoCreator() {
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4">
                       <div>
                         <p className="font-semibold">
-                          {activeModel.label} · {resolution} · {duration}s ·{' '}
-                          {format === 'match'
-                            ? 'Match selected format'
-                            : format}
+                          {activeModel.label} · {resolution}
+                          {quote
+                            ? ` · ${quote.templateSeconds}s · ${quote.aspectRatio}`
+                            : ''}
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {copy(
                             locale,
-                            '可调整模型、清晰度、时长与比例',
-                            'Change model, resolution, length or format'
+                            '时长和画面比例由已授权的视频示例固定，积分由服务端报价。',
+                            'The authorized example fixes duration and format; the server provides the quote.'
                           )}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-primary">
-                        {credits} {copy(locale, '积分', 'credits')}
+                        {creditsLabel} {copy(locale, '积分', 'credits')}
                       </span>
                     </div>
                     <div className="space-y-5 p-5">
@@ -385,63 +535,18 @@ export function Bulin47VideoCreator() {
                           ))}
                         </div>
                       </fieldset>
-                      <div className="grid gap-5 sm:grid-cols-2">
-                        <fieldset>
-                          <legend className="text-sm font-medium text-muted-foreground">
-                            {copy(locale, '清晰度', 'Resolution')}
-                          </legend>
-                          <div className="mt-3 flex gap-2">
-                            {(['480p', '720p'] as const).map((value) => (
-                              <ButtonChoice
-                                key={value}
-                                active={resolution === value}
-                                onClick={() => setResolution(value)}
-                              >
-                                {value}
-                              </ButtonChoice>
-                            ))}
-                          </div>
-                        </fieldset>
-                        <fieldset>
-                          <legend className="text-sm font-medium text-muted-foreground">
-                            {copy(locale, '时长', 'Length')}
-                          </legend>
-                          <div className="mt-3 flex gap-2">
-                            {([12, 15] as const).map((value) => (
-                              <ButtonChoice
-                                key={value}
-                                active={duration === value}
-                                onClick={() => setDuration(value)}
-                              >
-                                {value}s
-                              </ButtonChoice>
-                            ))}
-                          </div>
-                        </fieldset>
-                      </div>
                       <fieldset>
                         <legend className="text-sm font-medium text-muted-foreground">
-                          {copy(locale, '画面比例', 'Format')}
+                          {copy(locale, '清晰度', 'Resolution')}
                         </legend>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {[
-                            [
-                              'match',
-                              copy(
-                                locale,
-                                '匹配示例规格',
-                                'Match selected format'
-                              ),
-                            ],
-                            ['16:9', '16:9'],
-                            ['9:16', '9:16'],
-                          ].map(([value, label]) => (
+                        <div className="mt-3 flex gap-2">
+                          {(['480p', '720p'] as const).map((value) => (
                             <ButtonChoice
                               key={value}
-                              active={format === value}
-                              onClick={() => setFormat(value as typeof format)}
+                              active={resolution === value}
+                              onClick={() => setResolution(value)}
                             >
-                              {label}
+                              {value}
                             </ButtonChoice>
                           ))}
                         </div>
@@ -449,8 +554,8 @@ export function Bulin47VideoCreator() {
                       <p className="text-sm leading-6 text-muted-foreground">
                         {copy(
                           locale,
-                          '更高的清晰度和更长的视频会消耗更多积分；切换画面比例不会改变价格。',
-                          'Higher quality and longer clips use more credits. Changing the format does not change the price.'
+                          '更高的清晰度会消耗更多积分；模板时长与比例不会由浏览器修改。',
+                          'Higher quality uses more credits; the browser cannot change the template duration or format.'
                         )}
                       </p>
                     </div>
@@ -470,12 +575,20 @@ export function Bulin47VideoCreator() {
                       className="mt-4 h-13 w-full rounded-xl text-base font-semibold"
                     >
                       <IconPlayerPlay className="size-5" />
-                      {photo
+                      {photo && quote
                         ? copy(locale, '生成 AI 视频', 'Generate AI video')
                         : copy(
                             locale,
-                            '请先上传照片',
-                            'Add a photo to continue'
+                            photo
+                              ? quoteMessage
+                                ? '暂无可用授权示例'
+                                : '正在获取服务端报价'
+                              : '请先上传照片',
+                            photo
+                              ? quoteMessage
+                                ? 'No authorized example available'
+                                : 'Getting the server quote'
+                              : 'Add a photo to continue'
                           )}
                     </Button>
                   ) : (
@@ -487,9 +600,31 @@ export function Bulin47VideoCreator() {
                       {copy(locale, '登录后上传照片', 'Sign in to add a photo')}
                     </Link>
                   )}
+                  <label className="mt-4 flex items-start gap-3 text-sm leading-6 text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={authorizationAccepted}
+                      onChange={(event) =>
+                        setAuthorizationAccepted(event.target.checked)
+                      }
+                      className="mt-1 size-4 rounded border-input accent-primary"
+                    />
+                    <span>
+                      {copy(
+                        locale,
+                        '我确认拥有所上传图片的使用授权，并同意按服务条款进行内容审核。',
+                        'I confirm I have permission to use the uploaded image and agree to content review under the Terms.'
+                      )}
+                    </span>
+                  </label>
                   <p className="mt-4 text-center text-sm text-muted-foreground">
-                    {credits} {copy(locale, '积分', 'credits')}
+                    {creditsLabel} {copy(locale, '积分', 'credits')}
                   </p>
+                  {quoteMessage ? (
+                    <output className="mt-3 block rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-foreground">
+                      {quoteMessage}
+                    </output>
+                  ) : null}
                   <div className="mt-4 flex flex-col items-center gap-2 text-center text-sm text-muted-foreground">
                     <a
                       href="#pricing"
@@ -497,8 +632,12 @@ export function Bulin47VideoCreator() {
                     >
                       {copy(
                         locale,
-                        `按当前设置，约可每月生成 ${Math.max(1, Math.floor(100 / credits))} 个视频 · 查看套餐`,
-                        `About ${Math.max(1, Math.floor(100 / credits))} videos / month at these settings · See plans`
+                        credits
+                          ? `按当前设置，约可每月生成 ${Math.max(1, Math.floor(100 / credits))} 个视频 · 查看套餐`
+                          : '请登录后查看服务端积分报价 · 查看套餐',
+                        credits
+                          ? `About ${Math.max(1, Math.floor(100 / credits))} videos / month at these settings · See plans`
+                          : 'Sign in to view the server-side credit quote · See plans'
                       )}
                     </a>
                     <a href="#pricing" className="underline underline-offset-4">
@@ -520,6 +659,43 @@ export function Bulin47VideoCreator() {
                     <output className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-center text-sm text-primary">
                       {submitMessage}
                     </output>
+                  ) : null}
+                  {job ? (
+                    <div className="mt-4 rounded-xl border bg-card p-4 text-sm">
+                      <p className="font-semibold">
+                        {copy(locale, '任务状态：', 'Job status: ')}
+                        {job.status}
+                      </p>
+                      {job.errorCode ? (
+                        <p className="mt-1 text-muted-foreground">
+                          {copy(locale, '需要人工复核：', 'Needs review: ')}
+                          {job.errorCode}
+                        </p>
+                      ) : null}
+                      {job.output ? (
+                        <video
+                          controls
+                          playsInline
+                          className="mt-4 aspect-video w-full rounded-lg bg-black object-contain"
+                          src={job.output.mediaUrl}
+                        >
+                          <track
+                            kind="captions"
+                            srcLang={locale === 'zh' ? 'zh-CN' : 'en'}
+                            label={copy(
+                              locale,
+                              '字幕（如有）',
+                              'Captions when available'
+                            )}
+                          />
+                          {copy(
+                            locale,
+                            '你的浏览器不支持视频预览。',
+                            'Your browser does not support video preview.'
+                          )}
+                        </video>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -610,7 +786,7 @@ function VideoSeoSectionsEn() {
                 ],
                 [
                   'Choose your video settings',
-                  'Choose an example, quality, length, and format that fit your idea.',
+                  'Choose an authorized example and quality setting that fit your idea.',
                 ],
                 [
                   'Review and download',
@@ -647,7 +823,7 @@ function VideoSeoSectionsEn() {
                 ],
                 [
                   'Your choice of quality',
-                  'Choose a model, resolution, duration, and format before creating.',
+                  'Choose a model and resolution; the authorized template controls its duration and format.',
                 ],
                 [
                   'Credits returned on failure',
@@ -751,7 +927,8 @@ function VideoSeoSectionsEn() {
               </p>
               <h3 className="mt-5 font-semibold">What a video costs</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your model, resolution, and length determine the credit cost.
+                Your model, resolution, and authorized template determine the
+                credit cost.
               </p>
             </article>
           </div>
@@ -820,7 +997,10 @@ function VideoSeoSections({ locale }: { locale: CreatorLocale }) {
             <ol className="mt-7 space-y-5">
               {[
                 ['登录并添加图片', '选择一张清晰且你拥有使用授权的图片。'],
-                ['选择视频设置', '选择示例、模型、清晰度、时长和画面比例。'],
+                [
+                  '选择视频设置',
+                  '选择已授权示例、模型与清晰度。时长和画面比例由示例确定。',
+                ],
                 ['预览并下载', '确认生成结果后再下载或分享。'],
               ].map(([title, description], index) => (
                 <li key={title} className="flex gap-4">
@@ -847,7 +1027,7 @@ function VideoSeoSections({ locale }: { locale: CreatorLocale }) {
                 ['提交前确认积分', '你选择的设置会即时显示预计需要的积分。'],
                 [
                   '由你决定质量',
-                  '可以在生成前选择模型、清晰度、时长与画面比例。',
+                  '可以在生成前选择模型与清晰度；时长和画面比例由已授权示例确定。',
                 ],
                 ['失败返还积分', '未成功完成的生成请求将按规则返还积分。'],
               ].map(([title, description]) => (

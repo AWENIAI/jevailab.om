@@ -63,6 +63,27 @@ export const serverEnv = createEnv({
 
     // AI image generation (Kie GPT Image 2)
     KIE_API_KEY: z.string().optional(),
+    KIE_WEBHOOK_HMAC_KEY: z.string().optional(),
+    KIE_API_BASE_URL: z.url().default('https://api.kie.ai'),
+
+    // Video character creation. Every switch defaults closed so an unset
+    // environment cannot spend provider credits.
+    VIDEO_REPLACEMENT_ENABLED: z.enum(['true', 'false']).default('false'),
+    VIDEO_REPLACEMENT_PROVIDER_SEND_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false'),
+    VIDEO_REPLACEMENT_ALLOW_PROMO_CREDITS: z
+      .enum(['true', 'false'])
+      .default('false'),
+    KIE_LIVE_TEST_ENABLED: z.enum(['true', 'false']).default('false'),
+    VIDEO_REPLACEMENT_MAX_ACTIVE_PER_USER: z.string().default('1'),
+    VIDEO_REPLACEMENT_MAX_JOBS_PER_USER_DAY: z.string().default('3'),
+    VIDEO_REPLACEMENT_MAX_JOBS_PER_USER_WEEK: z.string().default('10'),
+    VIDEO_REPLACEMENT_PROVIDER_MAX_INFLIGHT: z.string().default('3'),
+    VIDEO_REPLACEMENT_HOURLY_BUDGET_USD: z.string().default('3'),
+    VIDEO_REPLACEMENT_DAILY_BUDGET_USD: z.string().default('10'),
+    VIDEO_REPLACEMENT_PER_USER_DAILY_BUDGET_USD: z.string().default('1.5'),
+    VIDEO_REPLACEMENT_QUOTE_TTL_SECONDS: z.string().default('300'),
 
     // Image content review (SeeAPI nsfw-filter). This must remain server-only.
     SEEAPI_API_KEY: z.string().optional(),

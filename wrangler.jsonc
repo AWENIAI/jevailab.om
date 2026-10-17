@@ -26,6 +26,10 @@
   // Enables Workers Trace Events Logpush for a Worker
   "logpush": true,
 
+  "triggers": {
+    "crons": ["*/2 * * * *"]
+  },
+
   // Whether Wrangler should keep variables configured in the dashboard on deploy
   "keep_vars": true,
 

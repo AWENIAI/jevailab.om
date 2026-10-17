@@ -4,10 +4,16 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/auth/auth';
 import { getDb } from '@/db';
 import { userFiles } from '@/db/app.schema';
+import {
+  videoAssets,
+  videoJobs,
+  videoOutputs,
+} from '@/db/video-creator.schema';
 import { getFile } from '@/storage';
 import { isPublicFolder } from '@/storage/utils';
 import { ConfigurationError } from '@/storage/types';
 import { verifySeeApiReviewUrl } from '@/lib/image-creator/seeapi-review-url.server';
+import { verifyPrivateVideoProviderUrl } from '@/lib/video-creator/private-media-url.server';
 
 /**
  * Serves a file by key via the storage provider (same-origin proxy URL).
@@ -29,6 +35,14 @@ export const Route = createFileRoute('/api/storage/file')({
             url.searchParams.get('reviewExpires'),
             url.searchParams.get('reviewToken')
           );
+          const isVideoProviderRequest = await verifyPrivateVideoProviderUrl(
+            key,
+            url.searchParams.get('privateExpires'),
+            url.searchParams.get('privatePurpose'),
+            url.searchParams.get('privateToken')
+          );
+          const hasPrivateAccess =
+            isSeeApiReviewRequest || isVideoProviderRequest;
           const headers = getRequestHeaders();
           const session = await auth.api.getSession({ headers });
           const userId = session?.user?.id;
@@ -40,13 +54,26 @@ export const Route = createFileRoute('/api/storage/file')({
             .from(userFiles)
             .where(eq(userFiles.r2Key, key))
             .limit(1);
+          const [videoAsset] = await db
+            .select({ userId: videoAssets.userId })
+            .from(videoAssets)
+            .where(eq(videoAssets.storageKey, key))
+            .limit(1);
+          const [videoOutput] = await db
+            .select({ userId: videoJobs.userId })
+            .from(videoOutputs)
+            .innerJoin(videoJobs, eq(videoJobs.id, videoOutputs.jobId))
+            .where(eq(videoOutputs.storageKey, key))
+            .limit(1);
+          const privateOwnerId =
+            fileRecord?.userId ?? videoAsset?.userId ?? videoOutput?.userId;
 
-          if (!fileRecord && !isPublicKey) {
+          if (!privateOwnerId && !isPublicKey && !hasPrivateAccess) {
             return new Response('Not Found', { status: 404 });
           }
 
-          if (fileRecord && !fileRecord.isPublic && !isSeeApiReviewRequest) {
-            if (!userId || fileRecord.userId !== userId) {
+          if (privateOwnerId && !fileRecord?.isPublic && !hasPrivateAccess) {
+            if (!userId || privateOwnerId !== userId) {
               return new Response('Forbidden', { status: 403 });
             }
           }
@@ -66,6 +93,9 @@ export const Route = createFileRoute('/api/storage/file')({
             'image/bmp',
             'image/x-icon',
             'application/pdf',
+            'video/mp4',
+            'video/webm',
+            'video/quicktime',
           ];
           const isPublicFile = fileRecord?.isPublic === true || isPublicKey;
           const responseHeaders: Record<string, string> = {

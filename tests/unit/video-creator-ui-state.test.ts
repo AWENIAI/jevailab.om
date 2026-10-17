@@ -1,32 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import {
-  canGenerateBulinVideo,
-  getBulinVideoCredits,
-} from '@/lib/video-creator/ui-state';
+import { canGenerateBulinVideo } from '@/lib/video-creator/ui-state';
 
-describe('Bulin 47 video creator state', () => {
-  it('prices the selected model, resolution, and duration together', () => {
+describe('AI video creator state', () => {
+  it('requires sign-in, an image, and explicit authorization before generation', () => {
     expect(
-      getBulinVideoCredits({
-        model: 'standard',
-        resolution: '720p',
-        duration: 12,
+      canGenerateBulinVideo({
+        isSignedIn: false,
+        hasPhoto: true,
+        authorizationAccepted: true,
+        hasCurrentQuote: true,
+        isSubmitting: false,
       })
-    ).toBe(10);
-    expect(
-      getBulinVideoCredits({
-        model: 'ultra',
-        resolution: '720p',
-        duration: 15,
-      })
-    ).toBe(32);
-  });
-
-  it('requires both a signed-in user and a photo before video generation', () => {
+    ).toBe(false);
     expect(
       canGenerateBulinVideo({
         isSignedIn: true,
         hasPhoto: false,
+        authorizationAccepted: true,
+        hasCurrentQuote: true,
         isSubmitting: false,
       })
     ).toBe(false);
@@ -34,6 +25,35 @@ describe('Bulin 47 video creator state', () => {
       canGenerateBulinVideo({
         isSignedIn: true,
         hasPhoto: true,
+        authorizationAccepted: false,
+        hasCurrentQuote: true,
+        isSubmitting: false,
+      })
+    ).toBe(false);
+    expect(
+      canGenerateBulinVideo({
+        isSignedIn: true,
+        hasPhoto: true,
+        authorizationAccepted: true,
+        hasCurrentQuote: false,
+        isSubmitting: false,
+      })
+    ).toBe(false);
+    expect(
+      canGenerateBulinVideo({
+        isSignedIn: true,
+        hasPhoto: true,
+        authorizationAccepted: true,
+        hasCurrentQuote: true,
+        isSubmitting: true,
+      })
+    ).toBe(false);
+    expect(
+      canGenerateBulinVideo({
+        isSignedIn: true,
+        hasPhoto: true,
+        authorizationAccepted: true,
+        hasCurrentQuote: true,
         isSubmitting: false,
       })
     ).toBe(true);
