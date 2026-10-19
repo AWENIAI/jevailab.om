@@ -14,7 +14,10 @@ export function getCreatorTabState(hash: string): CreatorTabState {
   if (normalizedHash === '#video-duet') {
     return { surface: 'video', videoTab: 'duet' };
   }
-  return { surface: 'video', videoTab: 'bulin47' };
+  if (normalizedHash === '#video') {
+    return { surface: 'video', videoTab: 'bulin47' };
+  }
+  return { surface: 'image', videoTab: 'bulin47' };
 }
 
 export function getCreatorTabHash(state: CreatorTabState) {

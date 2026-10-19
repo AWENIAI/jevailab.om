@@ -53,7 +53,7 @@ Uses the [Resend](https://resend.com/docs) SDK. Requires `RESEND_API_KEY` env va
 mail: {
   enable: true,
   provider: 'resend',
-  fromEmail: 'MyApp <support@example.com>',
+  fromEmail: 'jevailab <support@jevailab.com>',
 }
 ```
 
@@ -80,7 +80,7 @@ CLOUDFLARE_API_TOKEN=your_api_token
 mail: {
   enable: true,
   provider: 'cloudflare',
-  fromEmail: 'MyApp <support@example.com>',
+  fromEmail: 'jevailab <support@jevailab.com>',
 }
 ```
 

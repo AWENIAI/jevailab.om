@@ -3,44 +3,54 @@ import { IconPhoto, IconVideo } from '@tabler/icons-react';
 import type { MenuItemConfig } from '../types';
 
 /**
- * Homepage-first navigation. Every active destination is a visible section on
- * the root route, with video as the default creative workspace.
+ * Homepage-first navigation. Video and the AI menu stay implemented, but are
+ * temporarily hidden from the public navigation while image creation is the
+ * homepage focus.
  */
 export function getNavbarLinks(): MenuItemConfig[] {
-  return [
+  const hiddenKeys = new Set(['video', 'ai']);
+  const links = [
     {
-      title: m.picvilo_nav_video_title(),
+      key: 'video',
+      title: m.jevailab_nav_video_title(),
       href: '/#video',
       external: false,
     },
     {
-      title: m.picvilo_nav_image_title(),
+      key: 'image',
+      title: m.jevailab_nav_image_title(),
       href: '/#image',
       external: false,
     },
     {
+      key: 'pricing',
       title: m.nav_pricing(),
       href: '/#pricing',
       external: false,
     },
     {
+      key: 'ai',
       title: m.nav_ai_title(),
       items: [
         {
-          title: m.picvilo_nav_video_title(),
-          description: m.picvilo_nav_video_description(),
+          title: m.jevailab_nav_video_title(),
+          description: m.jevailab_nav_video_description(),
           href: '/#video',
           icon: IconVideo,
           external: false,
         },
         {
-          title: m.picvilo_nav_image_title(),
-          description: m.picvilo_nav_image_description(),
+          title: m.jevailab_nav_image_title(),
+          description: m.jevailab_nav_image_description(),
           href: '/#image',
           icon: IconPhoto,
           external: false,
         },
       ],
     },
-  ];
+  ] satisfies Array<MenuItemConfig & { key: string }>;
+
+  return links
+    .filter((item) => !hiddenKeys.has(item.key))
+    .map(({ key: _key, ...item }) => item);
 }

@@ -1,8 +1,10 @@
 blank_issues_enabled: false
 contact_links:
-  - name: TanStack Starter Community Support
-    url: https://mksaas.link/discord
+  - name: jevailab Support
+    url: https://jevailab.com
     about: Please ask and answer questions here.
-  - name: TanStack Starter Documentation
-    url: https://docs.tanstackstarter.dev
+  - name: jevailab Documentation
+    url: https://jevailab.com
     about: Please check out the documentation here.
+
+

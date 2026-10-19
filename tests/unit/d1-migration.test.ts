@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   buildD1MigrationArgs,
   getWranglerEntrypoint,
+  stripJsonComments,
 } from '../../scripts/d1-migration';
 
 describe('D1 migration command arguments', () => {
@@ -20,5 +21,16 @@ describe('D1 migration command arguments', () => {
     expect(
       getWranglerEntrypoint('D:/project/node_modules/wrangler/package.json')
     ).toBe('D:\\project\\node_modules\\wrangler\\bin\\wrangler.js');
+  });
+
+  test('keeps URL slashes inside JSON strings when removing comments', () => {
+    expect(
+      JSON.parse(
+        stripJsonComments(`{
+          // comment
+          "url": "https://jevailab.com"
+        }`)
+      )
+    ).toEqual({ url: 'https://jevailab.com' });
   });
 });

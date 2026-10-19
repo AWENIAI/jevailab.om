@@ -1,4 +1,4 @@
-# PicVilo AI 首页内容架构改版设计
+# jevailab 首页内容架构改版设计
 
 **日期：** 2026-10-16  
 **状态：** 已确认，待实施  
@@ -6,11 +6,11 @@
 
 ## 目标
 
-将当前通用 SaaS 首页改为 PicVilo AI 的长首页。页面聚焦已上线的 AI 图片创作，说明 AI 视频是规划能力；所有营销内容均为可见 HTML，适配桌面、平板和手机。
+将当前通用 SaaS 首页改为 jevailab 的长首页。页面聚焦已上线的 AI 图片创作，说明 AI 视频是规划能力；所有营销内容均为可见 HTML，适配桌面、平板和手机。
 
 ## 已确认事实
 
-- 正式首页品牌为 **PicVilo AI**；
+- 正式首页品牌为 **jevailab**；
 - 现有 Hero 和三栏 AI 图片创作工作台保留，不重写其生成、登录、报价或审核逻辑；
 - 当前不存在可验证的 AI 视频生成服务，因此视频只能显示“即将推出”，不可提交任务、不可支付、不可链接到空页面；
 - 模板封面和案例使用用户已有的本地图库，并以“模板示例”标记，不冒充用户作品；
@@ -18,9 +18,9 @@
 
 ## 页面顺序与交互
 
-1. **导航与 Hero**：品牌为 PicVilo AI；唯一 H1 描述“从照片与文字创作 AI 图片”；主 CTA 滚动至 `#create`，次 CTA 滚动至 `#gallery`。视频导航展示规划状态而非生成入口。
+1. **导航与 Hero**：品牌为 jevailab；唯一 H1 描述“从照片与文字创作 AI 图片”；主 CTA 滚动至 `#create`，次 CTA 滚动至 `#gallery`。视频导航展示规划状态而非生成入口。
 2. **AI 创作工作台**：保留现有组件和 `#create`；补充与首页一致的图片/视频能力说明，视频未上线时不允许切换到伪造表单。
-3. **产品说明 `#about`**：一句话解释 PicVilo AI，并以六项事实说明模板、单图参考、画幅、报价和默认私密性。
+3. **产品说明 `#about`**：一句话解释 jevailab，并以六项事实说明模板、单图参考、画幅、报价和默认私密性。
 4. **模板案例 `#gallery`**：仅渲染真实图片示例；每张卡片包含模板示例标签、描述和映射模板 ID。点击已映射卡片后滚动至工作台并选中相应模板。视频 Tab 只显示不可操作的规划说明。
 5. **核心能力 `#features`**：AI 图片生成和图片风格为可用能力；图片转视频与视频特效为禁用的“即将推出”能力。
 6. **三步教程 `#how-it-works`**、**创意场景 `#use-cases`** 与 **上传建议 `#photo-tips`**：使用产品文档已确认的文案；上传建议必须包含授权和 NSFW 限制。
@@ -31,10 +31,10 @@
 
 ## 代码结构
 
-- 新建 `src/content/picvilo-homepage.ts`：中英文首页内容、案例映射、能力状态、FAQ、锚点和可用链接数据。
-- 新建或重构 `src/components/blocks/picvilo-homepage-sections.tsx`：产品说明、案例、能力、三步、玩法、上传建议、工具、积分说明、FAQ、底部 CTA；不承载生成业务逻辑。
+- 新建 `src/content/jevailab-homepage.ts`：中英文首页内容、案例映射、能力状态、FAQ、锚点和可用链接数据。
+- 新建或重构 `src/components/blocks/jevailab-homepage-sections.tsx`：产品说明、案例、能力、三步、玩法、上传建议、工具、积分说明、FAQ、底部 CTA；不承载生成业务逻辑。
 - 更新 `src/components/blocks/homepage.tsx`：以 Hero、既有创作工作台和上述内容区块重新编排首页，移除通用 SaaS 营销区块。
-- 更新 `src/components/blocks/hero.tsx`、`src/config/navbar-config.ts`、`src/config/footer-config.ts`：替换为 PicVilo AI 文案与有效锚点。
+- 更新 `src/components/blocks/hero.tsx`、`src/config/navbar-config.ts`、`src/config/footer-config.ts`：替换为 jevailab 文案与有效锚点。
 - 更新 `project.inlang/messages/zh.json`、`project.inlang/messages/en.json`：站点品牌、首页 title/description 等已有国际化键；不在组件中硬编码站点名称。
 - 视现有 SEO 工具能力更新首页 metadata；仅输出真实功能的结构化数据。
 
@@ -50,10 +50,11 @@
 - 用浏览器检查 1440px 桌面、平板和 390px 手机宽度；
 - 检查 Hero/工作台保留、全部锚点可达、案例点击回填模板、视频项不能触发生成；
 - 运行类型检查、单元测试和格式检查；
-- 检查首页只有一个 H1，且不存在 TanStarter 品牌残留或失效内部链接。
+- 检查首页只有一个 H1，且不存在 jevailab 品牌残留或失效内部链接。
 
 ## 非目标
 
 - 不添加视频生成 API、积分扣款、模板后台、公开作品广场或新支付价格；
 - 不将完整模板提示词、审核实现、密钥或用户私有内容送到浏览器；
 - 不创建没有实际内容或功能的 SEO 路由。
+

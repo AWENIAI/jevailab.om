@@ -91,6 +91,112 @@ export const schema = z.object({
   reviewer: z.string(),
 });
 
+type DashboardRow = z.infer<typeof schema>;
+
+const dashboardHeaderMessages: Record<number, () => string> = {
+  1: m.dashboard_data_header_1,
+  2: m.dashboard_data_header_2,
+  3: m.dashboard_data_header_3,
+  4: m.dashboard_data_header_4,
+  5: m.dashboard_data_header_5,
+  6: m.dashboard_data_header_6,
+  7: m.dashboard_data_header_7,
+  8: m.dashboard_data_header_8,
+  9: m.dashboard_data_header_9,
+  10: m.dashboard_data_header_10,
+  11: m.dashboard_data_header_11,
+  12: m.dashboard_data_header_12,
+  13: m.dashboard_data_header_13,
+  14: m.dashboard_data_header_14,
+  15: m.dashboard_data_header_15,
+  16: m.dashboard_data_header_16,
+  17: m.dashboard_data_header_17,
+  18: m.dashboard_data_header_18,
+  19: m.dashboard_data_header_19,
+  20: m.dashboard_data_header_20,
+  21: m.dashboard_data_header_21,
+  22: m.dashboard_data_header_22,
+  23: m.dashboard_data_header_23,
+  24: m.dashboard_data_header_24,
+  25: m.dashboard_data_header_25,
+  26: m.dashboard_data_header_26,
+  27: m.dashboard_data_header_27,
+  28: m.dashboard_data_header_28,
+  29: m.dashboard_data_header_29,
+  30: m.dashboard_data_header_30,
+  31: m.dashboard_data_header_31,
+  32: m.dashboard_data_header_32,
+  33: m.dashboard_data_header_33,
+  34: m.dashboard_data_header_34,
+  35: m.dashboard_data_header_35,
+  36: m.dashboard_data_header_36,
+  37: m.dashboard_data_header_37,
+  38: m.dashboard_data_header_38,
+  39: m.dashboard_data_header_39,
+  40: m.dashboard_data_header_40,
+  41: m.dashboard_data_header_41,
+  42: m.dashboard_data_header_42,
+  43: m.dashboard_data_header_43,
+  44: m.dashboard_data_header_44,
+  45: m.dashboard_data_header_45,
+  46: m.dashboard_data_header_46,
+  47: m.dashboard_data_header_47,
+  48: m.dashboard_data_header_48,
+  49: m.dashboard_data_header_49,
+  50: m.dashboard_data_header_50,
+  51: m.dashboard_data_header_51,
+  52: m.dashboard_data_header_52,
+  53: m.dashboard_data_header_53,
+  54: m.dashboard_data_header_54,
+  55: m.dashboard_data_header_55,
+  56: m.dashboard_data_header_56,
+  57: m.dashboard_data_header_57,
+  58: m.dashboard_data_header_58,
+  59: m.dashboard_data_header_59,
+  60: m.dashboard_data_header_60,
+  61: m.dashboard_data_header_61,
+  62: m.dashboard_data_header_62,
+  63: m.dashboard_data_header_63,
+  64: m.dashboard_data_header_64,
+  65: m.dashboard_data_header_65,
+  66: m.dashboard_data_header_66,
+  67: m.dashboard_data_header_67,
+  68: m.dashboard_data_header_68,
+};
+
+const dashboardTypeMessages: Record<string, () => string> = {
+  'Cover page': m.dashboard_table_type_cover_page,
+  'Table of contents': m.dashboard_table_type_table_of_contents,
+  Narrative: m.dashboard_table_type_narrative,
+  'Technical content': m.dashboard_table_type_technical_content,
+  'Plain language': m.dashboard_table_type_plain_language,
+  Legal: m.dashboard_table_type_legal,
+  Visual: m.dashboard_table_type_visual,
+  Financial: m.dashboard_table_type_financial,
+  Research: m.dashboard_table_type_research,
+  Planning: m.dashboard_table_type_planning,
+};
+
+function getDashboardHeader(item: DashboardRow) {
+  return dashboardHeaderMessages[item.id]?.() ?? item.header;
+}
+
+function getDashboardType(type: string) {
+  return dashboardTypeMessages[type]?.() ?? type;
+}
+
+function getDashboardStatus(status: string) {
+  return status === 'Done'
+    ? m.dashboard_data_status_done()
+    : m.dashboard_data_status_in_process();
+}
+
+function getDashboardReviewer(reviewer: string) {
+  return reviewer === 'Assign reviewer'
+    ? m.dashboard_data_reviewer_unassigned()
+    : reviewer;
+}
+
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     id: 'select',
@@ -121,7 +227,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: 'header',
-    header: 'Header',
+    header: () => m.dashboard_table_header(),
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
     },
@@ -129,18 +235,18 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: 'type',
-    header: 'Section Type',
+    header: () => m.dashboard_table_section_type(),
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.type}
+          {getDashboardType(row.original.type)}
         </Badge>
       </div>
     ),
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: () => m.dashboard_table_status(),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -156,26 +262,30 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         ) : (
           <IconLoader />
         )}
-        {row.original.status}
+        {getDashboardStatus(row.original.status)}
       </Badge>
     ),
   },
   {
     accessorKey: 'target',
-    header: () => <div className="w-full text-right">Target</div>,
+    header: () => (
+      <div className="w-full text-right">{m.dashboard_table_target()}</div>
+    ),
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
           e.preventDefault();
           toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: 'Done',
-            error: 'Error',
+            loading: m.dashboard_table_saving({
+              header: getDashboardHeader(row.original),
+            }),
+            success: m.dashboard_table_done(),
+            error: m.dashboard_table_error(),
           });
         }}
       >
         <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Target
+          {m.dashboard_table_target()}
         </Label>
         <Input
           className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
@@ -187,20 +297,24 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: 'limit',
-    header: () => <div className="w-full text-right">Limit</div>,
+    header: () => (
+      <div className="w-full text-right">{m.dashboard_table_limit()}</div>
+    ),
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
           e.preventDefault();
           toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: 'Done',
-            error: 'Error',
+            loading: m.dashboard_table_saving({
+              header: getDashboardHeader(row.original),
+            }),
+            success: m.dashboard_table_done(),
+            error: m.dashboard_table_error(),
           });
         }}
       >
         <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Limit
+          {m.dashboard_table_limit()}
         </Label>
         <Input
           className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
@@ -212,16 +326,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: 'reviewer',
-    header: 'Reviewer',
+    header: () => m.dashboard_table_reviewer(),
     cell: ({ row }) => {
       const isAssigned = row.original.reviewer !== 'Assign reviewer';
       if (isAssigned) {
-        return row.original.reviewer;
+        return getDashboardReviewer(row.original.reviewer);
       }
       return (
         <>
           <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Reviewer
+            {m.dashboard_table_reviewer()}
           </Label>
           <Select
             items={[
@@ -234,7 +348,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
               size="sm"
               id={`${row.original.id}-reviewer`}
             >
-              <SelectValue placeholder="Assign reviewer" />
+              <SelectValue placeholder={m.dashboard_table_assign_reviewer()} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -263,14 +377,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           }
         >
           <IconDotsVertical />
-          <span className="sr-only">Open menu</span>
+          <span className="sr-only">{m.dashboard_table_open_menu()}</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuItem>{m.dashboard_table_edit()}</DropdownMenuItem>
+          <DropdownMenuItem>{m.dashboard_table_make_copy()}</DropdownMenuItem>
+          <DropdownMenuItem>{m.dashboard_table_favorite()}</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive">
+            {m.dashboard_table_delete()}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -324,15 +440,24 @@ export function DataTable({
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
-          View
+          {m.dashboard_table_view()}
         </Label>
         <Select
           defaultValue="outline"
           items={[
-            { label: 'Outline', value: 'outline' },
-            { label: 'Past Performance', value: 'past-performance' },
-            { label: 'Key Personnel', value: 'key-personnel' },
-            { label: 'Focus Documents', value: 'focus-documents' },
+            { label: m.dashboard_table_outline(), value: 'outline' },
+            {
+              label: m.dashboard_table_past_performance(),
+              value: 'past-performance',
+            },
+            {
+              label: m.dashboard_table_key_personnel(),
+              value: 'key-personnel',
+            },
+            {
+              label: m.dashboard_table_focus_documents(),
+              value: 'focus-documents',
+            },
           ]}
         >
           <SelectTrigger
@@ -340,26 +465,40 @@ export function DataTable({
             size="sm"
             id="view-selector"
           >
-            <SelectValue placeholder="Select a view" />
+            <SelectValue placeholder={m.dashboard_table_select_view()} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="outline">Outline</SelectItem>
-              <SelectItem value="past-performance">Past Performance</SelectItem>
-              <SelectItem value="key-personnel">Key Personnel</SelectItem>
-              <SelectItem value="focus-documents">Focus Documents</SelectItem>
+              <SelectItem value="outline">
+                {m.dashboard_table_outline()}
+              </SelectItem>
+              <SelectItem value="past-performance">
+                {m.dashboard_table_past_performance()}
+              </SelectItem>
+              <SelectItem value="key-personnel">
+                {m.dashboard_table_key_personnel()}
+              </SelectItem>
+              <SelectItem value="focus-documents">
+                {m.dashboard_table_focus_documents()}
+              </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
+          <TabsTrigger value="outline">
+            {m.dashboard_table_outline()}
+          </TabsTrigger>
           <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
+            {m.dashboard_table_past_performance()}{' '}
+            <Badge variant="secondary">3</Badge>
           </TabsTrigger>
           <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
+            {m.dashboard_table_key_personnel()}{' '}
+            <Badge variant="secondary">2</Badge>
           </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
+          <TabsTrigger value="focus-documents">
+            {m.dashboard_table_focus_documents()}
+          </TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -367,7 +506,7 @@ export function DataTable({
               render={<Button variant="outline" size="sm" />}
             >
               <IconLayoutColumns data-icon="inline-start" />
-              Columns
+              {m.dashboard_table_columns()}
               <IconChevronDown data-icon="inline-end" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-32">
@@ -396,7 +535,9 @@ export function DataTable({
           </DropdownMenu>
           <Button variant="outline" size="sm">
             <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
+            <span className="hidden lg:inline">
+              {m.dashboard_table_add_section()}
+            </span>
           </Button>
         </div>
       </div>
@@ -445,7 +586,7 @@ export function DataTable({
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    No results.
+                    {m.common_table_no_results()}
                   </TableCell>
                 </TableRow>
               )}
@@ -454,13 +595,15 @@ export function DataTable({
         </div>
         <div className="flex items-center justify-between px-4">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of{' '}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+            {m.dashboard_table_selected_count({
+              selected: table.getFilteredSelectedRowModel().rows.length,
+              total: table.getFilteredRowModel().rows.length,
+            })}
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">
               <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                Rows per page
+                {m.common_table_rows_per_page()}
               </Label>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
@@ -489,8 +632,10 @@ export function DataTable({
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{' '}
-              {table.getPageCount()}
+              {m.dashboard_table_page_of({
+                page: table.getState().pagination.pageIndex + 1,
+                pages: table.getPageCount(),
+              })}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
@@ -499,7 +644,7 @@ export function DataTable({
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
-                <span className="sr-only">Go to first page</span>
+                <span className="sr-only">{m.common_table_first_page()}</span>
                 <IconChevronsLeft />
               </Button>
               <Button
@@ -509,7 +654,9 @@ export function DataTable({
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
-                <span className="sr-only">Go to previous page</span>
+                <span className="sr-only">
+                  {m.common_table_previous_page()}
+                </span>
                 <IconChevronLeft />
               </Button>
               <Button
@@ -519,7 +666,7 @@ export function DataTable({
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >
-                <span className="sr-only">Go to next page</span>
+                <span className="sr-only">{m.common_table_next_page()}</span>
                 <IconChevronRight />
               </Button>
               <Button
@@ -529,7 +676,7 @@ export function DataTable({
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
               >
-                <span className="sr-only">Go to last page</span>
+                <span className="sr-only">{m.common_table_last_page()}</span>
                 <IconChevronsRight />
               </Button>
             </div>
@@ -556,43 +703,43 @@ export function DataTable({
 }
 const chartData = [
   {
-    month: 'January',
+    month: m.dashboard_month_january(),
     desktop: 186,
     mobile: 80,
   },
   {
-    month: 'February',
+    month: m.dashboard_month_february(),
     desktop: 305,
     mobile: 200,
   },
   {
-    month: 'March',
+    month: m.dashboard_month_march(),
     desktop: 237,
     mobile: 120,
   },
   {
-    month: 'April',
+    month: m.dashboard_month_april(),
     desktop: 73,
     mobile: 190,
   },
   {
-    month: 'May',
+    month: m.dashboard_month_may(),
     desktop: 209,
     mobile: 130,
   },
   {
-    month: 'June',
+    month: m.dashboard_month_june(),
     desktop: 214,
     mobile: 140,
   },
 ];
 const chartConfig = {
   desktop: {
-    label: 'Desktop',
+    label: m.dashboard_chart_desktop(),
     color: 'var(--primary)',
   },
   mobile: {
-    label: 'Mobile',
+    label: m.dashboard_chart_mobile(),
     color: 'var(--primary)',
   },
 } satisfies ChartConfig;
@@ -608,13 +755,13 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           />
         }
       >
-        {item.header}
+        {getDashboardHeader(item)}
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.header}</DrawerTitle>
+          <DrawerTitle>{getDashboardHeader(item)}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            {m.dashboard_table_showing_total_visitors()}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -663,13 +810,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{' '}
+                  {m.dashboard_table_trending_up()}{' '}
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  {m.dashboard_table_showing_total_visitors()}
                 </div>
               </div>
               <Separator />
@@ -677,71 +822,152 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
+              <Label htmlFor="header">{m.dashboard_table_header()}</Label>
+              <Input id="header" defaultValue={getDashboardHeader(item)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type">{m.dashboard_table_section_type()}</Label>
                 <Select
                   defaultValue={item.type}
                   items={[
-                    { label: 'Table of Contents', value: 'Table of Contents' },
-                    { label: 'Executive Summary', value: 'Executive Summary' },
                     {
-                      label: 'Technical Approach',
-                      value: 'Technical Approach',
+                      label: m.dashboard_table_type_table_of_contents(),
+                      value: 'Table of contents',
                     },
-                    { label: 'Design', value: 'Design' },
-                    { label: 'Capabilities', value: 'Capabilities' },
-                    { label: 'Focus Documents', value: 'Focus Documents' },
-                    { label: 'Narrative', value: 'Narrative' },
-                    { label: 'Cover Page', value: 'Cover Page' },
+                    {
+                      label: m.dashboard_table_type_executive_summary(),
+                      value: 'Executive summary',
+                    },
+                    {
+                      label: m.dashboard_table_type_technical_approach(),
+                      value: 'Technical approach',
+                    },
+                    { label: m.dashboard_table_type_design(), value: 'Design' },
+                    {
+                      label: m.dashboard_table_type_capabilities(),
+                      value: 'Capabilities',
+                    },
+                    {
+                      label: m.dashboard_table_type_focus_documents(),
+                      value: 'Focus Documents',
+                    },
+                    {
+                      label: m.dashboard_table_type_narrative(),
+                      value: 'Narrative',
+                    },
+                    {
+                      label: m.dashboard_table_type_cover_page(),
+                      value: 'Cover page',
+                    },
+                    {
+                      label: m.dashboard_table_type_technical_content(),
+                      value: 'Technical content',
+                    },
+                    {
+                      label: m.dashboard_table_type_plain_language(),
+                      value: 'Plain language',
+                    },
+                    { label: m.dashboard_table_type_legal(), value: 'Legal' },
+                    { label: m.dashboard_table_type_visual(), value: 'Visual' },
+                    {
+                      label: m.dashboard_table_type_financial(),
+                      value: 'Financial',
+                    },
+                    {
+                      label: m.dashboard_table_type_research(),
+                      value: 'Research',
+                    },
+                    {
+                      label: m.dashboard_table_type_planning(),
+                      value: 'Planning',
+                    },
                   ]}
                 >
                   <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue
+                      placeholder={m.dashboard_table_select_type()}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="Table of Contents">
-                        Table of Contents
+                      <SelectItem value="Table of contents">
+                        {m.dashboard_table_type_table_of_contents()}
                       </SelectItem>
-                      <SelectItem value="Executive Summary">
-                        Executive Summary
+                      <SelectItem value="Executive summary">
+                        {m.dashboard_table_type_executive_summary()}
                       </SelectItem>
-                      <SelectItem value="Technical Approach">
-                        Technical Approach
+                      <SelectItem value="Technical approach">
+                        {m.dashboard_table_type_technical_approach()}
                       </SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Capabilities">Capabilities</SelectItem>
+                      <SelectItem value="Design">
+                        {m.dashboard_table_type_design()}
+                      </SelectItem>
+                      <SelectItem value="Capabilities">
+                        {m.dashboard_table_type_capabilities()}
+                      </SelectItem>
                       <SelectItem value="Focus Documents">
-                        Focus Documents
+                        {m.dashboard_table_type_focus_documents()}
                       </SelectItem>
-                      <SelectItem value="Narrative">Narrative</SelectItem>
-                      <SelectItem value="Cover Page">Cover Page</SelectItem>
+                      <SelectItem value="Narrative">
+                        {m.dashboard_table_type_narrative()}
+                      </SelectItem>
+                      <SelectItem value="Cover page">
+                        {m.dashboard_table_type_cover_page()}
+                      </SelectItem>
+                      <SelectItem value="Technical content">
+                        {m.dashboard_table_type_technical_content()}
+                      </SelectItem>
+                      <SelectItem value="Plain language">
+                        {m.dashboard_table_type_plain_language()}
+                      </SelectItem>
+                      <SelectItem value="Legal">
+                        {m.dashboard_table_type_legal()}
+                      </SelectItem>
+                      <SelectItem value="Visual">
+                        {m.dashboard_table_type_visual()}
+                      </SelectItem>
+                      <SelectItem value="Financial">
+                        {m.dashboard_table_type_financial()}
+                      </SelectItem>
+                      <SelectItem value="Research">
+                        {m.dashboard_table_type_research()}
+                      </SelectItem>
+                      <SelectItem value="Planning">
+                        {m.dashboard_table_type_planning()}
+                      </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{m.dashboard_table_status()}</Label>
                 <Select
                   defaultValue={item.status}
                   items={[
-                    { label: 'Done', value: 'Done' },
-                    { label: 'In Progress', value: 'In Progress' },
-                    { label: 'Not Started', value: 'Not Started' },
+                    {
+                      label: m.dashboard_data_status_done(),
+                      value: 'Done',
+                    },
+                    {
+                      label: m.dashboard_data_status_in_process(),
+                      value: 'In Process',
+                    },
                   ]}
                 >
                   <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
+                    <SelectValue
+                      placeholder={m.dashboard_table_select_status()}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="Done">Done</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Not Started">Not Started</SelectItem>
+                      <SelectItem value="Done">
+                        {m.dashboard_data_status_done()}
+                      </SelectItem>
+                      <SelectItem value="In Process">
+                        {m.dashboard_data_status_in_process()}
+                      </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -749,16 +975,16 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
+                <Label htmlFor="target">{m.dashboard_table_target()}</Label>
                 <Input id="target" defaultValue={item.target} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
+                <Label htmlFor="limit">{m.dashboard_table_limit()}</Label>
                 <Input id="limit" defaultValue={item.limit} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
+              <Label htmlFor="reviewer">{m.dashboard_table_reviewer()}</Label>
               <Select
                 defaultValue={item.reviewer}
                 items={[
@@ -768,7 +994,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 ]}
               >
                 <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
+                  <SelectValue
+                    placeholder={m.dashboard_table_select_reviewer()}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -784,8 +1012,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           </form>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose render={<Button variant="outline" />}>Close</DrawerClose>
+          <Button>{m.dashboard_table_submit()}</Button>
+          <DrawerClose render={<Button variant="outline" />}>
+            {m.common_cancel()}
+          </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

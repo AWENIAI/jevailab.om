@@ -2,7 +2,7 @@ import { BillingPeriod, TaxCategory, WaffoPancake } from '@waffo/pancake-ts';
 import { loadEnv } from 'vite';
 
 /**
- * Creates AWEN's three Waffo Pancake test products.
+ * Creates jevailab's three Waffo Pancake test products.
  *
  * Required local-only variables in .env.local or the current shell:
  * WAFFO_MERCHANT_ID, WAFFO_PRIVATE_KEY, WAFFO_STORE_ID.
@@ -25,8 +25,8 @@ const client = new WaffoPancake({ merchantId, privateKey });
 
 const { product: monthly } = await client.subscriptionProducts.create({
   storeId,
-  name: 'AWEN Pro Monthly (Test)',
-  description: 'Monthly subscription for AWEN AI image generation.',
+  name: 'jevailab Pro Monthly (Test)',
+  description: 'Monthly subscription for jevailab AI image generation.',
   billingPeriod: BillingPeriod.Monthly,
   prices: {
     USD: {
@@ -38,8 +38,8 @@ const { product: monthly } = await client.subscriptionProducts.create({
 
 const { product: yearly } = await client.subscriptionProducts.create({
   storeId,
-  name: 'AWEN Pro Yearly (Test)',
-  description: 'Yearly subscription for AWEN AI image generation.',
+  name: 'jevailab Pro Yearly (Test)',
+  description: 'Yearly subscription for jevailab AI image generation.',
   billingPeriod: BillingPeriod.Yearly,
   prices: {
     USD: {
@@ -51,8 +51,8 @@ const { product: yearly } = await client.subscriptionProducts.create({
 
 const { product: lifetime } = await client.onetimeProducts.create({
   storeId,
-  name: 'AWEN Lifetime (Test)',
-  description: 'One-time lifetime access to AWEN AI image generation.',
+  name: 'jevailab Lifetime (Test)',
+  description: 'One-time lifetime access to jevailab AI image generation.',
   prices: {
     USD: {
       amount: '199.90',
@@ -65,3 +65,4 @@ console.log('Waffo test products created. Copy these public product IDs:');
 console.log(`VITE_WAFFO_PRODUCT_PRO_MONTHLY='${monthly.id}'`);
 console.log(`VITE_WAFFO_PRODUCT_PRO_YEARLY='${yearly.id}'`);
 console.log(`VITE_WAFFO_PRODUCT_LIFETIME='${lifetime.id}'`);
+

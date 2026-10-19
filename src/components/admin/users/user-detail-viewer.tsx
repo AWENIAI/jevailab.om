@@ -51,7 +51,7 @@ export function UserDetailViewer({ user }: UserDetailViewerProps) {
       return;
     }
     if (!user.id) {
-      setError('User ID is required');
+      setError(m.admin_users_user_id_required());
       return;
     }
     setError(undefined);
@@ -75,7 +75,7 @@ export function UserDetailViewer({ user }: UserDetailViewerProps) {
   };
   const handleUnban = async () => {
     if (!user.id) {
-      setError('User ID is required');
+      setError(m.admin_users_user_id_required());
       return;
     }
     setError(undefined);

@@ -2,49 +2,49 @@ import { m } from '@/locale/paraglide/messages';
 import { ScrollReveal } from '@/components/shared/scroll-reveal';
 const logos = [
   {
-    src: 'https://cdn.mksaas.com/svg/nvidia.svg',
+    src: 'https://cdn.simpleicons.org/nvidia',
     alt: 'Nvidia Logo',
     h: 'h-5',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/column.svg',
+    src: 'https://cdn.simpleicons.org/column',
     alt: 'Column Logo',
     h: 'h-4',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/github.svg',
+    src: 'https://cdn.simpleicons.org/github',
     alt: 'GitHub Logo',
     h: 'h-4',
   },
-  { src: 'https://cdn.mksaas.com/svg/nike.svg', alt: 'Nike Logo', h: 'h-5' },
+  { src: 'https://cdn.simpleicons.org/nike', alt: 'Nike Logo', h: 'h-5' },
   {
-    src: 'https://cdn.mksaas.com/svg/laravel.svg',
+    src: 'https://cdn.simpleicons.org/laravel',
     alt: 'Laravel Logo',
     h: 'h-4',
   },
-  { src: 'https://cdn.mksaas.com/svg/lilly.svg', alt: 'Lilly Logo', h: 'h-7' },
+  { src: 'https://cdn.simpleicons.org/lilly', alt: 'Lilly Logo', h: 'h-7' },
   {
-    src: 'https://cdn.mksaas.com/svg/lemonsqueezy.svg',
+    src: 'https://cdn.simpleicons.org/lemonsqueezy',
     alt: 'Lemon Squeezy Logo',
     h: 'h-5',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/openai.svg',
+    src: 'https://cdn.simpleicons.org/openai',
     alt: 'OpenAI Logo',
     h: 'h-6',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/tailwindcss.svg',
+    src: 'https://cdn.simpleicons.org/tailwindcss',
     alt: 'Tailwind CSS Logo',
     h: 'h-4',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/vercel.svg',
+    src: 'https://cdn.simpleicons.org/vercel',
     alt: 'Vercel Logo',
     h: 'h-5',
   },
   {
-    src: 'https://cdn.mksaas.com/svg/zapier.svg',
+    src: 'https://cdn.simpleicons.org/zapier',
     alt: 'Zapier Logo',
     h: 'h-5',
   },

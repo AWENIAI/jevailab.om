@@ -1,5 +1,5 @@
 {
-  "projectName": "mkfast-template",
+  "projectName": "jevailab",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "pnpm",
@@ -20,3 +20,4 @@
     "resume"
   ]
 }
+

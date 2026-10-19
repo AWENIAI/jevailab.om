@@ -5,6 +5,7 @@ import { authClient } from '@/auth/client';
 import { Routes } from '@/lib/routes';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect, type ReactNode } from 'react';
+import { m } from '@/locale/paraglide/messages';
 
 /**
  * Shared layout for /dashboard /settings and /admin routes
@@ -18,7 +19,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isPending) return;
     if (!session?.user) {
-      navigate({ to: Routes.Login });
+      navigate({ to: Routes.Login, search: {} });
     }
   }, [session, isPending, navigate]);
 
@@ -26,7 +27,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-svh items-center justify-center">
         <Spinner className="size-6" />
-        <span className="sr-only">Loading...</span>
+        <span className="sr-only">{m.common_loading()}</span>
       </div>
     );
   }

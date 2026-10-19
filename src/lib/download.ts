@@ -52,7 +52,7 @@ function defaultFilename(url: string): string {
   if (url.startsWith('data:')) {
     const mime = url.slice(5, url.indexOf(';'));
     const ext = mime.split('/')[1]?.split('+')[0] ?? 'bin';
-    return `ai-image-${stamp}.${ext}`;
+    return `jevailab-${stamp}.${ext}`;
   }
   try {
     const path = new URL(url).pathname;
@@ -61,5 +61,5 @@ function defaultFilename(url: string): string {
   } catch {
     // ignore
   }
-  return `ai-image-${stamp}.jpg`;
+  return `jevailab-${stamp}.jpg`;
 }

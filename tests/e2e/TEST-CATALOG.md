@@ -100,6 +100,18 @@ Normal registration, login, and profile editing remain covered by `auth.spec.ts`
 and `settings-profile.spec.ts`. Provider and portal unit tests use mocked payment
 services; these journeys do not require a hosted checkout or real customer IDs.
 
+### Image creator draft handoff
+
+**File:** `specs/image-creator-draft.spec.ts` | **Priority:** P0
+
+Verifies the guest-to-account handoff without treating authentication as a
+precondition for editing.
+
+| # | Test name | Flow |
+|---|---|---|
+| 1 | Guest edits locally without uploading | Open `/#create`, select a template, choose a supported image, edit the prompt and ratio, accept the content notice, and verify the local preview appears while no reference-upload request is sent. |
+| 2 | Generate resumes after sign-in | Click Generate as a guest, verify navigation to login with a callback URL, switch to registration and back, sign in as a verified E2E user, return to the editor with the same draft and preview, and verify the reference uploads only after authentication. |
+
 ## 3. Protected Page Smoke Test
 
 **File:** `specs/protected-pages.spec.ts` | **Priority:** P0

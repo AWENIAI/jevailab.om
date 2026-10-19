@@ -5,7 +5,7 @@ import type { ImageTemplate } from './templates.server';
 export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   {
     id: "image-template-1015",
-    name: "Editorial poster 1015",
+    name: "Summer Sky Editorial Portrait",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1015 collection.",
@@ -21,7 +21,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1014",
-    name: "Editorial poster 1014",
+    name: "Playful Cat Crayon Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1014 collection.",
@@ -37,7 +37,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1013",
-    name: "Editorial poster 1013",
+    name: "Blue Sky Motion Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1013 collection.",
@@ -53,7 +53,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1012",
-    name: "Editorial poster 1012",
+    name: "Colorful Umbrella Art Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1012 collection.",
@@ -69,7 +69,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1011",
-    name: "Editorial poster 1011",
+    name: "Forever Young Ride Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1011 collection.",
@@ -85,7 +85,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1010",
-    name: "Editorial poster 1010",
+    name: "Spring Kite Travel Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1010 collection.",
@@ -101,7 +101,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1009",
-    name: "Editorial poster 1009",
+    name: "Summer Cycling Editorial",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1009 collection.",
@@ -117,7 +117,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1008",
-    name: "Editorial poster 1008",
+    name: "Blue Court Geometric Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1008 collection.",
@@ -133,7 +133,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1007",
-    name: "Editorial poster 1007",
+    name: "Snowfield Blue Poetry",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1007 collection.",
@@ -149,7 +149,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1006",
-    name: "Editorial poster 1006",
+    name: "Warm Sun Portrait Collage",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1006 collection.",
@@ -165,7 +165,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1005",
-    name: "Editorial poster 1005",
+    name: "Mustard Dress Collage",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1005 collection.",
@@ -181,7 +181,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1004",
-    name: "Editorial poster 1004",
+    name: "Blue Door Floral Embroidery",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1004 collection.",
@@ -197,7 +197,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1003",
-    name: "Editorial poster 1003",
+    name: "Cozy Baby Lifestyle Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1003 collection.",
@@ -213,7 +213,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1002",
-    name: "Editorial poster 1002",
+    name: "Garden Girl Sketch Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1002 collection.",
@@ -229,7 +229,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-1001",
-    name: "Editorial poster 1001",
+    name: "Coastal Kayak Travel Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 1001 collection.",
@@ -245,7 +245,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0930",
-    name: "Editorial poster 0930",
+    name: "Seaside Holiday Painted Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0930 collection.",
@@ -261,7 +261,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0929",
-    name: "Editorial poster 0929",
+    name: "Sunny Flower Field Story",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0929 collection.",
@@ -277,7 +277,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0928",
-    name: "Editorial poster 0928",
+    name: "Garden Cat Doodle",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0928 collection.",
@@ -293,7 +293,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0927",
-    name: "Editorial poster 0927",
+    name: "Blue Door Floral Collage",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0927 collection.",
@@ -309,7 +309,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0925",
-    name: "Editorial poster 0925",
+    name: "Meadow Companion Illustration",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0925 collection.",
@@ -325,7 +325,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0924",
-    name: "Editorial poster 0924",
+    name: "Blue Escape Travel Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0924 collection.",
@@ -341,7 +341,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0923",
-    name: "Editorial poster 0923",
+    name: "Color Signal Street Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0923 collection.",
@@ -357,7 +357,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0922",
-    name: "Editorial poster 0922",
+    name: "Orchard Daydream Illustration",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0922 collection.",
@@ -373,7 +373,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0921",
-    name: "Editorial poster 0921",
+    name: "Daisy Bear Hand Drawn",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0921 collection.",
@@ -384,12 +384,12 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
     defaultRatio: '3:4',
     defaultCount: 1,
     revision: 1,
-    basePrompt: "【layout-page-01.png】\nWen\nAvenues AI Battle Notes &\n@ Levon_n\nPrompt:\nKeep the original photo in its entirety in the upper half.Automatically identify core subjects and scenarios, subjects can be human\nObjects, animals, plants, objects, buildings or other objects.Maintain subject identity, quantity,\nFacial features or appearance characteristics, scale, gesture, orientation, clothing accessories, interaction, composition,\nPerspective, environment, natural light and shadow, depth of field and original color are unchanged, only light photographic color palette is done.\nImprove clarity and hierarchy without altering authenticity.If the ratio does not fit 3: 4, only along the original ring\nThe environment naturally extends the background, prohibiting stretching, distorting, changing the scene, moving the subject, changing identity or\nAdd extraneous elements; no text, illustrations, or decorations in the upper half.\nThe second half is based solely on the same original photo, and the most recognizable subject, expression, and posture are\nState, outline, costume, props, and structural relationships are translated into minimalist colored line illustrations.\nKeep white or warm, leave a lot of white, do not replicate the complex environment.with ease, childishness,\nHumorous color marker sketch language, the focus is on \"drawing lines with color\", not filling in large areas\nColor. Body contour is concise, rounded, slightly clumsy, only key identification points are retained; character or movement\nThe eyes, nose, and mouth of the object are summarized with small black dots, short lines, arcs, and simple shapes.\n\nIt can be moderately exaggerated, but it must be visible at a glance, and it is forbidden to fix the Q template.\nThe lines are extracted according to the original drawing 2-5 representative colors, which can be blue, green, orange, yellow, pink, red,\nGrey, black, etc., bear the outer contour, hair, coat pattern, shadow prompts and local emphasis respectively.\nLines allow for variations in thickness, slight dithering, incomplete closure, local breaks, repetitive tracing\n\n【layout-page-02.png】\nWen\nAW AI Battle Notes.\n@ Levon_n\nAnd nature crosses the line, presenting a colorful marker pen, signature pen quickly hand-painted feeling.Hair, hair,\nClothing, plants or details are represented by short lines, diagonal lines, arcs and scattered brushstrokes, between lines\nMaintains clear white gaps; only a small amount of flat coating is used for nose, mouth, accessories, etc., to avoid\nAvoid large area color blocks.\nThe composition remains concise and breathable.Single subject is centered on one main line manuscript image, more\nThe subjects are loosely arranged after maintaining the number, position, and interaction.The environment retains only a small amount of ground\nLines, action lines, wind lines, flowers or small symbols.1 short English title can be added automatically\nAnd a small number of handwritten small letters, love, arrows or accent lines, the position is flexible with the subject and white space\nWhole, do not obscure the body; small print naturally add \"prompt by awen\".\nThe final effect is like an editorial illustration done by an independent illustrator with multiple colored markers: white background,\nLightweight, color jumping, sharp lines, lots of white space inside, naive but not childish, simplified\nBut recognizable, relaxed and designing.No crayons, paint sticks, pastel friction, thick\nCoating, Particle Stacking, Real Hair Rendering, Gradient Shadows, 3D, Anime, Disney,\nSmooth vector feeling, complex background and large area color filling.",
+    basePrompt: "【layout-page-01.png】\nWen\nAvenues AI Battle Notes &\n@ Levon_n\nPrompt:\nKeep the original photo in its entirety in the upper half.Automatically identify core subjects and scenarios, subjects can be human\nObjects, animals, plants, objects, buildings or other objects.Maintain subject identity, quantity,\nFacial features or appearance characteristics, scale, gesture, orientation, clothing accessories, interaction, composition,\nPerspective, environment, natural light and shadow, depth of field and original color are unchanged, only light photographic color palette is done.\nImprove clarity and hierarchy without altering authenticity.If the ratio does not fit 3: 4, only along the original ring\nThe environment naturally extends the background, prohibiting stretching, distorting, changing the scene, moving the subject, changing identity or\nAdd extraneous elements; no text, illustrations, or decorations in the upper half.\nThe second half is based solely on the same original photo, and the most recognizable subject, expression, and posture are\nState, outline, costume, props, and structural relationships are translated into minimalist colored line illustrations.\nKeep white or warm, leave a lot of white, do not replicate the complex environment.with ease, childishness,\nHumorous color marker sketch language, the focus is on \"drawing lines with color\", not filling in large areas\nColor. Body contour is concise, rounded, slightly clumsy, only key identification points are retained; character or movement\nThe eyes, nose, and mouth of the object are summarized with small black dots, short lines, arcs, and simple shapes.\n\nIt can be moderately exaggerated, but it must be visible at a glance, and it is forbidden to fix the Q template.\nThe lines are extracted according to the original drawing 2-5 representative colors, which can be blue, green, orange, yellow, pink, red,\nGrey, black, etc., bear the outer contour, hair, coat pattern, shadow prompts and local emphasis respectively.\nLines allow for variations in thickness, slight dithering, incomplete closure, local breaks, repetitive tracing\n\n【layout-page-02.png】\nWen\nAW AI Battle Notes.\n@ Levon_n\nAnd nature crosses the line, presenting a colorful marker pen, signature pen quickly hand-painted feeling.Hair, hair,\nClothing, plants or details are represented by short lines, diagonal lines, arcs and scattered brushstrokes, between lines\nMaintains clear white gaps; only a small amount of flat coating is used for nose, mouth, accessories, etc., to avoid\nAvoid large area color blocks.\nThe composition remains concise and breathable.Single subject is centered on one main line manuscript image, more\nThe subjects are loosely arranged after maintaining the number, position, and interaction.The environment retains only a small amount of ground\nLines, action lines, wind lines, flowers or small symbols.1 short English title can be added automatically\nAnd a small number of handwritten small letters, love, arrows or accent lines, the position is flexible with the subject and white space\nWhole, do not obscure the body; small print naturally add \"prompt by jevailab\".\nThe final effect is like an editorial illustration done by an independent illustrator with multiple colored markers: white background,\nLightweight, color jumping, sharp lines, lots of white space inside, naive but not childish, simplified\nBut recognizable, relaxed and designing.No crayons, paint sticks, pastel friction, thick\nCoating, Particle Stacking, Real Hair Rendering, Gradient Shadows, 3D, Anime, Disney,\nSmooth vector feeling, complex background and large area color filling.",
     negativePrompt: 'low quality, distorted details, watermark, unreadable text',
   },
   {
     id: "image-template-0920",
-    name: "Editorial poster 0920",
+    name: "Good Friends Pet Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0920 collection.",
@@ -400,12 +400,12 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
     defaultRatio: '3:4',
     defaultCount: 1,
     revision: 1,
-    basePrompt: "【清洗/layout-page-01.png】\nWen\nArwen AI Battle Notes\n•\n@ Levon_n\nPrompt:\nGenerate a separate 3: 4 vertical design poster for each photo I upload without splicing,\nDo not merge. The screen is strictly 1: 1, accounting for 50% each.\nOriginal photography in the first half, retaining the original core information: subject identity, facial features, quantity,\nscale, pose, clothing accessories, character relations, composition, perspective, environment, material, from\nLight and shadow, depth of field and original colors.Only do a slight advanced photography toning to improve the level and quality\nFeeling, does not change authenticity.If the ratio is not suitable, the background can be naturally extended along the original environment, forbidden\nStop stretching, twisting, changing scenery, moving subjects, or redesigning characters.\nBlack crayon sketch in the second half, based solely on the same original photo, refined to be the most recognizable\nPeople, animals, objects, poses, interactions and story relationships, translated into minimalist hand-drawn inserts\nPainting. The background uses warm white or off-white rough paper.Body with rounded, heavy, slightly awkward wheels\nOutline performance, keep it visible at a glance; multiplayer scenarios focus on retaining the most important interaction, not\nReplicate complex environments object by object.\nIt mainly uses pure black crayons, charcoal pens, dry brushes, friction and repeatedly superimposed brush strokes.\n\nBlack Shape\nNeed to present paper grains, broken edges, uneven thickness, natural white space, slight shaking and people\nImperfect workmanship, no smooth vector filling, gradients, 3D, realistic shadows and large areas\nGrey wash.Large black interior boldly uses white negative space to represent face, eyes, mouth\nNose, windows, openings or key features; face with only a small number of black dots and short tips, do not do\n\n【清洗/layout-page-02.png】\nWen\nArwen AI Battle Notes\n@ Levon_n\nRealistic portraits.\nAdd a very small amount of bright spot brush strokes to the pure black sketch, the area is controlled within 5%, only\nUsed to enhance visual focus, direction of action, or mood.The bright color gives priority to extracting the generation in the original photo\nAppearance color, highlight color, clothing color, or environmental accent color; if the original image lacks a suitable color, it can be used to\nAccentuate colors with complementary colors, cool and warm contrasting colors, or high awareness.Colors in crayon, pastel or coarse\nRough hand-drawn lines appear, do not do smooth color blocks, and do not make noise; in principle, only 1 type is used\nMain light color, up to 2 if necessary.\nThe lower half maintains minimalism, restraint, and a lot of negative space, highlighting only one core action, character,\nRelationships or stories.The environment retains the most ground lines, grass, rain, smoke, roads, wind, yin\nA small number of rough symbols such as shadows.Automatically generate 1 short English tag based on photo sentiment and story\nSubject and 1-2 sentences very small English auxiliary text, using restrained editing fonts combined with clumsy handwriting or\nCrayon fonts that blend naturally in the direction of negative space, ground lines, or movement can be slightly\nOverlaps the illustration, but does not obscure the subject.Insert naturally in small print “prompt by\nawen \", low-key without grabbing sight.\n\nThe overall temperament image \"Old Times Black and White Children's Picture Book is Contemporary\nHigh-end design studio republished \": quiet, warm, slightly humorous, slightly lonely, with children\nChildlike naivety and mature editorial sense, between documentary photography, independent magazines, old-style picture books, black\nBetween white crayon sketches and contemporary art publications.",
+    basePrompt: "【清洗/layout-page-01.png】\nWen\nArwen AI Battle Notes\n•\n@ Levon_n\nPrompt:\nGenerate a separate 3: 4 vertical design poster for each photo I upload without splicing,\nDo not merge. The screen is strictly 1: 1, accounting for 50% each.\nOriginal photography in the first half, retaining the original core information: subject identity, facial features, quantity,\nscale, pose, clothing accessories, character relations, composition, perspective, environment, material, from\nLight and shadow, depth of field and original colors.Only do a slight advanced photography toning to improve the level and quality\nFeeling, does not change authenticity.If the ratio is not suitable, the background can be naturally extended along the original environment, forbidden\nStop stretching, twisting, changing scenery, moving subjects, or redesigning characters.\nBlack crayon sketch in the second half, based solely on the same original photo, refined to be the most recognizable\nPeople, animals, objects, poses, interactions and story relationships, translated into minimalist hand-drawn inserts\nPainting. The background uses warm white or off-white rough paper.Body with rounded, heavy, slightly awkward wheels\nOutline performance, keep it visible at a glance; multiplayer scenarios focus on retaining the most important interaction, not\nReplicate complex environments object by object.\nIt mainly uses pure black crayons, charcoal pens, dry brushes, friction and repeatedly superimposed brush strokes.\n\nBlack Shape\nNeed to present paper grains, broken edges, uneven thickness, natural white space, slight shaking and people\nImperfect workmanship, no smooth vector filling, gradients, 3D, realistic shadows and large areas\nGrey wash.Large black interior boldly uses white negative space to represent face, eyes, mouth\nNose, windows, openings or key features; face with only a small number of black dots and short tips, do not do\n\n【清洗/layout-page-02.png】\nWen\nArwen AI Battle Notes\n@ Levon_n\nRealistic portraits.\nAdd a very small amount of bright spot brush strokes to the pure black sketch, the area is controlled within 5%, only\nUsed to enhance visual focus, direction of action, or mood.The bright color gives priority to extracting the generation in the original photo\nAppearance color, highlight color, clothing color, or environmental accent color; if the original image lacks a suitable color, it can be used to\nAccentuate colors with complementary colors, cool and warm contrasting colors, or high awareness.Colors in crayon, pastel or coarse\nRough hand-drawn lines appear, do not do smooth color blocks, and do not make noise; in principle, only 1 type is used\nMain light color, up to 2 if necessary.\nThe lower half maintains minimalism, restraint, and a lot of negative space, highlighting only one core action, character,\nRelationships or stories.The environment retains the most ground lines, grass, rain, smoke, roads, wind, yin\nA small number of rough symbols such as shadows.Automatically generate 1 short English tag based on photo sentiment and story\nSubject and 1-2 sentences very small English auxiliary text, using restrained editing fonts combined with clumsy handwriting or\nCrayon fonts that blend naturally in the direction of negative space, ground lines, or movement can be slightly\nOverlaps the illustration, but does not obscure the subject.Insert naturally in small print “prompt by\njevailab \", low-key without grabbing sight.\n\nThe overall temperament image \"Old Times Black and White Children's Picture Book is Contemporary\nHigh-end design studio republished \": quiet, warm, slightly humorous, slightly lonely, with children\nChildlike naivety and mature editorial sense, between documentary photography, independent magazines, old-style picture books, black\nBetween white crayon sketches and contemporary art publications.",
     negativePrompt: 'low quality, distorted details, watermark, unreadable text',
   },
   {
     id: "image-template-0919",
-    name: "Editorial poster 0919",
+    name: "Golden Gallery Portrait",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0919 collection.",
@@ -421,7 +421,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0918",
-    name: "Editorial poster 0918",
+    name: "Garden Friends Playful Art",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0918 collection.",
@@ -437,7 +437,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0917",
-    name: "Editorial poster 0917",
+    name: "Cat Letterpress Art Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0917 collection.",
@@ -453,7 +453,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0916",
-    name: "Editorial poster 0916",
+    name: "Golden Autumn Travel Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0916 collection.",
@@ -469,7 +469,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0915",
-    name: "Editorial poster 0915",
+    name: "Morning Meadow Editorial",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0915 collection.",
@@ -485,7 +485,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0914",
-    name: "Editorial poster 0914",
+    name: "Sweet Color Food Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0914 collection.",
@@ -501,7 +501,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0913",
-    name: "Editorial poster 0913",
+    name: "Geometric Fashion Collage",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0913 collection.",
@@ -517,7 +517,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0912",
-    name: "Editorial poster 0912",
+    name: "Mountain Lake Minimal Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0912 collection.",
@@ -533,7 +533,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0911",
-    name: "Editorial poster 0911",
+    name: "Spring Light Floral Portrait",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0911 collection.",
@@ -549,7 +549,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0910",
-    name: "Editorial poster 0910",
+    name: "Lazy Summer Hat Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0910 collection.",
@@ -565,7 +565,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0909",
-    name: "Editorial poster 0909",
+    name: "Bright Rider Story Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0909 collection.",
@@ -581,7 +581,7 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
   },
   {
     id: "image-template-0908",
-    name: "Editorial poster 0908",
+    name: "Coconut Grove Story Poster",
     category: 'Editorial',
     tags: ['editorial', 'reference-photo', '3:4'],
     description: "A reference-led 3:4 editorial poster from the 0908 collection.",
@@ -596,3 +596,4 @@ export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
     negativePrompt: 'low quality, distorted details, watermark, unreadable text',
   },
 ];
+

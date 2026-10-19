@@ -1,12 +1,12 @@
 ---
 title: 快速开始
-description: 设置并运行 AWEN 模板的快速指南。
+description: 设置并运行 jevailab 模板的快速指南。
 date: 2026-02-12
 category: 指南
 image: /images/blog-get-started.webp
 ---
 
-这篇文章会带你了解如何运行和定制 AWEN 模板。
+这篇文章会带你了解如何运行和定制 jevailab 模板。
 
 ## 前置条件
 
@@ -33,3 +33,5 @@ pnpm dev
 - 在 `src/config/website.ts` 的 `blog.enable` 和 `blog.paginationSize` 中开关博客并设置分页数量。
 - 在 `content/blog/` 下添加更多文章，它们会自动出现在博客列表和 `/blog/$slug` 路由中。
 - 按需定制 `src/components/blocks/` 和 `src/routes/` 中的页面布局与区块。
+
+

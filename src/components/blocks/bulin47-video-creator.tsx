@@ -581,9 +581,21 @@ export function Bulin47VideoCreator() {
                             locale,
                             photo
                               ? quoteMessage
-                                ? '暂无可用授权示例'
-                                : '正在获取服务端报价'
-                              : '请先上传照片',
+                                ? copy(
+                                    locale,
+                                    '暂无可用授权示例',
+                                    'No authorized example available'
+                                  )
+                                : copy(
+                                    locale,
+                                    '正在获取服务端报价',
+                                    'Getting the server quote'
+                                  )
+                              : copy(
+                                  locale,
+                                  '请先上传照片',
+                                  'Add a photo to continue'
+                                ),
                             photo
                               ? quoteMessage
                                 ? 'No authorized example available'

@@ -26,9 +26,9 @@ export interface UiConfig {
 
 /** Website metadata */
 export interface MetadataConfig {
-  name?: string;         // The name of the website, e.g. 'AWEN'
-  title?: string;        // The title of the website, e.g. 'AWEN - The Ultimate SaaS Template'
-  description?: string;  // The description of the website, e.g. 'AWEN is the ultimate SaaS template for building your next SaaS application.'
+  name?: string;         // The name of the website, e.g. 'jevailab'
+  title?: string;        // The title of the website, e.g. 'jevailab - AI image creation'
+  description?: string;  // The description of the website, e.g. 'jevailab helps you create images and videos.'
   images?: ImagesConfig; // The images of the website
 }
 

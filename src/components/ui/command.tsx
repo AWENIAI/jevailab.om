@@ -16,6 +16,7 @@ import {
   InputGroupAddon,
 } from "@/components/ui/input-group"
 import { IconSearch, IconCheck } from "@tabler/icons-react"
+import { m } from "@/locale/paraglide/messages"
 
 function Command({
   className,
@@ -34,8 +35,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title = m.common_command_palette(),
+  description = m.common_command_palette_description(),
   children,
   className,
   showCloseButton = false,

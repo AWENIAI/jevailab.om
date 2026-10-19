@@ -20,7 +20,7 @@ export const authRouteMiddleware = createMiddleware().server(
     const session = await auth.api.getSession({ headers });
 
     if (!session?.user) {
-      throw redirect({ to: Routes.Login });
+      throw redirect({ to: Routes.Login, search: {} });
     }
 
     if (!session.user.emailVerified) {

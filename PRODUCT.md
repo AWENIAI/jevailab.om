@@ -8,22 +8,22 @@ web
 
 ## Users
 
-**Primary audience:** indie hackers and solo founders building SaaS products on Cloudflare Workers. They are technically proficient developers who value speed, efficiency, and clean tooling. They use this boilerplate to skip setup and ship revenue-generating products faster. Their context is focused productivity — they want to configure, customize, and deploy without friction.
+**Primary audience:** creators and teams who want a focused workspace for making AI images and videos from photos, templates, and ideas. They value private-by-default workflows, clear controls, and predictable creation costs.
 
 ## Product Purpose
 
-AWEN is the complete TanStack Start boilerplate for building profitable SaaS, packed with AI, auth, database, storage, blog, email, newsletter, payments, dashboard, i18n, SEO, and more, fully deployed on Cloudflare Workers. Success means a buyer goes from clone to a working, revenue-capable SaaS running on Cloudflare Workers with minimal setup time and predictable low cost.
+jevailab is an AI image and video creation workspace. Success means a user can choose a template, optionally upload a reference photo, describe an idea, review the credit quote, and receive a private creation without unnecessary setup.
 
 ## Positioning
 
-“Ship Faster with TanStack, Cost Less with Cloudflare.” The mechanism a neighboring boilerplate could not truthfully copy: a full-stack TanStack Start + React 19 SaaS with auth (Better Auth), payments (Stripe/Creem/Waffo), storage (R2), mail, newsletter, blog, dashboard, admin, i18n, and SEO that runs as a single Cloudflare Worker with D1/R2/KV — batteries included, no server to operate, and Workers-scale cost.
+“Create More with AI, Keep Your Workflow Private.” The product is centered on template-led image creation, optional reference photos, private results, and transparent credit estimates before generation.
 
 ## Operating Context
 
-- Buyer workflow: start at the docs site, clone or generate from the template, configure `.env` (build-time `VITE_` client vars; runtime server bindings/secrets), run `pnpm dev` on port 3000, customize `src/config/website.ts`, apply D1 migrations with `pnpm db:migrate:local|remote`, and ship with `pnpm deploy`.
-- Supporting surfaces: website tanstarter.dev, demo demo.tanstarter.dev, docs docs.tanstarter.dev, video tutorials on YouTube (@AWEN), Discord community (mksaas.link/discord), support at support@tanstarter.dev.
+- User workflow: open jevailab.com, choose a template, add an optional reference image, describe the idea, review the quote, and create a private result.
+- Supporting surface: jevailab.com and support@jevailab.com.
 - Quality workflow: local-first Playwright E2E under `tests/e2e/` with the acceptance checklist in TEST-CATALOG.md; `pnpm check` runs complete local validation; `pnpm check:production` separately runs production-mode Worker smoke tests in local preview. Neither command deploys or tests a live site. The E2E helper API only works in local Vite DEV with `MODE=e2e` and a matching secret.
-- The template is the upstream for the MkFastHQ product family; sibling checkouts (e.g. mkfast-app, mkfast-website) sync from it while preserving their own branding and product behavior.
+- The product is deployed on Cloudflare Workers with the existing application bindings and provider integrations.
 
 ## Capabilities and Constraints
 
@@ -46,14 +46,13 @@ Confirmed constraints:
 - Runs on the Cloudflare Workers runtime: no Node.js-specific APIs. Bindings are `DB` (D1), `BUCKET` (R2), and `CACHE` (KV); schemas use Drizzle.
 - Client env vars use the `VITE_` prefix (build-time); server env is validated at runtime with Zod via `@t3-oss/env-core`.
 - File-based routing under `src/routes/`; `src/routeTree.gen.ts` is auto-generated and must never be edited.
-- The LICENSE is a custom AWEN License (not OSI/MIT): unlimited end products including client work and resale, but no redistribution of template components separately and no competing starter kits; governed by Swiss law, revocable on material breach, liability limited to license fee.
+- The LICENSE file retains the upstream license terms and should not be rewritten as product marketing copy.
 - Biome-enforced style: 2-space indent, 80-char line width, single quotes, semicolons; linting excludes `src/components/ui/`, `src/components/data-table/`, `src/db/`, and generated route tree.
 
 ## Brand Commitments
 
-- Name: AWEN. Tagline: “Ship Faster with TanStack, Cost Less with Cloudflare.”
-- Created by Fox (@indie_maker_fox), founder of AWEN, MkImage, MkSaaS, and Mkdirs; distributed under the MkFastHQ GitHub org.
-- Public surfaces: tanstarter.dev, demo.tanstarter.dev, docs.tanstarter.dev, YouTube @AWEN, Discord, support@tanstarter.dev, X @AWEN.
+- Name: jevailab. Tagline: “Create More with AI, Keep Your Workflow Private.”
+- Public surface: jevailab.com and support@jevailab.com.
 - Identity commitments recorded in `docs/design.md`: brand personality Modern / Professional / Technical; voice direct, confident, and understated; dark-first, ultra-minimal achromatic visual system with a single amber accent and Bricolage Grotesque; design references Linear, Vercel, Raycast, and Stripe; explicitly avoids playful/cartoonish, enterprise-heavy, cluttered, and generic Bootstrap-style designs.
 - Asset names are binding: `/logo.png`, `/logo-dark.png`, `/og.png`, plus favicon set in `public/`.
 
@@ -66,8 +65,8 @@ Confirmed constraints:
 - project.inlang/messages/en.json and zh.json — full site copy in English and Chinese.
 - content/ — blog posts, changelog, and legal pages in en/zh.
 - tests/e2e/TEST-CATALOG.md and specs — the acceptance journeys and E2E coverage.
-- public/ — logo.png, logo-dark.png, og.png, tanstarter.png, favicon set.
-- LICENSE — the AWEN License terms.
+- public/ — logo.png, logo-dark.png, og.png, jevailab.png, favicon set.
+- LICENSE — the upstream license terms.
 
 Absent: no customer testimonials, case studies, revenue figures, or benchmark data exist in the repository. Homepage testimonial/stats copy is demo content and must not be treated as real evidence.
 
@@ -84,3 +83,6 @@ Absent: no customer testimonials, case studies, revenue figures, or benchmark da
 - docs/design.md commits to WCAG 2.1 AA, visible focus indicators, keyboard navigability, and sufficient contrast in both themes.
 - The UI ships dark, light, and system modes (dark-first) and is localized in English and Chinese via Paraglide.
 - No other product-specific accessibility requirements have been established.
+
+
+

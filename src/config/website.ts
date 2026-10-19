@@ -63,15 +63,12 @@ export const websiteConfig: WebsiteConfig = {
     },
     images: {
       ogImage: '/og.png',
-      logoLight: '/logo.png',
-      logoDark: '/logo-dark.png',
+      logoLight: '/jevailab-icon.png',
+      logoDark: '/jevailab-icon.png',
     },
   },
   social: {
-    github: 'https://github.com/MkFastHQ',
-    discord: 'https://mksaas.link/discord',
-    twitter: 'https://x.com/AWEN',
-    youtube: 'https://www.youtube.com/@AWEN',
+    // Add jevailab-owned social profiles here when they are available.
   },
   auth: {
     enable: true,
@@ -85,13 +82,13 @@ export const websiteConfig: WebsiteConfig = {
   },
   mail: {
     enable: true,
-    provider: 'resend',
+    provider: 'cloudflare',
     fromEmail: 'jevailab <support@jevailab.com>',
     supportEmail: 'jevailab <support@jevailab.com>',
   },
   newsletter: {
     enable: true,
-    provider: 'resend',
+    provider: 'cloudflare',
     autoSubscribeAfterSignUp: true,
   },
   notification: {

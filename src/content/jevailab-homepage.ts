@@ -1,4 +1,4 @@
-export const PICVILO_ANCHORS = {
+export const JEVAILAB_ANCHORS = {
   create: '#create',
   gallery: '#gallery',
   about: '#about',
@@ -21,11 +21,11 @@ export const PUBLISHED_IMAGE_TEMPLATE_IDS = [
   'image-template-1010',
 ] as const;
 
-export type PicviloLocale = 'zh' | 'en';
+export type JevailabLocale = 'zh' | 'en';
 export type PublishedImageTemplateId =
   (typeof PUBLISHED_IMAGE_TEMPLATE_IDS)[number];
 
-export type PicviloFeature = {
+export type JevailabFeature = {
   title: string;
   description: string;
   kind: 'image' | 'video';
@@ -46,7 +46,7 @@ type FaqItem = {
   answer: string;
 };
 
-type PicviloHomepageContent = {
+type JevailabHomepageContent = {
   hero: {
     eyebrow: string;
     h1: string;
@@ -67,7 +67,7 @@ type PicviloHomepageContent = {
     label: string;
   };
   galleryExamples: readonly GalleryExample[];
-  features: readonly PicviloFeature[];
+  features: readonly JevailabFeature[];
   howItWorks: {
     title: string;
     steps: readonly { title: string; description: string }[];
@@ -101,13 +101,13 @@ type PicviloHomepageContent = {
   };
 };
 
-export function isPlannedVideoFeature(feature: PicviloFeature): boolean {
+export function isPlannedVideoFeature(feature: JevailabFeature): boolean {
   return feature.kind === 'video' && feature.comingSoon;
 }
 
-const zh: PicviloHomepageContent = {
+const zh: JevailabHomepageContent = {
   hero: {
-    eyebrow: 'PicVilo AI 创作工作台',
+    eyebrow: 'jevailab 创作工作台',
     h1: '一张照片，一段灵感，创作你的 AI 图片与视频',
     description:
       '从模板、文字或一张参考图开始。现在即可创建 AI 图片，也可以用照片制作 AI 视频。',
@@ -115,11 +115,11 @@ const zh: PicviloHomepageContent = {
     secondaryAction: '浏览模板示例',
     videoNote: '进入视频创作',
   },
-  sections: Object.values(PICVILO_ANCHORS),
+  sections: Object.values(JEVAILAB_ANCHORS),
   about: {
-    title: '什么是 PicVilo AI？',
+    title: '什么是 jevailab？',
     description:
-      'PicVilo AI 是面向日常创作的 AI 图片工作台。选择风格、补充灵感，再由清晰的参数和积分提示帮助你完成创作。',
+      'jevailab 是面向日常创作的 AI 图片工作台。选择风格、补充灵感，再由清晰的参数和积分提示帮助你完成创作。',
     points: ['从照片或文字开始', '使用可见的模板风格', '在生成前了解所需积分'],
   },
   gallery: {
@@ -129,43 +129,43 @@ const zh: PicviloHomepageContent = {
   },
   galleryExamples: [
     {
-      title: '图片模板 1015',
-      description: '最新收录的图片创作模板。',
+      title: '夏日云际编辑肖像',
+      description: '蓝天人物与夏日海报质感的肖像风格。',
       imageUrl: '/images/image-templates/1015.png',
       templateId: 'image-template-1015',
       isTemplateExample: true,
     },
     {
-      title: '图片模板 1014',
-      description: '最新收录的图片创作模板。',
+      title: '趣味猫咪蜡笔海报',
+      description: '真实照片结合童趣蜡笔插画的轻松海报风格。',
       imageUrl: '/images/image-templates/1014.png',
       templateId: 'image-template-1014',
       isTemplateExample: true,
     },
     {
-      title: '图片模板 1013',
-      description: '最新收录的图片创作模板。',
+      title: '蓝天跃动艺术海报',
+      description: '用明亮蓝天和动态姿态呈现轻盈的艺术海报。',
       imageUrl: '/images/image-templates/1013.png',
       templateId: 'image-template-1013',
       isTemplateExample: true,
     },
     {
-      title: '图片模板 1012',
-      description: '最新收录的图片创作模板。',
+      title: '彩伞图案艺术海报',
+      description: '以重复图案、柔和色彩和生活细节构成艺术海报。',
       imageUrl: '/images/image-templates/1012.png',
       templateId: 'image-template-1012',
       isTemplateExample: true,
     },
     {
-      title: '图片模板 1011',
-      description: '最新收录的图片创作模板。',
+      title: '青春骑行纪念海报',
+      description: '把日常骑行画面转化为温暖、充满故事感的纪念海报。',
       imageUrl: '/images/image-templates/1011.png',
       templateId: 'image-template-1011',
       isTemplateExample: true,
     },
     {
-      title: '图片模板 1010',
-      description: '最新收录的图片创作模板。',
+      title: '春日风筝旅行海报',
+      description: '以春日色彩和风中图案营造轻快的旅行视觉。',
       imageUrl: '/images/image-templates/1010.png',
       templateId: 'image-template-1010',
       isTemplateExample: true,
@@ -237,7 +237,7 @@ const zh: PicviloHomepageContent = {
   },
   faq: [
     {
-      question: 'PicVilo AI 现在可以做什么？',
+      question: 'jevailab 现在可以做什么？',
       answer: '你现在可以使用模板、文字和可选参考图创建 AI 图片。',
     },
     {
@@ -254,7 +254,7 @@ const zh: PicviloHomepageContent = {
     },
     {
       question: '模板里的示例图来自哪里？',
-      answer: '它们是 PicVilo AI 提供的模板效果示例，不是用户公开作品。',
+      answer: '它们是 jevailab 提供的模板效果示例，不是用户公开作品。',
     },
     {
       question: '图片比例可以选择吗？',
@@ -292,9 +292,9 @@ const zh: PicviloHomepageContent = {
   },
 };
 
-const en: PicviloHomepageContent = {
+const en: JevailabHomepageContent = {
   hero: {
-    eyebrow: 'PicVilo AI creative workspace',
+    eyebrow: 'jevailab creative workspace',
     h1: 'Create AI images and videos from a photo and an idea',
     description:
       'Start from a template, a prompt, or one reference photo. Create AI images now, or turn a photo into an AI video.',
@@ -302,11 +302,11 @@ const en: PicviloHomepageContent = {
     secondaryAction: 'Explore templates',
     videoNote: 'Open video creator',
   },
-  sections: Object.values(PICVILO_ANCHORS),
+  sections: Object.values(JEVAILAB_ANCHORS),
   about: {
-    title: 'What is PicVilo AI?',
+    title: 'What is jevailab?',
     description:
-      'PicVilo AI is an everyday creative workspace for AI images. Choose a visual direction, add your idea, and create with clear settings and credit guidance.',
+      'jevailab is an everyday creative workspace for AI images. Choose a visual direction, add your idea, and create with clear settings and credit guidance.',
     points: [
       'Start from a photo or text',
       'Use visible template styles',
@@ -316,48 +316,48 @@ const en: PicviloHomepageContent = {
   gallery: {
     title: 'Begin with a visual direction',
     description:
-      'These are template examples from PicVilo AI, not public user creations.',
+      'These are template examples from jevailab, not public user creations.',
     label: 'Template example',
   },
   galleryExamples: [
     {
-      title: 'Image template 1015',
-      description: 'The latest image creation template.',
+      title: 'Summer Sky Editorial Portrait',
+      description: 'A blue-sky editorial portrait with a soft summer poster finish.',
       imageUrl: '/images/image-templates/1015.png',
       templateId: 'image-template-1015',
       isTemplateExample: true,
     },
     {
-      title: 'Image template 1014',
-      description: 'The latest image creation template.',
+      title: 'Playful Cat Crayon Poster',
+      description: 'A lighthearted poster style blending a photo with crayon illustration.',
       imageUrl: '/images/image-templates/1014.png',
       templateId: 'image-template-1014',
       isTemplateExample: true,
     },
     {
-      title: 'Image template 1013',
-      description: 'The latest image creation template.',
+      title: 'Blue Sky Motion Poster',
+      description: 'A bright art-poster style built around blue skies and expressive motion.',
       imageUrl: '/images/image-templates/1013.png',
       templateId: 'image-template-1013',
       isTemplateExample: true,
     },
     {
-      title: 'Image template 1012',
-      description: 'The latest image creation template.',
+      title: 'Colorful Umbrella Art Poster',
+      description: 'An art-poster composition built from repeating patterns and soft color.',
       imageUrl: '/images/image-templates/1012.png',
       templateId: 'image-template-1012',
       isTemplateExample: true,
     },
     {
-      title: 'Image template 1011',
-      description: 'The latest image creation template.',
+      title: 'Forever Young Ride Poster',
+      description: 'A warm memory poster for everyday rides and youthful stories.',
       imageUrl: '/images/image-templates/1011.png',
       templateId: 'image-template-1011',
       isTemplateExample: true,
     },
     {
-      title: 'Image template 1010',
-      description: 'The latest image creation template.',
+      title: 'Spring Kite Travel Poster',
+      description: 'A fresh travel-poster style inspired by spring color and motion.',
       imageUrl: '/images/image-templates/1010.png',
       templateId: 'image-template-1010',
       isTemplateExample: true,
@@ -448,7 +448,7 @@ const en: PicviloHomepageContent = {
   },
   faq: [
     {
-      question: 'What can PicVilo AI do today?',
+      question: 'What can jevailab do today?',
       answer:
         'You can create AI images with templates, text, and an optional reference photo.',
     },
@@ -468,8 +468,7 @@ const en: PicviloHomepageContent = {
     },
     {
       question: 'Where do template examples come from?',
-      answer:
-        'They are PicVilo AI template examples, not public user creations.',
+    answer: 'They are jevailab template examples, not public user creations.',
     },
     {
       question: 'Can I choose an image ratio?',
@@ -515,10 +514,11 @@ const en: PicviloHomepageContent = {
   },
 };
 
-export function getPicviloHomepageContent(
-  locale: PicviloLocale
-): PicviloHomepageContent {
+export function getJevailabHomepageContent(
+  locale: JevailabLocale
+): JevailabHomepageContent {
   return locale === 'zh' ? zh : en;
 }
 
-export type { FaqItem, GalleryExample, PicviloHomepageContent };
+export type { FaqItem, GalleryExample, JevailabHomepageContent };
+

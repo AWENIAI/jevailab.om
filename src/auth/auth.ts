@@ -20,6 +20,22 @@ import { logOperationalEvent } from '@/lib/observability';
 
 const trustedOrigins = getTrustedOrigins(serverEnv.BETTER_AUTH_TRUSTED_ORIGINS);
 
+/**
+ * Resolve auth URLs from the incoming host so local/preview deployments do
+ * not accidentally build callbacks against the production URL from
+ * VITE_BASE_URL. The production host remains the fallback, and only loopback
+ * hosts are added as development alternatives.
+ */
+const authBaseURL = (() => {
+  const configuredUrl = new URL(getBaseUrl());
+
+  return {
+    allowedHosts: [configuredUrl.host, 'localhost:*', '127.0.0.1:*', '[::1]:*'],
+    fallback: configuredUrl.origin,
+    protocol: 'auto' as const,
+  };
+})();
+
 // Better Auth uses the first client ID for the website authorization URL, while
 // accepting every item here as an ID-token audience. Keep the website client
 // first so browser-extension tokens can be verified without changing web OAuth.
@@ -99,7 +115,7 @@ const getGoogleTokenHandlers = () => {
  * https://www.better-auth.com/docs/adapters/drizzle
  */
 export const auth = betterAuth({
-  baseURL: getBaseUrl(),
+  baseURL: authBaseURL,
   appName: websiteConfig.metadata?.name,
   // Allow explicitly configured clients, such as the browser extension, to
   // authenticate cross-origin. Keep this list in server-side environment

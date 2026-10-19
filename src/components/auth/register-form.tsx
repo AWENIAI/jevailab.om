@@ -88,6 +88,7 @@ export function RegisterForm({
       headerLabel={m.auth_register_create_account()}
       bottomButtonLabel={m.auth_register_sign_in_hint()}
       bottomButtonHref={Routes.Login}
+      callbackUrl={callbackUrl}
     >
       {credentialLoginEnabled && (
         <Form {...form}>

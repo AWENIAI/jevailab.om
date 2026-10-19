@@ -32,17 +32,17 @@ const CF_MODELS: {
   {
     value: CF_IMAGE_MODELS[0],
     label: 'FLUX.2 Klein 4B',
-    hint: 'Default · Fast generation',
+    hint: m.ai_page_cf_model_default(),
   },
   {
     value: CF_IMAGE_MODELS[1],
     label: 'FLUX.2 Klein 9B',
-    hint: 'More detail · 9B model',
+    hint: m.ai_page_cf_model_detail(),
   },
   {
     value: CF_IMAGE_MODELS[2],
     label: 'FLUX.1 Schnell',
-    hint: '12B distilled flow transformer',
+    hint: m.ai_page_cf_model_distilled(),
   },
 ];
 const CF_MODEL_SELECT_ITEMS = CF_MODELS.map((model) => ({

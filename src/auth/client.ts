@@ -5,11 +5,23 @@ import { getBaseUrl } from '@/lib/urls';
 import type { auth } from './auth';
 
 /**
+ * Browser requests must target the origin that rendered the app. Using the
+ * canonical production URL here breaks local/preview auth with a CORS error
+ * whenever VITE_BASE_URL points at the production site.
+ *
+ * Server-side consumers keep using the configured canonical URL because they
+ * do not have a browser origin.
+ */
+function getAuthClientBaseUrl(): string {
+  return typeof window === 'undefined' ? getBaseUrl() : window.location.origin;
+}
+
+/**
  * Better Auth Client Configuration
  * https://www.better-auth.com/docs/integrations/tanstack
  */
 export const authClient = createAuthClient({
-  baseURL: getBaseUrl(),
+  baseURL: getAuthClientBaseUrl(),
   plugins: [
     // https://www.better-auth.com/docs/plugins/admin#add-the-client-plugin
     adminClient(),

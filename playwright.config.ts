@@ -19,15 +19,15 @@ export default defineConfig({
       'pnpm exec tsx scripts/prepare-e2e-state.ts',
       [
         'pnpm exec wrangler d1 migrations apply',
-        '$(pnpm -s exec tsx scripts/get-db-name.ts)',
+        'ai-image',
         '--local',
         `--persist-to ${persistPath}`,
       ].join(' '),
       [
-        `E2E_PERSIST_PATH=${persistPath}`,
-        `VITE_BASE_URL=${baseURL}`,
-        'VITE_PAYMENT_PROVIDER=stripe',
-        'BETTER_AUTH_SECRET=e2e-better-auth-secret',
+        "$env:E2E_PERSIST_PATH='" + persistPath + "';",
+        "$env:VITE_BASE_URL='" + baseURL + "';",
+        "$env:VITE_PAYMENT_PROVIDER='stripe';",
+        "$env:BETTER_AUTH_SECRET='e2e-better-auth-secret';",
         [
           'pnpm exec vite dev --mode e2e',
           '--host 127.0.0.1',

@@ -19,6 +19,13 @@ export const Route = createFileRoute('/auth/login')({
       }
     }
   },
+  validateSearch: (
+    search: Record<string, unknown>
+  ): { callbackUrl?: string; error?: string } => ({
+    callbackUrl:
+      typeof search.callbackUrl === 'string' ? search.callbackUrl : undefined,
+    error: typeof search.error === 'string' ? search.error : undefined,
+  }),
   component: LoginPage,
   server: {
     // Server-side navigation: check session in server, 302 redirect
@@ -33,9 +40,11 @@ export const Route = createFileRoute('/auth/login')({
 });
 
 function LoginPage() {
+  const { callbackUrl } = Route.useSearch();
+
   return (
     <div className="flex flex-col gap-4">
-      <LoginForm />
+      <LoginForm callbackUrl={callbackUrl} />
       <div className="text-balance text-center text-xs text-muted-foreground">
         {m.auth_common_by_clicking_continue()}
         <Link

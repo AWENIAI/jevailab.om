@@ -1,20 +1,21 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { m } from '@/locale/paraglide/messages';
 
 export default function BuiltWithButton() {
   return (
     <a
       target="_blank"
       rel="noopener noreferrer"
-      href="https://tanstarter.dev?utm_source=built-with-tanstarter"
+      href="https://jevailab.com"
       className={cn(
         buttonVariants({ variant: 'outline', size: 'sm' }),
         'border border-border px-4 py-4 rounded-md gap-2'
       )}
     >
-      <span>Built with</span>
-      <img src="/tanstarter.png" alt="AWEN" className="size-5" />
-      <span className="font-semibold">AWEN</span>
+      <span>{m.common_built_with()}</span>
+      <img src="/jevailab-icon.png" alt="jevailab" className="size-5" />
+      <span className="font-semibold">jevailab</span>
     </a>
   );
 }

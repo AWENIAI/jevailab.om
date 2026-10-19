@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripJsonComments } from './d1-migration';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,8 +26,8 @@ export function parseWranglerConfig(): WranglerConfig {
   const wranglerPath = path.join(__dirname, '..', 'wrangler.jsonc');
   const wranglerContent = fs.readFileSync(wranglerPath, 'utf8');
 
-  // Remove comments from the JSONC content
-  const jsonContent = wranglerContent.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+  // Remove comments without treating the `//` in quoted URLs as a comment.
+  const jsonContent = stripJsonComments(wranglerContent);
 
   // Fix trailing commas in objects and arrays (which are valid in JSONC but not in JSON)
   const fixedJsonContent = jsonContent.replace(/,\s*([}\]])/g, '$1'); // Replace trailing commas before closing brackets

@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getRequestHeaders } from '@tanstack/react-start/server';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { auth } from '@/auth/auth';
 import { getDb } from '@/db';
 import { userFiles } from '@/db/app.schema';
+import { imageAssets } from '@/db/image-creator.schema';
 import {
   videoAssets,
   videoJobs,
@@ -59,6 +60,16 @@ export const Route = createFileRoute('/api/storage/file')({
             .from(videoAssets)
             .where(eq(videoAssets.storageKey, key))
             .limit(1);
+          const [imageAsset] = await db
+            .select({ userId: imageAssets.userId })
+            .from(imageAssets)
+            .where(
+              and(
+                eq(imageAssets.storageKey, key),
+                isNull(imageAssets.deletedAt)
+              )
+            )
+            .limit(1);
           const [videoOutput] = await db
             .select({ userId: videoJobs.userId })
             .from(videoOutputs)
@@ -66,7 +77,10 @@ export const Route = createFileRoute('/api/storage/file')({
             .where(eq(videoOutputs.storageKey, key))
             .limit(1);
           const privateOwnerId =
-            fileRecord?.userId ?? videoAsset?.userId ?? videoOutput?.userId;
+            fileRecord?.userId ??
+            videoAsset?.userId ??
+            videoOutput?.userId ??
+            imageAsset?.userId;
 
           if (!privateOwnerId && !isPublicKey && !hasPrivateAccess) {
             return new Response('Not Found', { status: 404 });

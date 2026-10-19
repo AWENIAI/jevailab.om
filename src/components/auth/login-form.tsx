@@ -98,6 +98,7 @@ export function LoginForm({
       headerLabel={m.auth_login_welcome_back()}
       bottomButtonLabel={m.auth_login_sign_up_hint()}
       bottomButtonHref={Routes.Register}
+      callbackUrl={callbackUrl}
       className={cn('', className)}
     >
       {credentialLoginEnabled && (

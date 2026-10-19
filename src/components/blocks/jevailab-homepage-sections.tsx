@@ -11,13 +11,13 @@ import {
   IconWand,
 } from '@tabler/icons-react';
 import type {
-  PicviloHomepageContent,
+  JevailabHomepageContent,
   PublishedImageTemplateId,
-} from '@/content/picvilo-homepage';
-import { PICVILO_ANCHORS } from '@/content/picvilo-homepage';
+} from '@/content/jevailab-homepage';
+import { JEVAILAB_ANCHORS } from '@/content/jevailab-homepage';
 
-type PicviloHomepageSectionsProps = {
-  content: PicviloHomepageContent;
+type JevailabHomepageSectionsProps = {
+  content: JevailabHomepageContent;
   onSelectTemplate: (templateId: PublishedImageTemplateId) => void;
 };
 
@@ -25,10 +25,10 @@ const sectionClassName = 'scroll-mt-16 py-14 sm:py-20';
 const surfaceClassName =
   'rounded-3xl border border-border/70 bg-card/70 p-5 shadow-sm sm:p-8';
 
-export function PicviloHomepageSections({
+export function JevailabHomepageSections({
   content,
   onSelectTemplate,
-}: PicviloHomepageSectionsProps) {
+}: JevailabHomepageSectionsProps) {
   const imageFeature = content.features.find(
     (feature) => feature.kind === 'image'
   );
@@ -46,7 +46,7 @@ export function PicviloHomepageSections({
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
             <p className="text-sm font-semibold tracking-wide text-primary">
-              PicVilo AI
+              jevailab
             </p>
             <h2
               id="about-title"
@@ -116,9 +116,6 @@ export function PicviloHomepageSections({
               />
               <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/55 to-transparent px-3 pt-12 pb-3 text-white">
                 <p className="text-sm font-semibold">{example.title}</p>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/75">
-                  {example.description}
-                </p>
               </div>
             </button>
           ))}
@@ -132,7 +129,7 @@ export function PicviloHomepageSections({
       >
         <div className="max-w-2xl">
           <p className="text-sm font-semibold tracking-wide text-primary">
-            PicVilo AI
+            jevailab
           </p>
           <h2
             id="features-title"
@@ -147,7 +144,7 @@ export function PicviloHomepageSections({
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {imageFeature ? (
             <a
-              href={PICVILO_ANCHORS.create}
+              href={JEVAILAB_ANCHORS.create}
               className={`${surfaceClassName} group block transition hover:border-primary/55 hover:shadow-lg`}
             >
               <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -316,7 +313,7 @@ export function PicviloHomepageSections({
             </p>
           </div>
           <a
-            href={PICVILO_ANCHORS.create}
+            href={JEVAILAB_ANCHORS.create}
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
           >
             {content.hero.primaryAction}
@@ -336,7 +333,7 @@ export function PicviloHomepageSections({
           <div>
             <div className="flex items-center gap-2 text-primary">
               <IconWand className="size-5" aria-hidden="true" />
-              <span className="text-sm font-semibold">PicVilo AI</span>
+              <span className="text-sm font-semibold">jevailab</span>
             </div>
             <h2
               id="pricing-title"
@@ -349,7 +346,7 @@ export function PicviloHomepageSections({
             </p>
           </div>
           <a
-            href={PICVILO_ANCHORS.create}
+            href={JEVAILAB_ANCHORS.create}
             className="inline-flex h-10 items-center justify-center rounded-lg border border-primary/40 px-4 text-sm font-semibold text-primary transition hover:bg-primary/10"
           >
             {content.pricing.actionLabel}
@@ -413,7 +410,7 @@ export function PicviloHomepageSections({
               {content.finalCta.description}
             </p>
             <a
-              href={PICVILO_ANCHORS.create}
+              href={JEVAILAB_ANCHORS.create}
               className="mt-7 inline-flex h-10 items-center gap-2 rounded-lg bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-background/85"
             >
               {content.finalCta.actionLabel}
@@ -425,3 +422,4 @@ export function PicviloHomepageSections({
     </div>
   );
 }
+

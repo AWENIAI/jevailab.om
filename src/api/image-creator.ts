@@ -17,6 +17,7 @@ import {
 } from '@/lib/image-creator/validation';
 import { deleteFile, uploadFile } from '@/storage';
 import { createServerFn } from '@tanstack/react-start';
+import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 const quoteSchema = imageCreatorDraftSchema;
@@ -34,6 +35,10 @@ const referenceUploadSchema = z
     }
     return { file };
   });
+
+const referenceDeleteSchema = z.object({
+  assetId: z.string().min(1),
+});
 
 const RATIO_TO_KIE = {
   AUTO: 'auto',
@@ -149,7 +154,45 @@ export const uploadImageCreatorReference = createServerFn({ method: 'POST' })
       moderationVersion: moderation.policyVersion,
       createdAt: now,
     });
-    return { assetId: result.metadata.id, fileName: data.file.name };
+    return {
+      assetId: result.metadata.id,
+      fileName: data.file.name,
+      previewUrl: result.url,
+    };
+  });
+
+export const deleteImageCreatorReference = createServerFn({ method: 'POST' })
+  .validator(referenceDeleteSchema)
+  .middleware([authApiMiddleware])
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const [asset] = await db
+      .select({ storageKey: imageAssets.storageKey })
+      .from(imageAssets)
+      .where(
+        and(
+          eq(imageAssets.id, data.assetId),
+          eq(imageAssets.userId, context.userId),
+          isNull(imageAssets.deletedAt)
+        )
+      )
+      .limit(1);
+
+    if (!asset) return { deleted: false };
+
+    await deleteFile(asset.storageKey);
+    await db
+      .update(imageAssets)
+      .set({ state: 'deleted', deletedAt: new Date() })
+      .where(
+        and(
+          eq(imageAssets.id, data.assetId),
+          eq(imageAssets.userId, context.userId),
+          isNull(imageAssets.deletedAt)
+        )
+      );
+
+    return { deleted: true };
   });
 
 export const startImageCreatorGeneration = createServerFn({ method: 'POST' })

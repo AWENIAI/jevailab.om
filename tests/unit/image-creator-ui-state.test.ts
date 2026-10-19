@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildImageCreatorAuthHref,
+  buildImageCreatorCallbackUrl,
   canSubmitImageCreatorDraft,
   getLocalizedImageTemplate,
   resolveExternalTemplateSelection,
+  validateImageCreatorReferenceFile,
 } from '@/lib/image-creator/ui-state';
 
 describe('image creator submit state', () => {
   it('disables a free draft without a meaningful prompt', () => {
     expect(
       canSubmitImageCreatorDraft({
-        isSignedIn: true,
         isSubmitting: false,
         consentAccepted: true,
         templateId: null,
@@ -18,10 +20,9 @@ describe('image creator submit state', () => {
     ).toBe(false);
   });
 
-  it('requires sign-in, consent and an idle request before submission', () => {
+  it('allows a complete local draft without requiring sign-in', () => {
     expect(
       canSubmitImageCreatorDraft({
-        isSignedIn: true,
         isSubmitting: false,
         consentAccepted: true,
         templateId: 'cinematic-portrait',
@@ -30,8 +31,26 @@ describe('image creator submit state', () => {
     ).toBe(true);
     expect(
       canSubmitImageCreatorDraft({
-        isSignedIn: false,
         isSubmitting: false,
+        consentAccepted: true,
+        templateId: 'cinematic-portrait',
+        prompt: '',
+      })
+    ).toBe(true);
+  });
+
+  it('still requires consent and an idle request before submission', () => {
+    expect(
+      canSubmitImageCreatorDraft({
+        isSubmitting: false,
+        consentAccepted: false,
+        templateId: 'cinematic-portrait',
+        prompt: '',
+      })
+    ).toBe(false);
+    expect(
+      canSubmitImageCreatorDraft({
+        isSubmitting: true,
         consentAccepted: true,
         templateId: 'cinematic-portrait',
         prompt: '',
@@ -70,5 +89,42 @@ describe('image creator submit state', () => {
         'zh'
       )
     ).toMatchObject({ name: '电影人像', category: '摄影' });
+  });
+
+  it('rejects unsupported or oversized reference images before upload', () => {
+    expect(
+      validateImageCreatorReferenceFile({
+        type: 'image/gif',
+        size: 1024,
+      })
+    ).toBe('type');
+    expect(
+      validateImageCreatorReferenceFile({
+        type: 'image/png',
+        size: 10 * 1024 * 1024 + 1,
+      })
+    ).toBe('size');
+    expect(
+      validateImageCreatorReferenceFile({
+        type: 'image/webp',
+        size: 10 * 1024 * 1024,
+      })
+    ).toBeNull();
+  });
+
+  it('returns to the same editor after authentication', () => {
+    expect(
+      buildImageCreatorCallbackUrl({
+        pathname: '/en/',
+        search: '?tab=image',
+        hash: '#create',
+      })
+    ).toBe('/en/?tab=image&create=1');
+    expect(
+      buildImageCreatorAuthHref({
+        loginPath: '/auth/login',
+        callbackUrl: '/en/?tab=image&create=1',
+      })
+    ).toBe('/auth/login?callbackUrl=%2Fen%2F%3Ftab%3Dimage%26create%3D1');
   });
 });

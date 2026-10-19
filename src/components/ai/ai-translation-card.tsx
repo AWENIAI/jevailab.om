@@ -39,16 +39,16 @@ const LANGUAGES: {
   value: Language;
   label: string;
 }[] = [
-  { value: 'english', label: 'English' },
-  { value: 'chinese', label: '中文 Chinese' },
-  { value: 'french', label: 'Français French' },
-  { value: 'german', label: 'Deutsch German' },
-  { value: 'spanish', label: 'Español Spanish' },
-  { value: 'japanese', label: '日本語 Japanese' },
-  { value: 'korean', label: '한국어 Korean' },
-  { value: 'russian', label: 'Русский Russian' },
-  { value: 'portuguese', label: 'Português Portuguese' },
-  { value: 'arabic', label: 'العربية Arabic' },
+  { value: 'english', label: m.ai_page_translation_lang_english() },
+  { value: 'chinese', label: m.ai_page_translation_lang_chinese() },
+  { value: 'french', label: m.ai_page_translation_lang_french() },
+  { value: 'german', label: m.ai_page_translation_lang_german() },
+  { value: 'spanish', label: m.ai_page_translation_lang_spanish() },
+  { value: 'japanese', label: m.ai_page_translation_lang_japanese() },
+  { value: 'korean', label: m.ai_page_translation_lang_korean() },
+  { value: 'russian', label: m.ai_page_translation_lang_russian() },
+  { value: 'portuguese', label: m.ai_page_translation_lang_portuguese() },
+  { value: 'arabic', label: m.ai_page_translation_lang_arabic() },
 ];
 export function AiTranslationCard() {
   const [input, setInput] = useState<string>(m.ai_page_translation_sample());

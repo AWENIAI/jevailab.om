@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { m } from '@/locale/paraglide/messages';
 import { useState } from 'react';
 
 const GALLERY_IMAGES = [
@@ -53,7 +54,7 @@ export default function FloatingGallery() {
           <button
             key={src}
             type="button"
-            aria-label="放大查看作品"
+            aria-label={m.common_zoom_image()}
             onClick={(event) => {
               event.stopPropagation();
               setSelected(isSelected ? null : index);
@@ -84,7 +85,7 @@ export default function FloatingGallery() {
           >
             <img
               src={src}
-              alt="AI 生成作品示例"
+              alt={m.common_generated_image_example()}
               className="size-full object-cover"
               draggable={false}
               loading={index < 2 ? 'eager' : 'lazy'}

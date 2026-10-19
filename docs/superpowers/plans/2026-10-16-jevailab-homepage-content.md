@@ -1,18 +1,18 @@
-# PicVilo AI Homepage Content Implementation Plan
+# jevailab Homepage Content Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the generic SaaS marketing homepage with a responsive PicVilo AI image-creation landing page while retaining the existing Hero and creator workbench behavior.
+**Goal:** Replace the generic SaaS marketing homepage with a responsive jevailab image-creation landing page while retaining the existing Hero and creator workbench behavior.
 
 **Architecture:** Define one typed homepage-content source for Chinese and English copy, capability states, anchors, FAQ entries, and mapped template examples. Compose dedicated presentational sections below the existing Hero/workbench; route all actions only to existing anchors or published routes, and keep video capabilities visibly planned rather than interactive.
 
 **Tech Stack:** TanStack Start, React 19, TypeScript, Tailwind CSS, shadcn/ui, Paraglide localization, Vitest, Biome.
 
-**Spec:** `docs/superpowers/specs/2026-10-16-picvilo-homepage-content-design.md`
+**Spec:** `docs/superpowers/specs/2026-10-16-jevailab-homepage-content-design.md`
 
 ## Global Constraints
 
-- Brand the homepage as PicVilo AI through existing localized site configuration; do not hardcode a domain, logo URL, or social account.
+- Brand the homepage as jevailab through existing localized site configuration; do not hardcode a domain, logo URL, or social account.
 - Preserve the existing Hero and AI image creator workbench business logic.
 - Keep desktop workbench three-column, tablet adaptive, and mobile vertically stacked without horizontal overflow.
 - Show AI video only as `Coming soon`; do not create a task, checkout, route, or false availability state.
@@ -32,15 +32,15 @@
 
 ---
 
-### Task 1: Define localized PicVilo homepage content and capability states
+### Task 1: Define localized Jevailab homepage content and capability states
 
 **Files:**
-- Create: `src/content/picvilo-homepage.ts`
-- Create: `tests/unit/picvilo-homepage-content.test.ts`
+- Create: `src/content/jevailab-homepage.ts`
+- Create: `tests/unit/jevailab-homepage-content.test.ts`
 
 **Interfaces:**
-- Produces: `getPicviloHomepageContent(locale: 'zh' | 'en'): PicviloHomepageContent`
-- Produces: `PICVILO_ANCHORS` and `isPlannedVideoFeature(feature: Feature): boolean`
+- Produces: `getJevailabHomepageContent(locale: 'zh' | 'en'): JevailabHomepageContent`
+- Produces: `JEVAILAB_ANCHORS` and `isPlannedVideoFeature(feature: Feature): boolean`
 - Consumed by: homepage sections, navigation configuration, metadata updates.
 
 - [ ] **Step 1: Write failing content tests**
@@ -49,7 +49,7 @@ Assert that both locales contain one Hero H1, all required section identifiers, 
 
 - [ ] **Step 2: Run the content test to verify it fails**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-content.test.ts`  
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-content.test.ts`  
 Expected: FAIL because the content module does not exist.
 
 - [ ] **Step 3: Implement typed homepage content**
@@ -58,18 +58,18 @@ Create the content model and zh/en entries from the approved spec. Include only 
 
 - [ ] **Step 4: Run the content test to verify it passes**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-content.test.ts`  
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-content.test.ts`  
 Expected: PASS.
 
 ### Task 2: Build reusable, accessible homepage content sections
 
 **Files:**
-- Create: `src/components/blocks/picvilo-homepage-sections.tsx`
-- Create: `tests/unit/picvilo-homepage-sections.test.tsx`
+- Create: `src/components/blocks/jevailab-homepage-sections.tsx`
+- Create: `tests/unit/jevailab-homepage-sections.test.tsx`
 
 **Interfaces:**
-- Consumes: `PicviloHomepageContent` from Task 1.
-- Produces: `PicviloHomepageSections({ content, onSelectTemplate })`.
+- Consumes: `JevailabHomepageContent` from Task 1.
+- Produces: `JevailabHomepageSections({ content, onSelectTemplate })`.
 - Consumed by: `HomePage` in Task 3.
 
 - [ ] **Step 1: Write failing section tests**
@@ -78,7 +78,7 @@ Render the component and assert presence of semantic section headings, visible p
 
 - [ ] **Step 2: Run the section test to verify it fails**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-sections.test.tsx`  
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-sections.test.tsx`  
 Expected: FAIL because the section component does not exist.
 
 - [ ] **Step 3: Implement presentational sections**
@@ -87,7 +87,7 @@ Implement What Is, image showcase, capabilities, three steps, use cases, photo t
 
 - [ ] **Step 4: Run the section test to verify it passes**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-sections.test.tsx`  
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-sections.test.tsx`  
 Expected: PASS.
 
 ### Task 3: Connect examples to the existing workbench without changing generation logic
@@ -120,7 +120,7 @@ Replace the generic logo/cloud, stats, integration, testimonial, newsletter, and
 
 - [ ] **Step 5: Run focused tests**
 
-Run: `pnpm exec vitest run tests/unit/image-creator-ui-state.test.ts tests/unit/picvilo-homepage-sections.test.tsx`  
+Run: `pnpm exec vitest run tests/unit/image-creator-ui-state.test.ts tests/unit/jevailab-homepage-sections.test.tsx`  
 Expected: PASS.
 
 ### Task 4: Update localized brand, metadata, and real navigation
@@ -131,20 +131,20 @@ Expected: PASS.
 - Modify: `src/config/navbar-config.ts`
 - Modify: `src/config/footer-config.ts`
 - Modify: `src/components/blocks/hero.tsx`
-- Test: `tests/unit/picvilo-homepage-content.test.ts`
+- Test: `tests/unit/jevailab-homepage-content.test.ts`
 
 **Interfaces:**
 - Consumes: content/anchor definitions from Task 1.
-- Produces: PicVilo site name, localized title/description, and only-valid anchor/route navigation.
+- Produces: Jevailab site name, localized title/description, and only-valid anchor/route navigation.
 
 - [ ] **Step 1: Write failing metadata and navigation assertions**
 
-Assert localized site name/title/description contain PicVilo AI and image-creation terms; assert navigation targets are either known anchors or existing routes, and planned video links have no active route target.
+Assert localized site name/title/description contain jevailab and image-creation terms; assert navigation targets are either known anchors or existing routes, and planned video links have no active route target.
 
 - [ ] **Step 2: Run the assertions to verify they fail**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-content.test.ts`  
-Expected: FAIL because TanStarter metadata and generic menu links remain.
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-content.test.ts`  
+Expected: FAIL because jevailab metadata and generic menu links remain.
 
 - [ ] **Step 3: Implement brand and navigation changes**
 
@@ -152,7 +152,7 @@ Update existing locale keys, homepage Hero copy/CTAs, navbar anchors, and footer
 
 - [ ] **Step 4: Run metadata/navigation tests**
 
-Run: `pnpm exec vitest run tests/unit/picvilo-homepage-content.test.ts`  
+Run: `pnpm exec vitest run tests/unit/jevailab-homepage-content.test.ts`  
 Expected: PASS.
 
 ### Task 5: Validate desktop and mobile rendering
@@ -167,7 +167,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Run code-quality checks**
 
-Run: `pnpm exec biome check src/content/picvilo-homepage.ts src/components/blocks/picvilo-homepage-sections.tsx src/components/blocks/homepage.tsx src/components/blocks/hero.tsx && pnpm typecheck && pnpm exec vitest run`  
+Run: `pnpm exec biome check src/content/jevailab-homepage.ts src/components/blocks/jevailab-homepage-sections.tsx src/components/blocks/homepage.tsx src/components/blocks/hero.tsx && pnpm typecheck && pnpm exec vitest run`  
 Expected: no Biome errors, type-check exit 0, all Vitest tests pass.
 
 - [ ] **Step 2: Verify desktop, tablet, and mobile in a browser**
@@ -177,3 +177,4 @@ Capture `1440px`, `768px`, and `390px` screenshots of `/`. Verify exactly one H1
 - [ ] **Step 3: Record and fix visual mismatches**
 
 Compare the render to the supplied desktop/mobile reference images for section order, official dark/orange visual system, typography hierarchy, spacing, and media framing. Apply only concrete responsive/visual fixes and repeat the relevant screenshot verification.
+

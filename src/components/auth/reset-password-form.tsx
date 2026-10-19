@@ -72,7 +72,7 @@ export function ResetPasswordForm() {
         },
         onResponse: () => setIsPending(false),
         onSuccess: () => {
-          router.navigate({ to: Routes.Login });
+          router.navigate({ to: Routes.Login, search: {} });
         },
         onError: (ctx) => {
           setError(getAuthErrorMessage(ctx.error));

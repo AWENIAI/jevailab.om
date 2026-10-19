@@ -3,12 +3,13 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { IconChevronLeft, IconChevronRight, IconDots } from "@tabler/icons-react"
+import { m } from "@/locale/paraglide/messages"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
       role="navigation"
-      aria-label="pagination"
+      aria-label={m.common_pagination()}
       data-slot="pagination"
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
@@ -64,12 +65,12 @@ function PaginationLink({
 
 function PaginationPrevious({
   className,
-  text = "Previous",
+  text = m.common_table_previous_page(),
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
   return (
     <PaginationLink
-      aria-label="Go to previous page"
+      aria-label={m.common_table_previous_page()}
       size="default"
       className={cn("pl-1.5!", className)}
       {...props}
@@ -82,12 +83,12 @@ function PaginationPrevious({
 
 function PaginationNext({
   className,
-  text = "Next",
+  text = m.common_table_next_page(),
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
   return (
     <PaginationLink
-      aria-label="Go to next page"
+      aria-label={m.common_table_next_page()}
       size="default"
       className={cn("pr-1.5!", className)}
       {...props}
@@ -114,7 +115,7 @@ function PaginationEllipsis({
     >
       <IconDots
       />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{m.common_more_pages()}</span>
     </span>
   )
 }

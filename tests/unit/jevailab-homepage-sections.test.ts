@@ -1,24 +1,27 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { PicviloHomepageSections } from '@/components/blocks/picvilo-homepage-sections';
-import { getPicviloHomepageContent } from '@/content/picvilo-homepage';
+import { JevailabHomepageSections } from '@/components/blocks/jevailab-homepage-sections';
+import { getJevailabHomepageContent } from '@/content/jevailab-homepage';
 
-describe('PicVilo homepage sections', () => {
+describe('Jevailab homepage sections', () => {
   it('renders real sections, an active video entry, FAQ disclosure, and mapped examples', () => {
     const markup = renderToStaticMarkup(
-      createElement(PicviloHomepageSections, {
-        content: getPicviloHomepageContent('en'),
+      createElement(JevailabHomepageSections, {
+        content: getJevailabHomepageContent('en'),
         onSelectTemplate: vi.fn(),
       })
     );
 
-    expect(markup).toContain('What is PicVilo AI?');
+    expect(markup).toContain('What is jevailab?');
     expect(markup).toContain('Create an AI image in three steps');
     expect(markup).toContain('AI video creation');
     expect(markup).toContain('Create video');
     expect(markup).toContain('href="#video"');
     expect(markup).toContain('<summary');
     expect(markup).toContain('data-template-id="image-template-1015"');
+    expect(markup).toContain('Summer Sky Editorial Portrait');
+    expect(markup).not.toContain('The latest image creation template.');
   });
 });
+

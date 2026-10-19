@@ -3,21 +3,21 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getNavbarLinks } from '@/config/navbar-config';
 import {
-  getPicviloHomepageContent,
-  PICVILO_ANCHORS,
+  getJevailabHomepageContent,
+  JEVAILAB_ANCHORS,
   PUBLISHED_IMAGE_TEMPLATE_IDS,
-} from '@/content/picvilo-homepage';
+} from '@/content/jevailab-homepage';
 
-describe('PicVilo homepage content', () => {
+describe('Jevailab homepage content', () => {
   it.each([
     'zh',
     'en',
   ] as const)('defines complete, crawler-readable %s homepage content', (locale) => {
-    const content = getPicviloHomepageContent(locale);
+    const content = getJevailabHomepageContent(locale);
 
     expect(content.hero.h1.trim()).not.toHaveLength(0);
     expect(content.faq).toHaveLength(12);
-    expect(Object.values(PICVILO_ANCHORS)).toEqual([
+    expect(Object.values(JEVAILAB_ANCHORS)).toEqual([
       '#create',
       '#gallery',
       '#about',
@@ -32,23 +32,23 @@ describe('PicVilo homepage content', () => {
     ]);
     expect(content.sections).toEqual(
       expect.arrayContaining([
-        PICVILO_ANCHORS.create,
-        PICVILO_ANCHORS.gallery,
-        PICVILO_ANCHORS.about,
-        PICVILO_ANCHORS.features,
-        PICVILO_ANCHORS.howItWorks,
-        PICVILO_ANCHORS.useCases,
-        PICVILO_ANCHORS.photoTips,
-        PICVILO_ANCHORS.tools,
-        PICVILO_ANCHORS.pricing,
-        PICVILO_ANCHORS.faq,
-        PICVILO_ANCHORS.startNow,
+        JEVAILAB_ANCHORS.create,
+        JEVAILAB_ANCHORS.gallery,
+        JEVAILAB_ANCHORS.about,
+        JEVAILAB_ANCHORS.features,
+        JEVAILAB_ANCHORS.howItWorks,
+        JEVAILAB_ANCHORS.useCases,
+        JEVAILAB_ANCHORS.photoTips,
+        JEVAILAB_ANCHORS.tools,
+        JEVAILAB_ANCHORS.pricing,
+        JEVAILAB_ANCHORS.faq,
+        JEVAILAB_ANCHORS.startNow,
       ])
     );
   });
 
   it('exposes the video creation entry as an active destination', () => {
-    const videoFeatures = getPicviloHomepageContent('en').features.filter(
+    const videoFeatures = getJevailabHomepageContent('en').features.filter(
       (feature) => feature.kind === 'video'
     );
 
@@ -58,9 +58,17 @@ describe('PicVilo homepage content', () => {
   });
 
   it('maps each gallery example to a published public image template', () => {
-    for (const example of getPicviloHomepageContent('zh').galleryExamples) {
+    for (const example of getJevailabHomepageContent('zh').galleryExamples) {
       expect(PUBLISHED_IMAGE_TEMPLATE_IDS).toContain(example.templateId);
       expect(example.isTemplateExample).toBe(true);
+      expect(example.title).not.toMatch(/图片模板 \d{4}/);
+    }
+
+    for (const example of getJevailabHomepageContent('en').galleryExamples) {
+      expect(example.title).not.toMatch(/Image template \d{4}/);
+      expect(example.description).not.toContain(
+        'The latest image creation template.'
+      );
     }
   });
 
@@ -79,7 +87,7 @@ describe('PicVilo homepage content', () => {
     const hrefs = items.flatMap((item) => (item.href ? [item.href] : []));
 
     for (const messages of [zhMessages, enMessages]) {
-      expect(messages.site_name).toContain('PicVilo AI');
+      expect(messages.site_name).toContain('jevailab');
       expect(messages.site_title).toMatch(/AI|视频|Video/);
       expect(messages.site_description.toLowerCase()).toContain('ai');
       expect(messages.site_description).toMatch(/video|视频/i);
@@ -94,3 +102,4 @@ describe('PicVilo homepage content', () => {
     );
   });
 });
+

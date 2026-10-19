@@ -1,5 +1,6 @@
 import { getKieImageGenerationStatus } from '@/api/ai';
 import {
+  deleteImageCreatorReference,
   getImageCreatorPolicy,
   getImageCreatorTemplates,
   quoteImageCreatorDraft,
@@ -13,31 +14,35 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  buildImageCreatorAuthHref,
+  buildImageCreatorCallbackUrl,
   canSubmitImageCreatorDraft,
   getLocalizedImageTemplate,
-  PICVILO_TEMPLATE_SELECTION_EVENT,
+  JEVAILAB_TEMPLATE_SELECTION_EVENT,
   resolveExternalTemplateSelection,
+  validateImageCreatorReferenceFile,
 } from '@/lib/image-creator/ui-state';
+import {
+  clearImageCreatorReference,
+  loadImageCreatorDraft,
+  loadImageCreatorReference,
+  saveImageCreatorDraft,
+  saveImageCreatorReference,
+} from '@/lib/image-creator/draft-storage';
 import { getLocale } from '@/lib/locale';
 import type {
   ImageCreatorMode,
   ImageCreatorRatio,
   PublicImageTemplate,
 } from '@/lib/image-creator/types';
-import { Routes } from '@/lib/routes';
+import { getPathWithLocale } from '@/lib/urls';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import {
   IconArrowRight,
+  IconAlertCircle,
   IconCheck,
   IconDownload,
   IconLoader2,
@@ -46,6 +51,7 @@ import {
   IconSearch,
   IconSparkles,
   IconWand,
+  IconX,
 } from '@tabler/icons-react';
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -78,21 +84,14 @@ function localizedCategory(category: string, locale: CreatorLocale) {
   );
 }
 
-const ratios: ImageCreatorRatio[] = [
-  'AUTO',
-  '9:16',
-  '2:3',
-  '3:4',
-  '1:1',
-  '4:3',
-  '3:2',
-  '16:9',
-  '21:9',
-];
+const ratios: Array<
+  Extract<ImageCreatorRatio, '3:4' | '9:16' | '1:1' | '4:3' | '16:9'>
+> = ['3:4', '9:16', '1:1', '4:3', '16:9'];
 
 export default function AiImageCreatorSection() {
   const locale: CreatorLocale = getLocale() === 'zh' ? 'zh' : 'en';
   const { data: session } = authClient.useSession();
+  const signedIn = Boolean(session?.user);
   const [templates, setTemplates] = useState<PublicImageTemplate[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [policyVersion, setPolicyVersion] = useState('2026-10-16');
@@ -105,14 +104,30 @@ export default function AiImageCreatorSection() {
   const [mode, setMode] = useState<ImageCreatorMode>('1K_SD');
   const [ratio, setRatio] = useState<ImageCreatorRatio>('3:4');
   const [count, setCount] = useState(1);
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [referenceName, setReferenceName] = useState<string>();
+  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string>();
   const [referenceAssetId, setReferenceAssetId] = useState<string | null>(null);
+  const referenceObjectUrlsRef = useRef<Set<string>>(new Set());
   const [isUploadingReference, setIsUploadingReference] = useState(false);
+  const [isRemovingReference, setIsRemovingReference] = useState(false);
+  const [referenceUploadProgress, setReferenceUploadProgress] = useState(0);
+  const [referenceUploadError, setReferenceUploadError] = useState<string>();
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [quote, setQuote] = useState<Quote>();
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ticket, setTicket] = useState<string>();
+  const [pendingGenerate, setPendingGenerate] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [referenceHydrated, setReferenceHydrated] = useState(false);
+  const uploadReferencePromiseRef = useRef<Promise<string | null> | null>(null);
+  const uploadedReferenceRef = useRef<{
+    file: File;
+    assetId: string;
+  } | null>(null);
+  const pendingGenerateRef = useRef(false);
+  const resumeStartedRef = useRef(false);
   const creatorFormRef = useRef<HTMLElement>(null);
   const [creatorFormHeight, setCreatorFormHeight] = useState<number>();
 
@@ -121,7 +136,7 @@ export default function AiImageCreatorSection() {
     if (!element) return;
 
     const syncHeight = () => {
-      if (window.matchMedia('(min-width: 1280px)').matches) {
+      if (window.matchMedia('(min-width: 1024px)').matches) {
         const submitControl = element.querySelector(
           '[data-image-creator-submit]'
         );
@@ -152,6 +167,28 @@ export default function AiImageCreatorSection() {
   const [tasks, setTasks] = useState<GenerationTask[]>([]);
   const [error, setError] = useState<string>();
 
+  function createReferencePreviewUrl(file: File) {
+    const previewUrl = URL.createObjectURL(file);
+    referenceObjectUrlsRef.current.add(previewUrl);
+    return previewUrl;
+  }
+
+  function releaseReferencePreviewUrl(previewUrl?: string) {
+    if (!previewUrl || !referenceObjectUrlsRef.current.has(previewUrl)) return;
+    URL.revokeObjectURL(previewUrl);
+    referenceObjectUrlsRef.current.delete(previewUrl);
+  }
+
+  useEffect(
+    () => () => {
+      for (const previewUrl of referenceObjectUrlsRef.current) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      referenceObjectUrlsRef.current.clear();
+    },
+    []
+  );
+
   useEffect(() => {
     void getImageCreatorTemplates().then((result) => {
       setTemplates(result.items);
@@ -161,6 +198,69 @@ export default function AiImageCreatorSection() {
       setPolicyVersion(result.version);
     });
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const storedDraft = loadImageCreatorDraft();
+    if (storedDraft) {
+      setTemplateId(storedDraft.templateId);
+      setPrompt(storedDraft.prompt);
+      setMode(storedDraft.mode);
+      setRatio(storedDraft.ratio);
+      setCount(storedDraft.count);
+      setConsentAccepted(storedDraft.consentAccepted);
+      setQuery(storedDraft.query);
+      setCategory(storedDraft.category);
+      setPendingGenerate(storedDraft.pendingGenerate);
+      pendingGenerateRef.current = storedDraft.pendingGenerate;
+    }
+
+    void loadImageCreatorReference()
+      .then((file) => {
+        if (cancelled || !file) return;
+        setReferenceFile(file);
+        setReferenceName(file.name);
+        setReferencePreviewUrl(createReferencePreviewUrl(file));
+      })
+      .catch(() => {
+        // A missing or blocked local image must not prevent editing.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDraftHydrated(true);
+          setReferenceHydrated(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    saveImageCreatorDraft({
+      templateId,
+      prompt,
+      mode,
+      ratio,
+      count,
+      consentAccepted,
+      query,
+      category,
+      pendingGenerate: pendingGenerateRef.current,
+    });
+  }, [
+    category,
+    consentAccepted,
+    count,
+    draftHydrated,
+    mode,
+    prompt,
+    query,
+    ratio,
+    templateId,
+  ]);
 
   const selectedTemplate = templates.find(
     (template) => template.id === templateId
@@ -193,7 +293,6 @@ export default function AiImageCreatorSection() {
     if (
       !session?.user ||
       !canSubmitImageCreatorDraft({
-        isSignedIn: true,
         isSubmitting: false,
         consentAccepted: true,
         templateId,
@@ -248,8 +347,7 @@ export default function AiImageCreatorSection() {
     (tasks.length === 0 ||
       tasks.some((task) => task.state !== 'success' && task.state !== 'fail'));
   const canSubmit = canSubmitImageCreatorDraft({
-    isSignedIn: Boolean(session?.user),
-    isSubmitting: isSubmitting || isGenerating || isUploadingReference,
+    isSubmitting: isSubmitting || isGenerating,
     consentAccepted,
     templateId,
     prompt,
@@ -262,11 +360,21 @@ export default function AiImageCreatorSection() {
     setTemplateId(template?.id ?? null);
     if (template) {
       setMode(template.defaultMode);
-      setRatio(template.defaultRatio);
+      setRatio(
+        ratios.includes(template.defaultRatio as (typeof ratios)[number])
+          ? template.defaultRatio
+          : '3:4'
+      );
       setCount(template.defaultCount);
       if (template.inputPolicy === 'forbidden' && !preserveReference) {
+        setReferenceFile(null);
         setReferenceName(undefined);
         setReferenceAssetId(null);
+        releaseReferencePreviewUrl(referencePreviewUrl);
+        setReferencePreviewUrl(undefined);
+        setReferenceUploadProgress(0);
+        setReferenceUploadError(undefined);
+        void clearImageCreatorReference();
       }
     }
     setQuote(undefined);
@@ -295,27 +403,158 @@ export default function AiImageCreatorSection() {
     }
 
     window.addEventListener(
-      PICVILO_TEMPLATE_SELECTION_EVENT,
+      JEVAILAB_TEMPLATE_SELECTION_EVENT,
       selectExternalTemplate
     );
     return () =>
       window.removeEventListener(
-        PICVILO_TEMPLATE_SELECTION_EVENT,
+        JEVAILAB_TEMPLATE_SELECTION_EVENT,
         selectExternalTemplate
       );
   }, [templateId, templates]);
 
-  async function startGeneration() {
+  async function uploadReference(
+    file: File,
+    previousAssetId: string | null = null
+  ): Promise<string | null> {
+    if (!signedIn) return null;
+    if (uploadReferencePromiseRef.current) {
+      return uploadReferencePromiseRef.current;
+    }
+
+    setReferenceUploadError(undefined);
+    uploadedReferenceRef.current = null;
+    setIsUploadingReference(true);
+    setReferenceUploadProgress(8);
+    const progressTimer = window.setInterval(() => {
+      setReferenceUploadProgress((current) =>
+        Math.min(92, current + Math.max(1, Math.round((92 - current) / 5)))
+      );
+    }, 180);
+
+    const uploadTask = (async () => {
+      try {
+        const form = new FormData();
+        form.set('file', file);
+        const result = await uploadImageCreatorReference({ data: form });
+        setReferenceName(result.fileName);
+        setReferenceAssetId(result.assetId);
+        uploadedReferenceRef.current = { file, assetId: result.assetId };
+        setReferenceUploadProgress(100);
+        setReferenceUploadError(undefined);
+        if (previousAssetId && previousAssetId !== result.assetId) {
+          await deleteImageCreatorReference({
+            data: { assetId: previousAssetId },
+          }).catch(() => undefined);
+        }
+        return result.assetId;
+      } catch (uploadError) {
+        setReferenceUploadProgress(0);
+        const uploadMessage =
+          uploadError instanceof Error ? uploadError.message : '';
+        setReferenceUploadError(
+          /unauthorized|email not verified/i.test(uploadMessage)
+            ? copy(
+                locale,
+                '登录状态已失效，请重新登录后再生成。',
+                'Your session expired. Sign in again before generating.'
+              )
+            : uploadMessage ||
+                copy(
+                  locale,
+                  '参考图上传失败，请稍后重试。',
+                  'Reference image upload failed. Please try again later.'
+                )
+        );
+        return null;
+      } finally {
+        window.clearInterval(progressTimer);
+        setIsUploadingReference(false);
+      }
+    })();
+    uploadReferencePromiseRef.current = uploadTask;
+    try {
+      return await uploadTask;
+    } finally {
+      uploadReferencePromiseRef.current = null;
+    }
+  }
+
+  async function startGeneration(
+    referenceAssetIdOverride: string | null = referenceAssetId,
+    resume = false
+  ) {
     setError(undefined);
     setTasks([]);
     setTicket(undefined);
     setIsSubmitting(true);
     try {
+      let generationReferenceAssetId = referenceAssetIdOverride;
+      if (
+        referenceFile &&
+        uploadedReferenceRef.current?.file === referenceFile &&
+        (!generationReferenceAssetId ||
+          generationReferenceAssetId === referenceAssetId)
+      ) {
+        generationReferenceAssetId = uploadedReferenceRef.current.assetId;
+      }
+      if (referenceFile && !generationReferenceAssetId) {
+        generationReferenceAssetId = await uploadReference(referenceFile);
+        if (!generationReferenceAssetId) {
+          pendingGenerateRef.current = false;
+          setPendingGenerate(false);
+          saveImageCreatorDraft({
+            templateId,
+            prompt,
+            mode,
+            ratio,
+            count,
+            consentAccepted,
+            query,
+            category,
+            pendingGenerate: false,
+          });
+          return;
+        }
+      }
       const result = await startImageCreatorGeneration({
-        data: { ...draft, consentAccepted: true, policyVersion },
+        data: {
+          ...draft,
+          referenceAssetId: generationReferenceAssetId,
+          consentAccepted: true,
+          policyVersion,
+        },
+      });
+      pendingGenerateRef.current = false;
+      setPendingGenerate(false);
+      saveImageCreatorDraft({
+        templateId,
+        prompt,
+        mode,
+        ratio,
+        count,
+        consentAccepted,
+        query,
+        category,
+        pendingGenerate: false,
       });
       setTicket(result.ticket);
     } catch (startError) {
+      if (resume) {
+        pendingGenerateRef.current = false;
+        setPendingGenerate(false);
+        saveImageCreatorDraft({
+          templateId,
+          prompt,
+          mode,
+          ratio,
+          count,
+          consentAccepted,
+          query,
+          category,
+          pendingGenerate: false,
+        });
+      }
       setError(
         startError instanceof Error
           ? startError.message
@@ -325,6 +564,83 @@ export default function AiImageCreatorSection() {
       setIsSubmitting(false);
     }
   }
+
+  async function handleGenerate() {
+    if (!canSubmit) return;
+    if (!signedIn) {
+      pendingGenerateRef.current = true;
+      setPendingGenerate(true);
+      saveImageCreatorDraft({
+        templateId,
+        prompt,
+        mode,
+        ratio,
+        count,
+        consentAccepted,
+        query,
+        category,
+        pendingGenerate: true,
+      });
+      if (referenceFile) {
+        await saveImageCreatorReference(referenceFile).catch(() => undefined);
+      }
+      const callbackUrl = buildImageCreatorCallbackUrl({
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+      });
+      window.location.assign(
+        buildImageCreatorAuthHref({
+          loginPath: getPathWithLocale('/auth/login'),
+          callbackUrl,
+        })
+      );
+      return;
+    }
+
+    let assetId = referenceAssetId;
+    if (referenceFile && !assetId) {
+      assetId = await uploadReference(referenceFile);
+      if (!assetId) return;
+    }
+    await startGeneration(assetId);
+  }
+
+  useEffect(() => {
+    if (
+      !signedIn ||
+      !draftHydrated ||
+      !referenceHydrated ||
+      !pendingGenerate ||
+      resumeStartedRef.current
+    ) {
+      return;
+    }
+    resumeStartedRef.current = true;
+    void (async () => {
+      let assetId = referenceAssetId;
+      if (referenceFile && !assetId) {
+        assetId = await uploadReference(referenceFile);
+        if (!assetId) {
+          pendingGenerateRef.current = false;
+          setPendingGenerate(false);
+          saveImageCreatorDraft({
+            templateId,
+            prompt,
+            mode,
+            ratio,
+            count,
+            consentAccepted,
+            query,
+            category,
+            pendingGenerate: false,
+          });
+          return;
+        }
+      }
+      await startGeneration(assetId, true);
+    })();
+  }, [draftHydrated, pendingGenerate, referenceHydrated, signedIn]);
 
   return (
     <section id="create" className="scroll-mt-16 py-10 sm:py-14">
@@ -349,7 +665,7 @@ export default function AiImageCreatorSection() {
           </div>
         </div>
 
-        <CardContent className="grid gap-0 p-0 xl:items-stretch xl:grid-cols-[minmax(13.5rem,.72fr)_minmax(0,1.35fr)_minmax(18rem,.82fr)]">
+        <CardContent className="grid gap-0 p-0 lg:items-stretch lg:grid-cols-[minmax(13.5rem,.72fr)_minmax(0,1.35fr)_minmax(18rem,.82fr)]">
           <TemplateBrowser
             templates={filteredTemplates}
             categories={categories}
@@ -366,10 +682,12 @@ export default function AiImageCreatorSection() {
             formRef={creatorFormRef}
             selectedTemplate={selectedTemplate}
             prompt={prompt}
-            mode={mode}
             ratio={ratio}
             count={count}
             referenceName={referenceName}
+            referencePreviewUrl={referencePreviewUrl}
+            referenceUploadProgress={referenceUploadProgress}
+            referenceUploadError={referenceUploadError}
             quote={quote}
             isQuoteLoading={isQuoteLoading}
             consentAccepted={consentAccepted}
@@ -377,40 +695,94 @@ export default function AiImageCreatorSection() {
             canSubmit={canSubmit}
             isSubmitting={isSubmitting || isGenerating}
             isUploadingReference={isUploadingReference}
-            signedIn={Boolean(session?.user)}
+            isRemovingReference={isRemovingReference}
             onPromptChange={setPrompt}
-            onModeChange={setMode}
             onRatioChange={setRatio}
-            onCountChange={setCount}
-            onReferenceChange={async (file) => {
+            onReferenceChange={(file) => {
               setError(undefined);
-              setIsUploadingReference(true);
-              try {
-                const form = new FormData();
-                form.set('file', file);
-                const result = await uploadImageCreatorReference({
-                  data: form,
-                });
-                setReferenceName(result.fileName);
-                setReferenceAssetId(result.assetId);
-              } catch (uploadError) {
-                setReferenceName(undefined);
-                setReferenceAssetId(null);
-                setError(
-                  uploadError instanceof Error
-                    ? uploadError.message
+              setReferenceUploadError(undefined);
+              const validation = validateImageCreatorReferenceFile(file);
+              if (validation) {
+                setReferenceUploadError(
+                  validation === 'type'
+                    ? copy(
+                        locale,
+                        '请选择 JPG、PNG 或 WEBP 图片。',
+                        'Choose a JPG, PNG, or WEBP image.'
+                      )
                     : copy(
                         locale,
-                        '参考图上传失败，请稍后重试。',
-                        'Reference image upload failed. Please try again later.'
+                        '图片不能超过 10MB。',
+                        'The image must be 10MB or smaller.'
+                      )
+                );
+                return;
+              }
+              const previousAssetId = referenceAssetId;
+              const previousPreviewUrl = referencePreviewUrl;
+              const localPreviewUrl = createReferencePreviewUrl(file);
+              setReferenceFile(file);
+              setReferenceName(file.name);
+              setReferencePreviewUrl(localPreviewUrl);
+              setReferenceAssetId(null);
+              setReferenceUploadProgress(0);
+              if (previousPreviewUrl !== localPreviewUrl) {
+                releaseReferencePreviewUrl(previousPreviewUrl);
+              }
+              uploadedReferenceRef.current = null;
+              void saveImageCreatorReference(file).catch(() => {
+                setReferenceUploadError(
+                  copy(
+                    locale,
+                    '图片无法保存在浏览器中，登录后需要重新选择。',
+                    'This image could not be saved locally. Please select it again after signing in.'
+                  )
+                );
+              });
+              if (signedIn) {
+                void uploadReference(file, previousAssetId);
+              }
+            }}
+            onRemoveReference={async () => {
+              setReferenceFile(null);
+              uploadedReferenceRef.current = null;
+              void clearImageCreatorReference();
+              if (!referenceAssetId) {
+                releaseReferencePreviewUrl(referencePreviewUrl);
+                setReferenceName(undefined);
+                setReferencePreviewUrl(undefined);
+                setReferenceUploadProgress(0);
+                setReferenceUploadError(undefined);
+                setError(undefined);
+                return;
+              }
+              setError(undefined);
+              setIsRemovingReference(true);
+              try {
+                await deleteImageCreatorReference({
+                  data: { assetId: referenceAssetId },
+                });
+                setReferenceName(undefined);
+                setReferenceAssetId(null);
+                setReferencePreviewUrl(undefined);
+                setReferenceUploadProgress(0);
+                setReferenceUploadError(undefined);
+              } catch (removeError) {
+                setError(
+                  removeError instanceof Error
+                    ? removeError.message
+                    : copy(
+                        locale,
+                        '参考图删除失败，请稍后重试。',
+                        'Reference image could not be deleted. Please try again.'
                       )
                 );
               } finally {
-                setIsUploadingReference(false);
+                setIsRemovingReference(false);
               }
             }}
             onConsentChange={setConsentAccepted}
-            onGenerate={startGeneration}
+            onGenerate={handleGenerate}
             locale={locale}
           />
           <GenerationPreview
@@ -451,7 +823,7 @@ function TemplateBrowser({
   return (
     <aside
       style={contentHeight ? { height: `${contentHeight}px` } : undefined}
-      className="flex min-h-0 flex-col self-start border-b p-5 xl:border-r xl:border-b-0 sm:p-6"
+      className="flex min-h-0 flex-col self-start border-b p-5 lg:border-r lg:border-b-0 sm:p-6"
     >
       <div className="mb-4 flex items-center justify-between">
         <div>
@@ -498,7 +870,7 @@ function TemplateBrowser({
           </Button>
         ))}
       </div>
-      <div className="grid min-h-[31rem] flex-1 grid-cols-2 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-2">
+      <div className="grid min-h-[31rem] flex-1 grid-cols-2 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-2">
         <button
           type="button"
           onClick={() => onChoose(null)}
@@ -560,10 +932,12 @@ function CreatorForm({
   formRef,
   selectedTemplate,
   prompt,
-  mode,
   ratio,
   count,
   referenceName,
+  referencePreviewUrl,
+  referenceUploadProgress,
+  referenceUploadError,
   quote,
   isQuoteLoading,
   consentAccepted,
@@ -571,12 +945,11 @@ function CreatorForm({
   canSubmit,
   isSubmitting,
   isUploadingReference,
-  signedIn,
+  isRemovingReference,
   onPromptChange,
-  onModeChange,
   onRatioChange,
-  onCountChange,
   onReferenceChange,
+  onRemoveReference,
   onConsentChange,
   onGenerate,
   locale,
@@ -584,10 +957,12 @@ function CreatorForm({
   formRef: RefObject<HTMLElement | null>;
   selectedTemplate?: PublicImageTemplate;
   prompt: string;
-  mode: ImageCreatorMode;
   ratio: ImageCreatorRatio;
   count: number;
   referenceName?: string;
+  referencePreviewUrl?: string;
+  referenceUploadProgress: number;
+  referenceUploadError?: string;
   quote?: Quote;
   isQuoteLoading: boolean;
   consentAccepted: boolean;
@@ -595,12 +970,11 @@ function CreatorForm({
   canSubmit: boolean;
   isSubmitting: boolean;
   isUploadingReference: boolean;
-  signedIn: boolean;
+  isRemovingReference: boolean;
   onPromptChange: (value: string) => void;
-  onModeChange: (value: ImageCreatorMode) => void;
   onRatioChange: (value: ImageCreatorRatio) => void;
-  onCountChange: (value: number) => void;
   onReferenceChange: (file: File) => void;
+  onRemoveReference: () => void;
   onConsentChange: (value: boolean) => void;
   onGenerate: () => void;
   locale: CreatorLocale;
@@ -609,22 +983,18 @@ function CreatorForm({
     ? getLocalizedImageTemplate(selectedTemplate, locale)
     : undefined;
   const referenceForbidden = selectedTemplate?.inputPolicy === 'forbidden';
-  const referenceHint = referenceForbidden
-    ? copy(
-        locale,
-        '该模板不使用参考图。',
-        'This template does not use a reference image.'
-      )
-    : copy(
-        locale,
-        '参考图会先进入私有审核流程；图生图生成适配器接入前不会把它伪装为已生效。',
-        'Reference images enter a private review flow before use by the image-to-image adapter.'
-      );
+  const referenceHint = copy(
+    locale,
+    '该模板不使用参考图。',
+    'This template does not use a reference image.'
+  );
+  const referenceBusy = isUploadingReference || isRemovingReference;
 
   return (
     <main
       ref={formRef}
-      className="border-b p-5 xl:border-r xl:border-b-0 sm:p-7"
+      data-testid="image-creator-form"
+      className="border-b p-5 lg:border-r lg:border-b-0 sm:p-7"
     >
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
@@ -702,39 +1072,127 @@ function CreatorForm({
             htmlFor="creator-reference"
             className={cn(
               'flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed bg-muted/15 px-4 text-center transition-colors',
-              referenceForbidden
+              referenceForbidden || referenceBusy
                 ? 'cursor-not-allowed opacity-50'
-                : 'cursor-pointer hover:border-primary/60'
+                : 'cursor-pointer hover:border-primary/60',
+              referencePreviewUrl && 'items-stretch p-2'
             )}
+            aria-busy={isUploadingReference}
           >
-            <IconPhoto className="mb-2 size-5 text-primary" />
-            <span className="text-sm font-medium">
-              {isUploadingReference
-                ? copy(
-                    locale,
-                    '正在上传并审核参考图…',
-                    'Uploading and reviewing your reference…'
-                  )
-                : (referenceName ??
-                  copy(
-                    locale,
-                    '选择一张图片作为参考',
-                    'Choose an image as reference'
-                  ))}
-            </span>
-            <span className="mt-1 text-xs text-muted-foreground">
-              {referenceHint}
-            </span>
+            {referencePreviewUrl ? (
+              <div className="relative overflow-hidden rounded-lg border bg-background">
+                <img
+                  src={referencePreviewUrl}
+                  alt={
+                    referenceName ??
+                    copy(locale, '参考图片预览', 'Reference image preview')
+                  }
+                  className="mx-auto max-h-56 w-full object-contain"
+                />
+                <div className="absolute inset-x-2 bottom-2 rounded-md bg-background/90 px-3 py-2 text-left text-xs shadow-sm backdrop-blur-sm">
+                  <p className="truncate font-medium">{referenceName}</p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    {copy(
+                      locale,
+                      '点击图片替换参考图',
+                      'Click the image to replace it'
+                    )}
+                  </p>
+                </div>
+                {isUploadingReference && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/75 px-4 text-center backdrop-blur-[1px]">
+                    <IconLoader2 className="size-7 animate-spin text-primary" />
+                    <p className="text-sm font-semibold">
+                      {copy(
+                        locale,
+                        '图片正在上传中…',
+                        'Your image is uploading…'
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {referenceUploadProgress}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <IconPhoto className="mb-2 size-5 text-primary" />
+                <span className="text-sm font-medium">
+                  {isUploadingReference
+                    ? copy(
+                        locale,
+                        '正在上传参考图…',
+                        'Uploading your reference…'
+                      )
+                    : copy(
+                        locale,
+                        '选择一张图片作为参考',
+                        'Choose an image as reference'
+                      )}
+                </span>
+                {referenceForbidden && (
+                  <span className="mt-1 text-xs text-muted-foreground">
+                    {referenceHint}
+                  </span>
+                )}
+              </>
+            )}
+            {isUploadingReference && (
+              <div className="mt-3 w-full max-w-sm text-left">
+                <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{copy(locale, '上传进度', 'Upload progress')}</span>
+                  <span>{referenceUploadProgress}%</span>
+                </div>
+                <Progress
+                  value={referenceUploadProgress}
+                  aria-label={copy(locale, '上传进度', 'Upload progress')}
+                />
+              </div>
+            )}
           </label>
+          {referenceUploadError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
+              <span>{referenceUploadError}</span>
+            </div>
+          )}
+          {referencePreviewUrl && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-xs text-muted-foreground">
+                {referenceName}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 text-destructive hover:text-destructive"
+                disabled={referenceBusy}
+                onClick={onRemoveReference}
+              >
+                <IconX className="size-4" />
+                {isRemovingReference
+                  ? copy(locale, '删除中…', 'Deleting…')
+                  : copy(locale, '删除图片', 'Delete image')}
+              </Button>
+            </div>
+          )}
           <Input
             id="creator-reference"
+            data-testid="image-creator-reference"
             className="sr-only"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            disabled={isUploadingReference || referenceForbidden}
+            disabled={referenceBusy || referenceForbidden}
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) onReferenceChange(file);
+              if (file) {
+                onReferenceChange(file);
+                event.target.value = '';
+              }
             }}
           />
         </div>
@@ -779,40 +1237,28 @@ function CreatorForm({
               )}
             </p>
           </div>
-          <div className="grid gap-4 p-4 sm:grid-cols-2">
-            <CreatorSelect
-              label={copy(locale, '清晰度', 'Quality')}
-              value={mode}
-              onValueChange={(value) => onModeChange(value as ImageCreatorMode)}
-              items={[
-                { value: '1K_SD', label: '1K SD' },
-                { value: '2K_HD', label: '2K HD' },
-              ]}
-            />
-            <CreatorSelect
-              label={copy(locale, '图片比例', 'Image ratio')}
-              value={ratio}
-              onValueChange={(value) =>
-                onRatioChange(value as ImageCreatorRatio)
-              }
-              items={ratios.map((value) => ({
-                value,
-                label: value === 'AUTO' ? 'Auto' : value,
-              }))}
-            />
-            <CreatorSelect
-              label={copy(locale, '生成数量', 'Number of images')}
-              value={String(count)}
-              onValueChange={(value) => onCountChange(Number(value))}
-              items={Array.from({ length: 9 }, (_, index) => ({
-                value: String(index + 1),
-                label: copy(
-                  locale,
-                  `${index + 1} 张`,
-                  `${index + 1} image${index === 0 ? '' : 's'}`
-                ),
-              }))}
-            />
+          <div className="p-4">
+            <div className="space-y-2">
+              <Label>{copy(locale, '图片比例', 'Image ratio')}</Label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {ratios.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={ratio === value}
+                    onClick={() => onRatioChange(value)}
+                    className={cn(
+                      'rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                      ratio === value
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-background hover:border-primary/60 hover:bg-muted/50'
+                    )}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
@@ -820,13 +1266,6 @@ function CreatorForm({
             <div>
               <p className="font-semibold">
                 {copy(locale, '图片积分消耗', 'Image credit cost')}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {copy(
-                  locale,
-                  '服务器报价有效期 5 分钟，提交时会再次校验。',
-                  'Quotes are valid for 5 minutes and checked again when submitted.'
-                )}
               </p>
             </div>
             {isQuoteLoading ? (
@@ -890,41 +1329,31 @@ function CreatorForm({
             {error}
           </p>
         )}
-        {signedIn ? (
-          <Button
-            type="button"
-            size="lg"
-            data-image-creator-submit
-            className="w-full"
-            onClick={onGenerate}
-            disabled={!canSubmit}
-          >
-            {isSubmitting ? (
-              <>
-                <IconLoader2 className="size-4 animate-spin" />
-                {copy(locale, '正在生成', 'Generating')}
-              </>
-            ) : (
-              <>
-                <IconWand className="size-4" />
-                {copy(
-                  locale,
-                  `生成图片${quote ? `（${quote.totalCredits} 积分）` : ''}`,
-                  `Generate image${quote ? ` (${quote.totalCredits} credits)` : ''}`
-                )}
-              </>
-            )}
-          </Button>
-        ) : (
-          <Link
-            to={Routes.Login}
-            data-image-creator-submit
-            className={cn(buttonVariants({ size: 'lg' }), 'w-full')}
-          >
-            <IconSparkles className="size-4" />
-            {copy(locale, '登录后开始创作', 'Sign in to start creating')}
-          </Link>
-        )}
+        <Button
+          type="button"
+          size="lg"
+          data-image-creator-submit
+          data-testid="image-creator-submit"
+          className="w-full"
+          onClick={onGenerate}
+          disabled={!canSubmit}
+        >
+          {isSubmitting ? (
+            <>
+              <IconLoader2 className="size-4 animate-spin" />
+              {copy(locale, '正在生成', 'Generating')}
+            </>
+          ) : (
+            <>
+              <IconWand className="size-4" />
+              {copy(
+                locale,
+                `生成图片${quote ? `（${quote.totalCredits} 积分）` : ''}`,
+                `Generate image${quote ? ` (${quote.totalCredits} credits)` : ''}`
+              )}
+            </>
+          )}
+        </Button>
       </div>
     </main>
   );
@@ -1030,41 +1459,5 @@ function GenerationPreview({
         </p>
       </div>
     </aside>
-  );
-}
-
-function CreatorSelect({
-  label,
-  value,
-  onValueChange,
-  items,
-}: {
-  label: string;
-  value: string;
-  onValueChange: (value: string) => void;
-  items: Array<{ value: string; label: string }>;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Select
-        items={items}
-        value={value}
-        onValueChange={(next) => {
-          if (next) onValueChange(next);
-        }}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value} label={item.label}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
   );
 }

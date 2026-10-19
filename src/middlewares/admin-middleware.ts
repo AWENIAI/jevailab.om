@@ -35,7 +35,7 @@ export const adminRouteMiddleware = createMiddleware().server(
     const session = await auth.api.getSession({ headers });
 
     if (!session?.user) {
-      throw redirect({ to: Routes.Login });
+      throw redirect({ to: Routes.Login, search: {} });
     }
 
     const role = session.user.role;

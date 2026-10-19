@@ -4,11 +4,12 @@ import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
 import { IconChevronRight, IconDots } from "@tabler/icons-react"
+import { m } from "@/locale/paraglide/messages"
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
-      aria-label="breadcrumb"
+      aria-label={m.common_breadcrumb()}
       data-slot="breadcrumb"
       className={cn(className)}
       {...props}
@@ -109,7 +110,7 @@ function BreadcrumbEllipsis({
     >
       <IconDots
       />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{m.common_more()}</span>
     </span>
   )
 }

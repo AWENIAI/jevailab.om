@@ -1,5 +1,6 @@
 import { websiteConfig } from '@/config/website';
 import { cn } from '@/lib/utils';
+import { m } from '@/locale/paraglide/messages';
 
 export function Logo({ className }: { className?: string }) {
   const name = websiteConfig.metadata?.name ?? 'App';
@@ -10,7 +11,7 @@ export function Logo({ className }: { className?: string }) {
     <>
       <img
         src={logoLight}
-        alt={`${name} logo`}
+        alt={`${name} ${m.common_logo()}`}
         className={cn('size-8 rounded-md dark:hidden', className)}
         width={32}
         height={32}
@@ -18,7 +19,7 @@ export function Logo({ className }: { className?: string }) {
       />
       <img
         src={logoDark}
-        alt={`${name} logo`}
+        alt={`${name} ${m.common_logo()}`}
         className={cn('size-8 rounded-md hidden dark:block', className)}
         width={32}
         height={32}

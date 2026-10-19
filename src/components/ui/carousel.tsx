@@ -8,6 +8,7 @@ import useEmblaCarousel, {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
+import { m } from "@/locale/paraglide/messages"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -196,7 +197,7 @@ function CarouselPrevious({
       {...props}
     >
       <IconChevronLeft />
-      <span className="sr-only">Previous slide</span>
+      <span className="sr-only">{m.common_previous_slide()}</span>
     </Button>
   )
 }
@@ -226,7 +227,7 @@ function CarouselNext({
       {...props}
     >
       <IconChevronRight />
-      <span className="sr-only">Next slide</span>
+      <span className="sr-only">{m.common_next_slide()}</span>
     </Button>
   )
 }

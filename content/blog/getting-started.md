@@ -1,12 +1,12 @@
 ---
 title: Getting Started
-description: Quick guide to set up and run the AWEN template.
+description: Quick guide to set up and run the jevailab template.
 date: 2026-02-12
 category: Guide
 image: /images/blog-get-started.webp
 ---
 
-This post walks you through the basics of running and customizing the AWEN template.
+This post walks you through the basics of running and customizing the jevailab template.
 
 ## Prerequisites
 
@@ -33,3 +33,5 @@ Blog posts live in `content/blog/` as Markdown files. The collection is defined 
 - Toggle the blog and set pagination in `src/config/website.ts` under `blog.enable` and `blog.paginationSize`.
 - Add more posts under `content/blog/`; they will show up on the blog list and in the route `/blog/$slug`.
 - Customize the layout and blocks in `src/components/blocks/` and `src/routes/` as needed.
+
+

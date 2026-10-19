@@ -2,11 +2,11 @@
 
 import { Bulin47VideoCreator } from '@/components/blocks/bulin47-video-creator';
 import HeroSection from '@/components/blocks/hero';
-import { PicviloHomepageSections } from '@/components/blocks/picvilo-homepage-sections';
+import { JevailabHomepageSections } from '@/components/blocks/jevailab-homepage-sections';
 import {
-  getPicviloHomepageContent,
+  getJevailabHomepageContent,
   type PublishedImageTemplateId,
-} from '@/content/picvilo-homepage';
+} from '@/content/jevailab-homepage';
 import {
   getCreatorTabHash,
   getCreatorTabState,
@@ -14,19 +14,20 @@ import {
   type CreatorSurface,
   type VideoCreatorTab,
 } from '@/lib/home-creator-tabs';
-import { PICVILO_TEMPLATE_SELECTION_EVENT } from '@/lib/image-creator/ui-state';
+import { JEVAILAB_TEMPLATE_SELECTION_EVENT } from '@/lib/image-creator/ui-state';
 import { getLocale } from '@/lib/locale';
 import { cn } from '@/lib/utils';
+import { m } from '@/locale/paraglide/messages';
 import { IconMicrophone, IconVideo } from '@tabler/icons-react';
 import { useLocation } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 export function HomePage() {
   const locale = getLocale() === 'zh' ? 'zh' : 'en';
-  const content = getPicviloHomepageContent(locale);
+  const content = getJevailabHomepageContent(locale);
   const location = useLocation();
   const [creatorTab, setCreatorTab] = useState<CreatorTabState>({
-    surface: 'video' as const,
+    surface: 'image' as const,
     videoTab: 'bulin47' as const,
   });
 
@@ -42,6 +43,17 @@ export function HomePage() {
     setCreatorTab(getCreatorTabState(location.hash));
   }, [location.hash]);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('create') !== '1') {
+      return;
+    }
+    requestAnimationFrame(() => {
+      document
+        .getElementById('create')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
+
   function selectCreatorTab(
     surface: CreatorSurface,
     videoTab: VideoCreatorTab = 'bulin47'
@@ -56,7 +68,7 @@ export function HomePage() {
     selectCreatorTab('image');
     requestAnimationFrame(() => {
       window.dispatchEvent(
-        new CustomEvent(PICVILO_TEMPLATE_SELECTION_EVENT, {
+        new CustomEvent(JEVAILAB_TEMPLATE_SELECTION_EVENT, {
           detail: { templateId },
         })
       );
@@ -70,7 +82,7 @@ export function HomePage() {
     <div className="flex flex-col">
       {creatorTab.surface === 'video' && (
         <nav
-          aria-label={locale === 'zh' ? 'AI 视频类型' : 'AI video types'}
+          aria-label={m.common_ai_video_types()}
           className="sticky top-[4.25rem] z-30 border-b border-border/70 bg-background/90 backdrop-blur"
         >
           <div className="mx-auto flex max-w-7xl gap-2 px-4 py-3 sm:px-6 lg:px-8">
@@ -108,7 +120,7 @@ export function HomePage() {
       ) : (
         <>
           <HeroSection />
-          <PicviloHomepageSections
+          <JevailabHomepageSections
             content={content}
             onSelectTemplate={selectTemplate}
           />
