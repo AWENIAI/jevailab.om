@@ -1,7 +1,6 @@
 import { logOperationalEvent } from '@/lib/observability';
 import { websiteConfig } from '@/config/website';
 import { getTemplate } from '../render';
-import { serverEnv } from '@/env/server';
 import type {
   MailProvider,
   SendEmailResult,
@@ -9,30 +8,50 @@ import type {
   SendTemplateParams,
 } from '@/mail/types';
 
+type EmailBinding = {
+  send(message: {
+    to: string | EmailAddress;
+    from: string | EmailAddress;
+    subject: string;
+    html: string;
+    text?: string;
+  }): Promise<{ messageId: string }>;
+};
+
+type EmailAddress = {
+  name: string;
+  email: string;
+};
+
+/**
+ * Parse the configured sender without passing a display-name string straight
+ * to Cloudflare. The Workers API uses a structured `EmailAddress` for names.
+ */
+function parseSender(from: string): string | EmailAddress {
+  const trimmed = from.trim();
+  const match = /^(.*?)\s*<([^<>]+)>$/.exec(trimmed);
+  if (!match) return trimmed;
+
+  const name = match[1].trim();
+  const email = match[2].trim();
+  return name ? { name, email } : email;
+}
+
 /**
  * Cloudflare Email Service provider implementation.
- * Uses the REST API to send emails, compatible with any Node.js environment.
- * https://developers.cloudflare.com/email-service/get-started/send-emails/
- * https://developers.cloudflare.com/email-service/api/send-emails/rest-api/
+ * Uses the native Worker send_email binding, so the Worker never stores an
+ * account-scoped API token.
+ * https://developers.cloudflare.com/email-service/api/send-emails/workers-api/
  */
 export class CloudflareProvider implements MailProvider {
-  private from: string;
-  private accountId: string;
-  private apiToken: string;
-  private endpoint = 'https://api.cloudflare.com/client/v4/accounts';
+  private from: string | EmailAddress;
+  private email: EmailBinding;
 
-  constructor() {
+  constructor(email: EmailBinding) {
     const from = websiteConfig.mail?.fromEmail;
     if (!from) throw new Error('mail.fromEmail is required.');
-    if (!serverEnv.CLOUDFLARE_ACCOUNT_ID) {
-      throw new Error('CLOUDFLARE_ACCOUNT_ID is required.');
-    }
-    if (!serverEnv.CLOUDFLARE_API_TOKEN) {
-      throw new Error('CLOUDFLARE_API_TOKEN is required.');
-    }
-    this.from = from;
-    this.accountId = serverEnv.CLOUDFLARE_ACCOUNT_ID;
-    this.apiToken = serverEnv.CLOUDFLARE_API_TOKEN;
+    this.from = parseSender(from);
+    this.email = email;
   }
 
   getProviderName(): string {
@@ -62,37 +81,14 @@ export class CloudflareProvider implements MailProvider {
       return { success: false, error: 'Missing required fields' };
     }
     try {
-      const url = `${this.endpoint}/${this.accountId}/email/sending/send`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to,
-          from: this.from,
-          subject,
-          html,
-          text,
-        }),
+      const result = await this.email.send({
+        to,
+        from: this.from,
+        subject,
+        html,
+        text,
       });
-      const data = (await response.json()) as {
-        success: boolean;
-        result?: { delivered: string[] };
-        errors?: { code: number; message: string }[];
-      };
-
-      if (!data.success) {
-        const errorMsg =
-          data.errors?.map((e) => `${e.code}: ${e.message}`).join(', ') ||
-          'Unknown error';
-        logOperationalEvent.error('mail.provider_rejected');
-        return { success: false, error: errorMsg };
-      }
-
-      const messageId = data.result?.delivered?.[0];
-      return { success: true, messageId };
+      return { success: true, messageId: result.messageId };
     } catch (error) {
       logOperationalEvent.error('mail.provider_failed');
       return { success: false, error };

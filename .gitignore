@@ -47,6 +47,8 @@ issues/
 .auto-claude-status
 .claude_settings.json
 .worktrees/
+Jevailab-ai-image/
+Jevailab-ai-video/
 .security-key
 logs/security/
 

@@ -74,7 +74,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ai-image",
+      "database_name": "jevailab",
       "database_id": "9bbd9ba6-7fe5-46d8-8d39-57e1ca3202d9",
       "migrations_dir": "./src/db/migrations"
     }
@@ -84,8 +84,14 @@
    */
   "r2_buckets": [
     {
-      "bucket_name": "ai-image",
+      "bucket_name": "jevailab",
       "binding": "BUCKET"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["support@jevailab.com"]
     }
   ],
   /**

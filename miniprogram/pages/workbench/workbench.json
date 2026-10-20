@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "template-card": "/components/template-card/template-card",
+    "reference-upload": "/components/reference-upload/reference-upload",
+    "credit-quote": "/components/credit-quote/credit-quote",
+    "generation-preview": "/components/generation-preview/generation-preview"
+  },
+  "navigationBarTitleText": "创作"
+}

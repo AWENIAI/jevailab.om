@@ -1,0 +1,4 @@
+.empty { text-align: center; padding: 120rpx 0; }
+.empty-emoji { font-size: 80rpx; }
+.empty .muted { font-size: 30rpx; margin-top: 20rpx; }
+.empty .hint { margin-top: 8rpx; }

@@ -6,17 +6,21 @@ import type {
   SendRawEmailParams,
   SendTemplateParams,
 } from './types';
-import { ResendProvider } from './provider/resend';
 import { CloudflareProvider } from './provider/cloudflare';
 import { logOperationalEvent } from '@/lib/observability';
+import { env } from 'cloudflare:workers';
 
 let mailProvider: MailProvider | null = null;
 
 type ProviderFactory = () => MailProvider;
 
 const providerRegistry: Record<MailProviderName, ProviderFactory> = {
-  resend: () => new ResendProvider(),
-  cloudflare: () => new CloudflareProvider(),
+  cloudflare: () => {
+    if (!env.EMAIL) {
+      throw new Error('EMAIL binding is required.');
+    }
+    return new CloudflareProvider(env.EMAIL);
+  },
 };
 
 function createProvider(): MailProvider {

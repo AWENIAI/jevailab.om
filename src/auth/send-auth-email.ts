@@ -8,15 +8,50 @@ type AuthEmailParams = SendTemplateParams & {
   template: 'verifyEmail' | 'forgotPassword';
 };
 
+/**
+ * Better Auth can derive its origin from a local/preview request. Those links
+ * are unusable from an inbox, so transactional links use the configured
+ * public site origin instead.
+ */
+export function buildPublicAuthEmailUrl(
+  url: string,
+  publicBaseUrl: string
+): string {
+  const link = new URL(url);
+  const base = new URL(publicBaseUrl);
+  const isLoopback =
+    link.hostname === 'localhost' ||
+    link.hostname.endsWith('.localhost') ||
+    link.hostname === '::1' ||
+    link.hostname.startsWith('127.');
+  if (isLoopback) {
+    link.port = base.port;
+    link.hostname = base.hostname;
+    link.protocol = base.protocol;
+  }
+  return link.toString();
+}
+
 /** Try up to three times with the same link; never log recipients, links or provider errors. */
 export async function sendAuthEmail(
   params: AuthEmailParams,
-  send: (params: SendTemplateParams) => Promise<SendEmailResult>
+  send: (params: SendTemplateParams) => Promise<SendEmailResult>,
+  publicBaseUrl = ''
 ): Promise<void> {
+  const safeParams =
+    publicBaseUrl && typeof params.context.url === 'string'
+      ? {
+          ...params,
+          context: {
+            ...params.context,
+            url: buildPublicAuthEmailUrl(params.context.url, publicBaseUrl),
+          },
+        }
+      : params;
   for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt++) {
     let success = false;
     try {
-      success = (await send(params)).success;
+      success = (await send(safeParams)).success;
     } catch {
       // A sender may throw instead of returning a failure result.
     }

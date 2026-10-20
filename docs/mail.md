@@ -1,6 +1,6 @@
 # Mail module
 
-Transactional email (verification, password reset, contact form, subscription welcome). **Resend** and **Cloudflare Email Service** are the built-in providers. Design allows adding other providers via a provider registry without changing callers.
+Transactional email (verification, password reset, contact form, subscription welcome). **Cloudflare Email Service** is the production provider. Design allows adding other providers via a provider registry without changing callers.
 
 **Consumers:** Auth (`sendVerificationEmail`, `sendResetPassword`), contact form (`sendContactMessage` in `src/api/contact.ts`), newsletter welcome email — all use `sendEmail(...)` only.
 
@@ -14,7 +14,6 @@ src/mail/
 ├── types.ts           # EmailTemplate, MailProviderName, Send*Params, MailProvider
 ├── render.ts          # getTemplate, renderEmailHtml, toPlainText; EmailTemplates, EmailSubjects
 ├── provider/
-│   ├── resend.ts      # ResendProvider implements MailProvider
 │   └── cloudflare.ts  # CloudflareProvider implements MailProvider
 ├── templates/
 │   ├── verify-email.tsx
@@ -33,44 +32,31 @@ src/mail/
 | Source | Key | Description |
 |--------|-----|-------------|
 | `websiteConfig.mail` | `enable` | Master switch. When false, `sendEmail` returns `{ success: false, error: 'Mail feature is disabled' }`. |
-| | `provider` | `'resend'` or `'cloudflare'` (template default: `'cloudflare'`). Extend in `src/types/index.d.ts` when adding providers. |
+| | `provider` | `'cloudflare'`. Extend in `src/types/index.d.ts` when adding providers. |
 | | `fromEmail` | Sender address (required for sending). |
 | | `supportEmail` | Target address of the contact form. |
-| Env var | `RESEND_API_KEY` | Required when using the Resend provider. |
-| Env var | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID; required when using the Cloudflare Email provider. |
-| Env var | `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Email Send permission; required when using the Cloudflare provider. |
+| Worker binding | `EMAIL` | Native `send_email` binding declared in `wrangler.jsonc`. No account ID or API token is used at runtime. |
 
 ---
 
 ## Providers
 
-### Resend
-
-Uses the [Resend](https://resend.com/docs) SDK. Requires `RESEND_API_KEY` env var.
-
-```ts
-// src/config/website.ts
-mail: {
-  enable: true,
-  provider: 'resend',
-  fromEmail: 'jevailab <support@jevailab.com>',
-}
-```
-
 ### Cloudflare Email Service
 
-Uses the [Cloudflare Email Service REST API](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/) (`POST https://api.cloudflare.com/client/v4/accounts/{id}/email/sending/send`). No Workers binding is required, so the same code works in any environment that can call `fetch`. The returned `messageId` is the first entry of the API's `delivered` list.
+Uses the native [Cloudflare Workers `send_email` binding](https://developers.cloudflare.com/email-service/api/send-emails/workers-api/). This avoids storing an account-scoped API token in the Worker.
 
 **Prerequisites:**
 1. Your domain must be using Cloudflare DNS.
 2. Onboard your domain in the Cloudflare dashboard under **Email Sending**.
-3. Create an API token with `com.cloudflare.api.token.Email.Send` permission in the Cloudflare dashboard.
+3. Declare the binding in `wrangler.jsonc`:
 
-**Environment variables:**
-
-```bash
-CLOUDFLARE_ACCOUNT_ID=your_account_id
-CLOUDFLARE_API_TOKEN=your_api_token
+```jsonc
+"send_email": [
+  {
+    "name": "EMAIL",
+    "allowed_sender_addresses": ["support@jevailab.com"]
+  }
+]
 ```
 
 **Usage:**
@@ -81,10 +67,11 @@ mail: {
   enable: true,
   provider: 'cloudflare',
   fromEmail: 'jevailab <support@jevailab.com>',
+  supportEmail: 'support@jevailab.com',
 }
 ```
 
-> **Note:** The `fromEmail` address must be on a verified domain in your Cloudflare account.
+> **Note:** The sender address in `fromEmail` must be listed in `allowed_sender_addresses` and belong to a domain onboarded in Cloudflare Email Service. `supportEmail` is a plain recipient address; a display name there would become part of the `to` field.
 
 ---
 
@@ -134,7 +121,7 @@ Email copy is localized with Paraglide but **always rendered in English**: subje
 
 The module uses a **provider registry** (`providerRegistry` in `index.ts`). To add a new provider:
 
-1. **Types** — In `src/types/index.d.ts`, extend `MailConfig.provider` (e.g. `'resend' | 'cloudflare' | 'newprovider'`).
+1. **Types** — In `src/types/index.d.ts`, extend `MailConfig.provider` (e.g. `'cloudflare' | 'newprovider'`).
 2. **Implementation** — Add `src/mail/provider/<name>.ts` implementing `MailProvider` (`sendTemplate`, `sendRawEmail`, `getProviderName`). Use `getTemplate` from `../render` for template-based sends.
 3. **Registration** — In `src/mail/index.ts`, add a factory to `providerRegistry`: `newprovider: () => new NewProvider(...)`, reading provider-specific env/bindings inside.
 
@@ -144,7 +131,6 @@ Callers continue using `sendEmail(...)` only.
 
 ## Dependencies and tooling
 
-- **resend** — Resend SDK (when using Resend provider).
 - **react / react-dom/server** — Template rendering.
 - **@react-email/components** — Building blocks used by every template (`Body`, `Button`, `Container`, etc.).
 - **react-email + @react-email/preview-server** (dev) — `pnpm email:dev` compiles the Paraglide runtime and previews templates on port 3333.

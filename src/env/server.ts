@@ -29,10 +29,7 @@ export const serverEnv = createEnv({
     // Browser extension (Google OAuth)
     GOOGLE_EXTENSION_CLIENT_ID: z.string().optional(),
 
-    // Mail and Newsletter (Resend)
-    RESEND_API_KEY: z.string().optional(),
-
-    // Mail (Cloudflare Email)
+    // Cloudflare Email
     CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
     CLOUDFLARE_API_TOKEN: z.string().optional(),
 
@@ -93,6 +90,15 @@ export const serverEnv = createEnv({
     // This local-only switch is intentionally separate from payment debug
     // flags and must never enable production generation.
     IMAGE_CREATOR_DEV_MODERATION_MOCK: z.enum(['true', 'false']).optional(),
+
+    // WeChat Mini Program login, virtual payment, and message push.
+    WECHAT_MINIPROGRAM_APPID: z.string().optional(),
+    WECHAT_MINIPROGRAM_SECRET: z.string().optional(),
+    WECHAT_VIRTUAL_PAY_OFFER_ID: z.string().optional(),
+    WECHAT_VIRTUAL_PAY_APP_KEY: z.string().optional(),
+    WECHAT_VIRTUAL_PAY_ENV: z.enum(['0', '1']).default('0'),
+    WECHAT_MESSAGE_PUSH_TOKEN: z.string().optional(),
+    WECHAT_MESSAGE_PUSH_ENCODING_AES_KEY: z.string().optional(),
   },
   runtimeEnv: process.env,
 });

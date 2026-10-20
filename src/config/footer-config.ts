@@ -31,7 +31,11 @@ export function getFooterLinks(): MenuItemConfig[] {
           href: '/#how-it-works',
           external: false,
         },
-        { title: m.nav_pricing(), href: '/#pricing', external: false },
+        {
+          title: m.nav_pricing(),
+          href: Routes.LaunchPricing,
+          external: false,
+        },
         { title: m.nav_faq(), href: '/#faq', external: false },
       ],
     },
@@ -65,4 +69,3 @@ export function getFooterLinks(): MenuItemConfig[] {
     },
   ];
 }
-

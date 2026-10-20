@@ -1,0 +1,5 @@
+.credit { color: var(--accent); font-weight: 600; }
+.credit-sm { font-size: 24rpx; }
+.credit-md { font-size: 32rpx; }
+.credit-lg { font-size: 44rpx; }
+.unit { color: var(--text-2); font-weight: 400; font-size: 22rpx; }

@@ -6,6 +6,10 @@ import { getDb } from '@/db';
 import { userFiles } from '@/db/app.schema';
 import { imageAssets } from '@/db/image-creator.schema';
 import {
+  imageGenerationJobs,
+  imageGenerationOutputs,
+} from '@/db/image-creator.schema';
+import {
   videoAssets,
   videoJobs,
   videoOutputs,
@@ -15,6 +19,7 @@ import { isPublicFolder } from '@/storage/utils';
 import { ConfigurationError } from '@/storage/types';
 import { verifySeeApiReviewUrl } from '@/lib/image-creator/seeapi-review-url.server';
 import { verifyPrivateVideoProviderUrl } from '@/lib/video-creator/private-media-url.server';
+import { verifyPrivateImageUrl } from '@/lib/miniprogram/private-media-url.server';
 
 /**
  * Serves a file by key via the storage provider (same-origin proxy URL).
@@ -42,8 +47,16 @@ export const Route = createFileRoute('/api/storage/file')({
             url.searchParams.get('privatePurpose'),
             url.searchParams.get('privateToken')
           );
+          const imagePrivatePurpose = await verifyPrivateImageUrl(
+            key,
+            url.searchParams.get('privateExpires'),
+            url.searchParams.get('privatePurpose'),
+            url.searchParams.get('privateToken')
+          );
           const hasPrivateAccess =
-            isSeeApiReviewRequest || isVideoProviderRequest;
+            isSeeApiReviewRequest ||
+            isVideoProviderRequest ||
+            imagePrivatePurpose !== null;
           const headers = getRequestHeaders();
           const session = await auth.api.getSession({ headers });
           const userId = session?.user?.id;
@@ -76,17 +89,42 @@ export const Route = createFileRoute('/api/storage/file')({
             .innerJoin(videoJobs, eq(videoJobs.id, videoOutputs.jobId))
             .where(eq(videoOutputs.storageKey, key))
             .limit(1);
+          const [imageOutput] = await db
+            .select({ userId: imageGenerationJobs.userId })
+            .from(imageGenerationOutputs)
+            .innerJoin(
+              imageGenerationJobs,
+              eq(
+                imageGenerationJobs.id,
+                imageGenerationOutputs.jobId
+              )
+            )
+            .where(
+              and(
+                eq(
+                  imageGenerationOutputs.privateStorageKey,
+                  key
+                ),
+                isNull(imageGenerationJobs.deletedAt)
+              )
+            )
+            .limit(1);
           const privateOwnerId =
             fileRecord?.userId ??
             videoAsset?.userId ??
             videoOutput?.userId ??
+            imageOutput?.userId ??
             imageAsset?.userId;
 
           if (!privateOwnerId && !isPublicKey && !hasPrivateAccess) {
             return new Response('Not Found', { status: 404 });
           }
 
-          if (privateOwnerId && !fileRecord?.isPublic && !hasPrivateAccess) {
+          if (
+            privateOwnerId &&
+            !fileRecord?.isPublic &&
+            !hasPrivateAccess
+          ) {
             if (!userId || privateOwnerId !== userId) {
               return new Response('Forbidden', { status: 403 });
             }

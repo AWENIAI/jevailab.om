@@ -1,0 +1,42 @@
+.ref { margin-top: 20rpx; }
+.label { font-size: 26rpx; color: var(--text); margin-bottom: 12rpx; }
+.req { color: var(--accent); }
+.opt { color: var(--text-3); font-size: 22rpx; }
+.ban { color: var(--text-3); font-size: 22rpx; }
+
+.placeholder {
+  border: 1rpx dashed var(--border);
+  border-radius: 14rpx;
+  height: 200rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  background: var(--surface-2);
+}
+.placeholder.banned { color: var(--text-3); }
+.plus { font-size: 56rpx; line-height: 1; color: var(--accent); }
+.tip { font-size: 24rpx; margin-top: 8rpx; }
+
+.thumb-wrap {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 14rpx;
+  overflow: hidden;
+}
+.thumb { width: 100%; height: 100%; }
+.remove {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 30rpx;
+  text-align: center;
+  line-height: 38rpx;
+}

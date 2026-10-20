@@ -1,5 +1,6 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "Jevailab-ai-image", "Jevailab-ai-video"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

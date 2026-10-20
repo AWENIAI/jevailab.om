@@ -93,8 +93,9 @@ describe('Jevailab homepage content', () => {
       expect(messages.site_description).toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
-      expect.arrayContaining(['/#video', '/#image', '/#pricing'])
+      expect.arrayContaining(['/#image', '/launch-pricing'])
     );
+    expect(hrefs).not.toContain('/pricing');
     expect(hrefs).not.toContain('/#gallery');
     expect(hrefs).not.toContain('/#how-it-works');
     expect(items.some((item) => !item.href && Boolean(item.description))).toBe(
@@ -102,4 +103,3 @@ describe('Jevailab homepage content', () => {
     );
   });
 });
-

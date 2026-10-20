@@ -1,11 +1,12 @@
 import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
 import { describe, expect, it, vi } from 'vitest';
-import { sendAuthEmail } from '@/auth/send-auth-email';
+import { buildPublicAuthEmailUrl, sendAuthEmail } from '@/auth/send-auth-email';
 import type { SendTemplateParams } from '@/mail/types';
 
 function setup() {
   const sender = vi.fn().mockResolvedValue({ success: true });
+  const publicBaseUrl = 'https://jevailab.com';
   const auth = betterAuth({
     baseURL: 'http://localhost:3000',
     secret: 'local-auth-mail-test-secret-long-enough',
@@ -22,7 +23,8 @@ function setup() {
       sendResetPassword: ({ user, url }) =>
         sendAuthEmail(
           { to: user.email, template: 'forgotPassword', context: { url } },
-          sender
+          sender,
+          publicBaseUrl
         ),
     },
     emailVerification: {
@@ -31,7 +33,8 @@ function setup() {
       sendVerificationEmail: ({ user, url }) =>
         sendAuthEmail(
           { to: user.email, template: 'verifyEmail', context: { url } },
-          sender
+          sender,
+          publicBaseUrl
         ),
     },
   });
@@ -55,6 +58,23 @@ function setup() {
 }
 
 describe('auth mail through installed auth endpoints', () => {
+  it('replaces a loopback verification origin with the configured public site', () => {
+    expect(
+      buildPublicAuthEmailUrl(
+        'http://localhost:3000/api/auth/verify-email?token=abc&callbackURL=%2F',
+        'https://jevailab.com'
+      )
+    ).toBe(
+      'https://jevailab.com/api/auth/verify-email?token=abc&callbackURL=%2F'
+    );
+    expect(
+      buildPublicAuthEmailUrl(
+        'http://localhost:3000/api/auth/verify-email?token=abc',
+        'http://localhost:3000'
+      )
+    ).toBe('http://localhost:3000/api/auth/verify-email?token=abc');
+  });
+
   it('registers without a session and recovers a transient send failures with the same link', async () => {
     const { sender, post, account } = setup();
     sender
@@ -67,6 +87,14 @@ describe('auth mail through installed auth endpoints', () => {
     expect(sender).toHaveBeenCalledTimes(3);
     expect(sender.mock.calls[0][0]).toEqual(sender.mock.calls[1][0]);
     expect(sender.mock.calls[0][0]).toEqual(sender.mock.calls[2][0]);
+  });
+
+  it('emails a public verification URL when the auth request uses localhost', async () => {
+    const { sender, post, account } = setup();
+    const response = await post('sign-up/email', account);
+    expect(response.status).toBe(200);
+    const link = sender.mock.calls[0]?.[0].context.url as string;
+    expect(new URL(link).origin).toBe('https://jevailab.com');
   });
 
   it('surfaces persistent resend failure, allows recovery and preserves password/session boundaries', async () => {

@@ -1,0 +1,1 @@
+<text class="credit credit-{{size}}">{{credits}} <text class="unit">{{label}}</text></text>

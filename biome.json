@@ -18,6 +18,8 @@
       "!.source",
       "!node_modules",
       "!dist",
+      "!Jevailab-ai-image",
+      "!Jevailab-ai-video",
       "!build",
       "!playwright-report",
       "!test-results",

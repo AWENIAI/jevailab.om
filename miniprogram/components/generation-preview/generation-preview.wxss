@@ -1,0 +1,30 @@
+.preview { margin-top: 24rpx; }
+.head { margin-bottom: 16rpx; }
+.status {
+  display: inline-block;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.status-completed { background: rgba(59, 109, 17, 0.18); color: #97c459; }
+.status-running,
+.status-queued,
+.status-moderating,
+.status-reconciling { background: rgba(232, 163, 61, 0.16); color: var(--accent); }
+.status-failed,
+.status-rejected { background: rgba(226, 75, 74, 0.16); color: var(--danger); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+}
+.out {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12rpx;
+  background: var(--surface-2);
+}
+.actions { margin-top: 20rpx; }

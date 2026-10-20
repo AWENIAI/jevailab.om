@@ -25,7 +25,7 @@ export function getNavbarLinks(): MenuItemConfig[] {
     {
       key: 'pricing',
       title: m.nav_pricing(),
-      href: '/#pricing',
+      href: '/launch-pricing',
       external: false,
     },
     {

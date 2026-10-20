@@ -24,6 +24,7 @@ import { Route as pagesAboutRouteImport } from './routes/(pages)/about'
 import { Route as pagesAiRouteImport } from './routes/(pages)/ai'
 import { Route as pagesChangelogRouteImport } from './routes/(pages)/changelog'
 import { Route as pagesContactRouteImport } from './routes/(pages)/contact'
+import { Route as pagesLaunchPricingRouteImport } from './routes/(pages)/launch-pricing'
 import { Route as pagesPricingRouteImport } from './routes/(pages)/pricing'
 import { Route as pagesRoadmapRouteImport } from './routes/(pages)/roadmap'
 import { Route as pagesWaitlistRouteImport } from './routes/(pages)/waitlist'
@@ -50,6 +51,7 @@ import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiE2eUsersRouteImport } from './routes/api/e2e/users'
+import { Route as ApiMiniprogramSplatRouteImport } from './routes/api/miniprogram/$'
 import { Route as ApiStorageFileRouteImport } from './routes/api/storage/file'
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiWebhooksKieRouteImport } from './routes/api/webhooks/kie'
@@ -130,6 +132,11 @@ const pagesChangelogRoute = pagesChangelogRouteImport.update({
 const pagesContactRoute = pagesContactRouteImport.update({
   id: '/(pages)/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const pagesLaunchPricingRoute = pagesLaunchPricingRouteImport.update({
+  id: '/(pages)/launch-pricing',
+  path: '/launch-pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const pagesPricingRoute = pagesPricingRouteImport.update({
@@ -262,6 +269,11 @@ const ApiE2eUsersRoute = ApiE2eUsersRouteImport.update({
   path: '/api/e2e/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMiniprogramSplatRoute = ApiMiniprogramSplatRouteImport.update({
+  id: '/api/miniprogram/$',
+  path: '/api/miniprogram/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStorageFileRoute = ApiStorageFileRouteImport.update({
   id: '/api/storage/file',
   path: '/api/storage/file',
@@ -309,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof pagesAiRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
+  '/launch-pricing': typeof pagesLaunchPricingRoute
   '/pricing': typeof pagesPricingRoute
   '/roadmap': typeof pagesRoadmapRoute
   '/waitlist': typeof pagesWaitlistRoute
@@ -335,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof SettingsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/kie': typeof ApiWebhooksKieRoute
@@ -355,6 +369,7 @@ export interface FileRoutesByTo {
   '/ai': typeof pagesAiRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
+  '/launch-pricing': typeof pagesLaunchPricingRoute
   '/pricing': typeof pagesPricingRoute
   '/roadmap': typeof pagesRoadmapRoute
   '/waitlist': typeof pagesWaitlistRoute
@@ -381,6 +396,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/kie': typeof ApiWebhooksKieRoute
@@ -405,6 +421,7 @@ export interface FileRoutesById {
   '/(pages)/ai': typeof pagesAiRoute
   '/(pages)/changelog': typeof pagesChangelogRoute
   '/(pages)/contact': typeof pagesContactRoute
+  '/(pages)/launch-pricing': typeof pagesLaunchPricingRoute
   '/(pages)/pricing': typeof pagesPricingRoute
   '/(pages)/roadmap': typeof pagesRoadmapRoute
   '/(pages)/waitlist': typeof pagesWaitlistRoute
@@ -431,6 +448,7 @@ export interface FileRoutesById {
   '/settings/': typeof SettingsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/kie': typeof ApiWebhooksKieRoute
@@ -456,6 +474,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/changelog'
     | '/contact'
+    | '/launch-pricing'
     | '/pricing'
     | '/roadmap'
     | '/waitlist'
@@ -482,6 +501,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/miniprogram/$'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/kie'
@@ -502,6 +522,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/changelog'
     | '/contact'
+    | '/launch-pricing'
     | '/pricing'
     | '/roadmap'
     | '/waitlist'
@@ -528,6 +549,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/miniprogram/$'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/kie'
@@ -551,6 +573,7 @@ export interface FileRouteTypes {
     | '/(pages)/ai'
     | '/(pages)/changelog'
     | '/(pages)/contact'
+    | '/(pages)/launch-pricing'
     | '/(pages)/pricing'
     | '/(pages)/roadmap'
     | '/(pages)/waitlist'
@@ -577,6 +600,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/miniprogram/$'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/kie'
@@ -601,6 +625,7 @@ export interface RootRouteChildren {
   pagesAiRoute: typeof pagesAiRoute
   pagesChangelogRoute: typeof pagesChangelogRoute
   pagesContactRoute: typeof pagesContactRoute
+  pagesLaunchPricingRoute: typeof pagesLaunchPricingRoute
   pagesPricingRoute: typeof pagesPricingRoute
   pagesRoadmapRoute: typeof pagesRoadmapRoute
   pagesWaitlistRoute: typeof pagesWaitlistRoute
@@ -611,6 +636,7 @@ export interface RootRouteChildren {
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiE2eUsersRoute: typeof ApiE2eUsersRoute
+  ApiMiniprogramSplatRoute: typeof ApiMiniprogramSplatRoute
   ApiStorageFileRoute: typeof ApiStorageFileRoute
   ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
   ApiWebhooksKieRoute: typeof ApiWebhooksKieRoute
@@ -724,6 +750,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof pagesContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/launch-pricing': {
+      id: '/(pages)/launch-pricing'
+      path: '/launch-pricing'
+      fullPath: '/launch-pricing'
+      preLoaderRoute: typeof pagesLaunchPricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(pages)/pricing': {
@@ -908,6 +941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiE2eUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/miniprogram/$': {
+      id: '/api/miniprogram/$'
+      path: '/api/miniprogram/$'
+      fullPath: '/api/miniprogram/$'
+      preLoaderRoute: typeof ApiMiniprogramSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/storage/file': {
       id: '/api/storage/file'
       path: '/api/storage/file'
@@ -1037,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   pagesAiRoute: pagesAiRoute,
   pagesChangelogRoute: pagesChangelogRoute,
   pagesContactRoute: pagesContactRoute,
+  pagesLaunchPricingRoute: pagesLaunchPricingRoute,
   pagesPricingRoute: pagesPricingRoute,
   pagesRoadmapRoute: pagesRoadmapRoute,
   pagesWaitlistRoute: pagesWaitlistRoute,
@@ -1047,6 +1088,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiE2eUsersRoute: ApiE2eUsersRoute,
+  ApiMiniprogramSplatRoute: ApiMiniprogramSplatRoute,
   ApiStorageFileRoute: ApiStorageFileRoute,
   ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
   ApiWebhooksKieRoute: ApiWebhooksKieRoute,

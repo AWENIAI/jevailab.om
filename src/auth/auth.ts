@@ -152,7 +152,8 @@ export const auth = betterAuth({
           template: 'forgotPassword',
           context: { url, name: user.name ?? '' },
         },
-        sendEmail
+        sendEmail,
+        serverEnv.VITE_BASE_URL
       );
     },
   },
@@ -167,7 +168,8 @@ export const auth = betterAuth({
           template: 'verifyEmail',
           context: { url, name: user.name ?? '' },
         },
-        sendEmail
+        sendEmail,
+        serverEnv.VITE_BASE_URL
       );
     },
     sendOnSignIn: true,
@@ -261,6 +263,7 @@ export const auth = betterAuth({
  */
 async function onCreateUser(user: User) {
   if (import.meta.env.DEV && import.meta.env.MODE === 'e2e') return;
+  if (user.email.endsWith('@miniprogram.jevailab.local')) return;
   const newsletterConfig = websiteConfig.newsletter;
   if (
     !user.email ||

@@ -1,0 +1,6 @@
+<view class="container auth">
+  <view class="logo">Jevailab</view>
+  <view class="muted">AI 图片创作 · 私密工作流</view>
+  <view class="btn-primary section-gap" bindtap="onLogin">{{loading ? '登录中…' : '微信一键登录'}}</view>
+  <view wx:if="{{error}}" class="err">{{error}}</view>
+</view>

@@ -1,6 +1,6 @@
 # Newsletter module
 
-Email subscribe / unsubscribe / status, driven by **Resend** or **Beehiiv**. Config via `websiteConfig.newsletter`; env from **serverEnv** (`src/env/server.ts`). Status checks use the [Cache](./cache.md) module when `websiteConfig.cache` is enabled. See [Env](./env.md) for variable list and where to set them.
+Email subscribe / unsubscribe / status, driven by **Cloudflare D1** or **Beehiiv**. Config via `websiteConfig.newsletter`; env from **serverEnv** (`src/env/server.ts`). Status checks use the [Cache](./cache.md) module when `websiteConfig.cache` is enabled. See [Env](./env.md) for variable list and where to set them.
 
 **Consumers:** TanStack Start server functions in `src/api/newsletter.ts` (there are no REST routes under `routes/api/newsletter/`), hooks (`use-newsletter`), settings card (`NewsletterFormCard`), marketing block (`NewsletterCard` on the homepage), waitlist form (`WaitlistFormCard`), and the Better Auth sign-up hook (auto-subscribe). A welcome email after subscribe is sent by the **Mail** module when `websiteConfig.mail.fromEmail` is set.
 
@@ -15,7 +15,7 @@ src/newsletter/
 ├── index.ts           # subscribe, unsubscribe, isSubscribed, getNewsletterProvider; providerRegistry
 ├── types.ts           # NewsletterProviderName, NewsletterProvider, params & handler types
 └── provider/
-    ├── resend.ts      # ResendNewsletterProvider (Resend contacts)
+    ├── cloudflare.ts  # CloudflareNewsletterProvider (D1 consent records)
     └── beehiiv.ts     # BeehiivNewsletterProvider (@beehiiv/sdk)
 ```
 
@@ -34,10 +34,9 @@ src/newsletter/
 | Source | Key | Description |
 |--------|-----|-------------|
 | `websiteConfig.newsletter` | `enable` | Master switch; when false, the server functions throw and the UI hides. |
-| | `provider` | `'resend'` \| `'beehiiv'`. |
+| | `provider` | `'cloudflare'` \| `'beehiiv'`. |
 | | `autoSubscribeAfterSignUp` | If true, new users are subscribed after sign-up via Better Auth `databaseHooks.user.create.after` in `src/auth/auth.ts`. Failures are logged and do not block sign-up. |
-| `serverEnv` (`src/env/server.ts`) | `RESEND_API_KEY` | Required when provider is `resend` (shared with Mail if used). |
-| | `BEEHIIV_API_KEY`, `BEEHIIV_PUBLICATION_ID` | Both required when provider is `beehiiv`. |
+| `serverEnv` (`src/env/server.ts`) | `BEEHIIV_API_KEY`, `BEEHIIV_PUBLICATION_ID` | Both required when provider is `beehiiv`. |
 
 Env is defined in `serverEnv` (runtime: `process.env`; Worker vars/secrets populate it).
 
@@ -65,10 +64,10 @@ Env is defined in `serverEnv` (runtime: `process.env`; Worker vars/secrets popul
 
 Providers throw from the constructor when their API key is missing, and return `false` (after logging) on API errors.
 
-**Resend** (`contacts.create` / `contacts.update` / `contacts.get`, no audience ID):
-- Subscribe: create the contact with `unsubscribed: false`; if create returns any error (e.g. the contact exists), update it to `unsubscribed: false`. There is no pre-check, to stay under Resend's rate limit.
-- Unsubscribe: update the contact to `unsubscribed: true`.
-- Status: `!contact.unsubscribed`; any error returns `false`.
+**Cloudflare** (`newsletterSubscriptions` in D1):
+- Subscribe: upsert the normalized email with `subscribed: true` and clear `unsubscribedAt`.
+- Unsubscribe: retain the row for auditability, set `subscribed: false`, and record `unsubscribedAt`.
+- Status: return the stored `subscribed` flag; any database error returns `false`.
 
 **Beehiiv** (`@beehiiv/sdk`):
 - Subscribe: look up by email; reactivate an inactive subscription (`subscriptions.patch` + `bulkSubscriptionUpdates.patchStatus`), or create a new one with `send_welcome_email: false`.
@@ -108,5 +107,4 @@ Caveat: provider errors in `isSubscribed` resolve to `false`, and that `false` i
 
 ## Dependencies
 
-- **resend** — Resend SDK (contacts).
 - **@beehiiv/sdk** — Beehiiv API client (when using Beehiiv provider).

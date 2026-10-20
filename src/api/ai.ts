@@ -30,7 +30,10 @@ import {
   type WorkersAiChatResult,
 } from '@/lib/workers-ai';
 import { CLEF_TICKET_QUESTIONS, clefTicketResultSchema } from '@/lib/clef';
-import { getRuntimeModerationProvider } from '@/lib/image-creator/moderation.server';
+import {
+  assertPromptApproved,
+  getRuntimeModerationProvider,
+} from '@/lib/image-creator/moderation.server';
 
 /**
  * AI demo server functions.
@@ -355,6 +358,7 @@ function parseTaglines(text: string): string[] {
 export const generateAiImage = createServerFn({ method: 'POST' })
   .validator(imageGenerationSchema)
   .handler(async ({ data }) => {
+    await assertPromptApproved(data.prompt);
     const apiKey = serverEnv.FAL_KEY;
     if (!apiKey) {
       throw new Error(
@@ -397,6 +401,7 @@ export const generateAiImage = createServerFn({ method: 'POST' })
 export const editAiImage = createServerFn({ method: 'POST' })
   .validator(imageEditSchema)
   .handler(async ({ data }) => {
+    await assertPromptApproved(data.prompt);
     const apiKey = serverEnv.FAL_KEY;
     if (!apiKey) {
       throw new Error(
@@ -560,6 +565,7 @@ export const createKieImageGeneration = createServerFn({ method: 'POST' })
   .validator(kieImageGenerationSchema)
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
+    await assertPromptApproved(data.prompt);
     const input = toKieImageInput(data);
     const created = await Promise.allSettled(
       Array.from({ length: data.count }, async () => {
@@ -728,6 +734,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 export const generateCfImage = createServerFn({ method: 'POST' })
   .validator(cfImageGenerationSchema)
   .handler(async ({ data }) => {
+    await assertPromptApproved(data.prompt);
     const accountId = serverEnv.CLOUDFLARE_ACCOUNT_ID;
     const apiKey = serverEnv.CLOUDFLARE_API_TOKEN;
     if (!accountId || !apiKey) {

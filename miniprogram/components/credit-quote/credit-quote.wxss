@@ -1,0 +1,3 @@
+.quote { margin-top: 24rpx; }
+.row { display: flex; align-items: center; justify-content: space-between; margin: 6rpx 0; }
+.warn { color: var(--danger); font-size: 24rpx; margin-top: 8rpx; }

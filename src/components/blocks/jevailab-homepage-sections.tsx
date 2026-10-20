@@ -15,6 +15,7 @@ import type {
   PublishedImageTemplateId,
 } from '@/content/jevailab-homepage';
 import { JEVAILAB_ANCHORS } from '@/content/jevailab-homepage';
+import { Routes } from '@/lib/routes';
 
 type JevailabHomepageSectionsProps = {
   content: JevailabHomepageContent;
@@ -346,7 +347,7 @@ export function JevailabHomepageSections({
             </p>
           </div>
           <a
-            href={JEVAILAB_ANCHORS.create}
+            href={Routes.Pricing}
             className="inline-flex h-10 items-center justify-center rounded-lg border border-primary/40 px-4 text-sm font-semibold text-primary transition hover:bg-primary/10"
           >
             {content.pricing.actionLabel}
@@ -422,4 +423,3 @@ export function JevailabHomepageSections({
     </div>
   );
 }
-

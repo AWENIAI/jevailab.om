@@ -210,24 +210,6 @@ export const startImageCreatorGeneration = createServerFn({ method: 'POST' })
         '当前图生图服务尚未接入。请移除参考图后使用文本生图，或等待图生图适配器启用。'
       );
     }
-    const moderation = await getRuntimeModerationProvider().review({
-      kind: 'prompt',
-      text: draft.extraPrompt,
-    });
-    // SeeAPI's nsfw-filter is image-only. Keep this typed prompt boundary for
-    // the text provider that will be introduced later, without falsely marking
-    // prompts as reviewed by SeeAPI.
-    if (
-      moderation.decision !== 'approved' &&
-      moderation.reasonCode !== 'SEEAPI_IMAGE_ONLY'
-    ) {
-      throw new Error(
-        moderation.decision === 'unavailable'
-          ? 'Content review is not configured, so image generation is temporarily unavailable.'
-          : 'This request needs content review before it can be generated.'
-      );
-    }
-
     const privatePrompt = [template?.basePrompt, draft.extraPrompt]
       .filter(Boolean)
       .join('\n\n');

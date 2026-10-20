@@ -84,7 +84,7 @@ export const websiteConfig: WebsiteConfig = {
     enable: true,
     provider: 'cloudflare',
     fromEmail: 'jevailab <support@jevailab.com>',
-    supportEmail: 'jevailab <support@jevailab.com>',
+    supportEmail: 'support@jevailab.com',
   },
   newsletter: {
     enable: true,

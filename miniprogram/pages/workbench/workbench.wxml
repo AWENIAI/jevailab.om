@@ -1,0 +1,103 @@
+<view class="container">
+  <view class="topbar">
+    <view class="brand">Jevailab<text class="sub"> AI 图片创作</text></view>
+    <view class="avatar" bindtap="goProfile">我</view>
+  </view>
+
+  <!-- 模板浏览 -->
+  <view class="section-gap">
+    <view class="row-head">
+      <text class="title">模板</text>
+      <text class="hint">选模板或用参考图创作</text>
+    </view>
+    <scroll-view scroll-x class="tpl-scroll" enhanced="true" show-scrollbar="false">
+      <view class="tpl-row">
+        <view class="free {{!selectedTemplate ? 'active' : ''}}" bindtap="onFreeCreate">自由创作</view>
+        <template-card
+          wx:for="{{templates}}"
+          wx:key="id"
+          template="{{item}}"
+          selected="{{selectedTemplate.id === item.id}}"
+          bind:select="onSelectTemplate"
+        />
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 创作表单（含图生图参考图） -->
+  <view class="card section-gap">
+    <view class="row-head">
+      <text class="title">{{selectedTemplate ? selectedTemplate.name : '自由创作'}}</text>
+    </view>
+
+    <reference-upload
+      policy="{{refPolicy}}"
+      assetId="{{reference.assetId}}"
+      previewUrl="{{reference.previewUrl}}"
+      bind:change="onRefChange"
+    />
+
+    <view class="field">
+      <text class="label">描述</text>
+      <textarea
+        class="textarea"
+        placeholder="描述想要的画面；图生图时可写编辑指令（如：转成水彩风格）"
+        value="{{extraPrompt}}"
+        bindinput="onDescInput"
+        maxlength="1000"
+      />
+    </view>
+
+    <view class="field">
+      <text class="label">清晰度</text>
+      <view class="chips">
+        <text
+          wx:for="{{modeOptions}}"
+          wx:key="value"
+          class="chip {{mode === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onModeSelect"
+        >{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="field">
+      <text class="label">比例</text>
+      <view class="chips">
+        <text
+          wx:for="{{ratioOptions}}"
+          wx:key="value"
+          class="chip {{ratio === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onRatioSelect"
+        >{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="field">
+      <text class="label">张数</text>
+      <view class="stepper">
+        <view class="step-btn" bindtap="onCountDec">－</view>
+        <text class="step-val">{{count}}</text>
+        <view class="step-btn" bindtap="onCountInc">＋</view>
+      </view>
+    </view>
+
+    <credit-quote quote="{{quote}}" count="{{count}}" walletAvailable="{{walletAvailable}}" />
+
+    <view class="consent" bindtap="onConsent">
+      <view class="check {{consent ? 'checked' : ''}}">{{consent ? '✓' : ''}}</view>
+      <text class="consent-text">我已阅读并同意隐私与内容安全条款</text>
+    </view>
+
+    <view class="section-gap">
+      <view class="btn-primary {{canGenerate ? '' : 'btn-disabled'}}" bindtap="onGenerate">生成</view>
+    </view>
+  </view>
+
+  <!-- 当前任务预览 -->
+  <generation-preview wx:if="{{currentJob}}" job="{{currentJob}}" />
+  <view wx:if="{{currentJob && (currentJob.status === 'completed' || currentJob.status === 'partial')}}" class="section-gap">
+    <view class="btn-ghost" bindtap="saveCurrentImage">保存到相册</view>
+  </view>
+</view>

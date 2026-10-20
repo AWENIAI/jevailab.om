@@ -86,3 +86,20 @@ export const userFilesRelations = relations(userFiles, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+/** Newsletter consent, including retained opt-out history. */
+export const newsletterSubscriptions = sqliteTable(
+  'newsletter_subscriptions',
+  {
+    email: text('email').primaryKey(),
+    subscribed: integer('subscribed', { mode: 'boolean' })
+      .notNull()
+      .default(true),
+    subscribedAt: integer('subscribed_at', {
+      mode: 'timestamp_ms',
+    }).notNull(),
+    unsubscribedAt: integer('unsubscribed_at', { mode: 'timestamp_ms' }),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [index('newsletter_subscriptions_status_idx').on(table.subscribed)]
+);

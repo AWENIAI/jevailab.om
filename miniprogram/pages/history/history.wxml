@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="title section-gap">我的创作历史</view>
+
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+  <view wx:elif="{{jobs.length === 0}}" class="empty">
+    <view class="empty-emoji">🖼️</view>
+    <view class="muted">还没有创作记录</view>
+    <view class="hint">去「创作」页生成你的第一张图</view>
+  </view>
+
+  <history-item
+    wx:for="{{jobs}}"
+    wx:key="id"
+    job="{{item}}"
+    bind:open="onOpen"
+  />
+</view>

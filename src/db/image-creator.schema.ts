@@ -72,10 +72,14 @@ export const imageQuotes = sqliteTable(
     unitCredits: integer('unit_credits').notNull(),
     totalCredits: integer('total_credits').notNull(),
     priceVersion: text('price_version').notNull(),
+    consumedAt: integer('consumed_at', { mode: 'timestamp_ms' }),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
     expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
   },
-  (table) => [index('image_quotes_user_created_idx').on(table.userId, table.createdAt)]
+  (table) => [
+    index('image_quotes_user_created_idx').on(table.userId, table.createdAt),
+    uniqueIndex('image_quotes_id_user_unique').on(table.id, table.userId),
+  ]
 );
 
 export const imageGenerationJobs = sqliteTable(
@@ -112,6 +116,7 @@ export const imageGenerationJobs = sqliteTable(
     deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
   },
   (table) => [
+    uniqueIndex('image_jobs_quote_unique').on(table.quoteId),
     uniqueIndex('image_jobs_user_idempotency_unique').on(table.userId, table.idempotencyKey),
     index('image_jobs_user_created_idx').on(table.userId, table.createdAt),
     index('image_jobs_status_idx').on(table.status, table.createdAt),

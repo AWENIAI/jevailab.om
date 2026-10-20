@@ -1,0 +1,22 @@
+.item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx;
+  margin-bottom: 16rpx;
+}
+.thumb {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+.meta { flex: 1; margin-left: 20rpx; overflow: hidden; }
+.t {
+  font-size: 28rpx;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.arrow { color: var(--text-3); font-size: 40rpx; }

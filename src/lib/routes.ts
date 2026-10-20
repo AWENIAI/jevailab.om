@@ -5,6 +5,7 @@ export const Routes = {
   Features: '/#features',
   Faqs: '/#faqs',
   Pricing: '/pricing',
+  LaunchPricing: '/launch-pricing',
   Blog: '/blog',
   Changelog: '/changelog',
   Roadmap: '/roadmap',

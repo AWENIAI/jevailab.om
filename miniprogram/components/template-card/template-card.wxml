@@ -1,0 +1,7 @@
+<view class="tpl-card {{selected ? 'selected' : ''}}" bindtap="onTap">
+  <view class="cover-wrap">
+    <image class="cover" src="{{template.coverUrl}}" mode="aspectFill" lazy-load="true" />
+  </view>
+  <view class="name">{{template.name}}</view>
+  <view class="desc">{{template.description}}</view>
+</view>

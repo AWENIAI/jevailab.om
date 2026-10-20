@@ -64,6 +64,20 @@
       "when": 1792311900000,
       "tag": "0008_video_creator_kie_callback_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792413981851,
+      "tag": "0009_newsletter_cloudflare",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792464587743,
+      "tag": "0010_absurd_thunderbolt",
+      "breakpoints": true
     }
   ]
 }

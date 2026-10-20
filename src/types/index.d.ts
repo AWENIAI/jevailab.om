@@ -70,17 +70,17 @@ export interface BlogConfig {
 
 /** Mail configuration */
 export interface MailConfig {
-  enable: boolean;                      // Whether to enable the mail
-  provider?: 'resend' | 'cloudflare';   // The email provider, supports resend and cloudflare
-  fromEmail?: string;                   // The email address to send notification emails from
-  supportEmail?: string;                // The email address to send support or contact emails to
+  enable: boolean;       // Whether to enable the mail
+  provider?: 'cloudflare'; // The email provider
+  fromEmail?: string;    // The email address to send notification emails from
+  supportEmail?: string; // The email address to send support or contact emails to
 }
 
 /** Newsletter configuration */
 export interface NewsletterConfig {
-  enable: boolean;                        // Whether to enable the newsletter
-  provider?: 'resend' | 'beehiiv';        // The newsletter provider
-  autoSubscribeAfterSignUp?: boolean;     // Whether to automatically subscribe users after sign up
+  enable: boolean;                    // Whether to enable the newsletter
+  provider?: 'cloudflare' | 'beehiiv'; // The newsletter provider
+  autoSubscribeAfterSignUp?: boolean; // Whether to automatically subscribe users after sign up
 }
 
 /** Notification configuration */

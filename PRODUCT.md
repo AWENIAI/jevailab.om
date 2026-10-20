@@ -31,8 +31,8 @@ Confirmed capabilities:
 
 - Auth: Better Auth — email/password, Google OAuth, API keys, admin roles, user banning, delete account.
 - Payments: Stripe, Creem, or Waffo selected by `VITE_PAYMENT_PROVIDER`; plans Free, Pro ($9.90/month or $99/year), Lifetime ($199 one-time); checkout, billing portal, and webhooks.
-- Mail: Resend or Cloudflare Email behind a provider abstraction, with React Email templates.
-- Newsletter: Resend or Beehiiv; waitlist page; auto-subscribe after sign-up.
+- Mail: Cloudflare Email Service behind a provider abstraction, with React Email templates.
+- Newsletter: Cloudflare D1 or Beehiiv; waitlist page; auto-subscribe after sign-up.
 - Storage: Cloudflare R2 user files with configured allowed types and size limits.
 - AI playground: Cloudflare Workers AI (REST) and fal.ai — text summarization, translation, tagline generation, text-to-speech, image captioning, and image generation/editing.
 - Blog: Content Collections (markdown), English/Chinese content, pagination.

@@ -1,0 +1,22 @@
+<view class="preview card" wx:if="{{job}}">
+  <view class="head">
+    <text class="status status-{{job.status}}">{{statusText[job.status] || job.status}}</text>
+  </view>
+
+  <view class="grid" wx:if="{{job.outputs.length}}">
+    <image
+      wx:for="{{job.outputs}}"
+      wx:key="id"
+      class="out"
+      src="{{item.url}}"
+      mode="aspectFill"
+      data-url="{{item.url}}"
+      bindtap="onOpenOutput"
+      lazy-load="true"
+    />
+  </view>
+
+  <view class="actions" wx:if="{{job.status === 'completed' || job.status === 'partial'}}">
+    <view class="btn-ghost" bindtap="onRegenerate">再次生成</view>
+  </view>
+</view>

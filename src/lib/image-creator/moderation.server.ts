@@ -1,3 +1,10 @@
+import {
+  ScanSemanticMode,
+  type ScanPromptParams,
+  type ScanResult,
+  WaffoPancake,
+} from '@waffo/pancake-ts';
+
 export type ModerationSubject =
   | { kind: 'prompt'; text: string }
   | { kind: 'reference_image'; assetId: string; storageKey: string }
@@ -45,6 +52,15 @@ type SeeApiImageModerationOptions = {
 
 const SEEAPI_BASE_URL = 'https://api.seeapi.com/v1/inferences';
 const SEEAPI_POLICY_VERSION = 'seeapi-nsfw-filter-v1';
+const WAFFO_PROMPT_POLICY_VERSION = 'waffo-scan-prompt-v1';
+const WAFFO_PROMPT_MAX_CODE_POINTS = 10_000;
+
+type WaffoScanPrompt = (params: ScanPromptParams) => Promise<ScanResult>;
+
+type WaffoPromptModerationOptions = {
+  scanPrompt: WaffoScanPrompt;
+  semantic?: ScanSemanticMode;
+};
 
 function asStringList(value: unknown): string[] {
   return Array.isArray(value)
@@ -55,6 +71,83 @@ function asStringList(value: unknown): string[] {
 function wait(milliseconds: number): Promise<void> {
   if (milliseconds <= 0) return Promise.resolve();
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function detectPromptLocale(text: string): 'ja' | 'en' | 'zh' {
+  if (/[\u3040-\u30ff]/u.test(text)) return 'ja';
+  if (/[\u3400-\u9fff]/u.test(text)) return 'zh';
+  return 'en';
+}
+
+/**
+ * Waffo scans the complete prompt immediately before AIGC generation. Any
+ * verdict other than `allow` must stop the request, including the documented
+ * fail-closed `review + service_degraded` response.
+ */
+export class WaffoPromptModerationProvider implements ModerationProvider {
+  private readonly semantic: ScanSemanticMode;
+
+  constructor(private readonly options: WaffoPromptModerationOptions) {
+    this.semantic = options.semantic ?? ScanSemanticMode.Enforce;
+  }
+
+  async review(subject: ModerationSubject): Promise<ModerationResult> {
+    if (subject.kind !== 'prompt') {
+      return this.unavailable('WAFFO_PROMPT_ONLY');
+    }
+
+    const prompt = subject.text.trim();
+    if (
+      prompt.length === 0 ||
+      Array.from(prompt).length > WAFFO_PROMPT_MAX_CODE_POINTS
+    ) {
+      return this.unavailable('WAFFO_PROMPT_LENGTH_INVALID');
+    }
+
+    try {
+      const verdict = await this.options.scanPrompt({
+        prompt,
+        locale: detectPromptLocale(prompt),
+        semantic: this.semantic,
+      });
+      const reasonCode = `WAFFO_${verdict.reasonCode.toUpperCase()}`;
+
+      switch (verdict.action) {
+        case 'allow':
+          return {
+            decision: 'approved',
+            policyVersion: WAFFO_PROMPT_POLICY_VERSION,
+          };
+        case 'block':
+          return {
+            decision: 'rejected',
+            policyVersion: WAFFO_PROMPT_POLICY_VERSION,
+            reasonCode,
+          };
+        case 'review':
+          return {
+            decision:
+              verdict.reasonCode === 'service_degraded'
+                ? 'unavailable'
+                : 'manual_review',
+            policyVersion: WAFFO_PROMPT_POLICY_VERSION,
+            reasonCode,
+          };
+        default:
+          return this.unavailable('WAFFO_UNKNOWN_ACTION');
+      }
+    } catch {
+      return this.unavailable('WAFFO_REQUEST_FAILED');
+    }
+  }
+
+  private unavailable(reasonCode: string): ModerationResult {
+    return {
+      decision: 'unavailable',
+      policyVersion: WAFFO_PROMPT_POLICY_VERSION,
+      reasonCode,
+    };
+  }
 }
 
 /**
@@ -191,10 +284,24 @@ class LocalMockModerationProvider implements ModerationProvider {
   }
 }
 
+class RoutedModerationProvider implements ModerationProvider {
+  constructor(
+    private readonly promptProvider: ModerationProvider,
+    private readonly imageProvider: ModerationProvider
+  ) {}
+
+  review(subject: ModerationSubject): Promise<ModerationResult> {
+    return subject.kind === 'prompt'
+      ? this.promptProvider.review(subject)
+      : this.imageProvider.review(subject);
+  }
+}
+
 export function resolveModerationProvider({
   environment,
   allowDevelopmentMock,
   seeApi,
+  waffo,
 }: {
   environment: string | undefined;
   allowDevelopmentMock: boolean;
@@ -204,18 +311,34 @@ export function resolveModerationProvider({
     thresholdOffset?: number;
     strictSpecialCare?: boolean;
   };
+  waffo?: {
+    scanPrompt: WaffoScanPrompt;
+    semantic?: ScanSemanticMode;
+  };
 }): ModerationProvider {
-  if (seeApi?.apiKey) {
-    return new SeeApiImageModerationProvider(seeApi);
-  }
-  if (environment !== 'production' && allowDevelopmentMock) {
-    return new LocalMockModerationProvider();
-  }
-  return new UnavailableModerationProvider();
+  const useDevelopmentMock =
+    environment !== 'production' && allowDevelopmentMock;
+  const promptProvider = waffo?.scanPrompt
+    ? new WaffoPromptModerationProvider(waffo)
+    : useDevelopmentMock
+      ? new LocalMockModerationProvider()
+      : new UnavailableModerationProvider();
+  const imageProvider = seeApi?.apiKey
+    ? new SeeApiImageModerationProvider(seeApi)
+    : useDevelopmentMock
+      ? new LocalMockModerationProvider()
+      : new UnavailableModerationProvider();
+  return new RoutedModerationProvider(promptProvider, imageProvider);
 }
 
 export function getRuntimeModerationProvider(): ModerationProvider {
   const apiKey = process.env.SEEAPI_API_KEY;
+  const merchantId = process.env.WAFFO_MERCHANT_ID;
+  const privateKey = process.env.WAFFO_PRIVATE_KEY;
+  const waffoClient =
+    merchantId && privateKey
+      ? new WaffoPancake({ merchantId, privateKey })
+      : undefined;
   return resolveModerationProvider({
     environment: process.env.NODE_ENV,
     allowDevelopmentMock:
@@ -235,5 +358,65 @@ export function getRuntimeModerationProvider(): ModerationProvider {
             process.env.SEEAPI_NSFW_STRICT_SPECIAL_CARE !== 'false',
         }
       : undefined,
+    waffo: waffoClient
+      ? {
+          scanPrompt: (params) => waffoClient.contentSafety.scanPrompt(params),
+        }
+      : undefined,
   });
+}
+
+export async function assertPromptApproved(text: string): Promise<void> {
+  const moderation = await getRuntimeModerationProvider().review({
+    kind: 'prompt',
+    text,
+  });
+  if (moderation.decision === 'approved') return;
+
+  if (moderation.decision === 'rejected') {
+    throw new ModerationRejectedError(
+      'This prompt could not pass content review.',
+      moderation.reasonCode
+    );
+  }
+  if (moderation.decision === 'manual_review') {
+    throw new ModerationReviewRequiredError(
+      'This prompt needs manual content review before it can be generated.',
+      moderation.reasonCode
+    );
+  }
+  throw new ModerationUnavailableError(
+    'Prompt content review is temporarily unavailable. Please try again later.',
+    moderation.reasonCode
+  );
+}
+
+export class ModerationRejectedError extends Error {
+  constructor(
+    message: string,
+    readonly reasonCode?: string
+  ) {
+    super(message);
+    this.name = 'ModerationRejectedError';
+  }
+}
+
+export class ModerationReviewRequiredError extends Error {
+  constructor(
+    message: string,
+    readonly reasonCode?: string
+  ) {
+    super(message);
+    this.name = 'ModerationReviewRequiredError';
+  }
+}
+
+export class ModerationUnavailableError extends Error {
+  constructor(
+    message: string,
+    readonly reasonCode?: string
+  ) {
+    super(message);
+    this.name = 'ModerationUnavailableError';
+  }
 }

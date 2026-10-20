@@ -1,0 +1,26 @@
+<view class="container">
+  <view class="card profile-head">
+    <view class="avatar">{{user ? (user.name || '我') : '我'}}</view>
+    <view class="info">
+      <view class="name">{{user ? (user.email || user.name || 'Jevailab 用户') : '未登录'}}</view>
+      <view class="hint">私密创作 · 私有工作流</view>
+    </view>
+  </view>
+
+  <view class="card section-gap wallet">
+    <view class="muted">可用积分</view>
+    <view class="balance credit">{{walletAvailable === null ? '—' : walletAvailable}}</view>
+    <view class="hint">冻结 {{reserved}} · 1K=2 积分 / 2K=5 积分</view>
+  </view>
+
+  <view class="menu card section-gap">
+    <view class="menu-item" bindtap="goPay">
+      <text>积分购买</text><text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goPolicy">
+      <text>隐私与内容安全</text><text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view class="btn-ghost section-gap logout" bindtap="onLogout">退出登录</view>
+</view>

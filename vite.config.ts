@@ -16,6 +16,11 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 const config = defineConfig({
   server: {
     allowedHosts: ['.trycloudflare.com', '.jevailab.com'],
+    watch: {
+      // Paraglide rewrites thousands of generated files during startup and
+      // locale edits. Watching them causes EBUSY on synced Windows folders.
+      ignored: ['**/src/locale/paraglide/**'],
+    },
   },
   resolve: {
     alias: {

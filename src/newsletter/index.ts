@@ -1,6 +1,6 @@
 import { websiteConfig } from '@/config/website';
-import { ResendNewsletterProvider } from './provider/resend';
 import { BeehiivNewsletterProvider } from './provider/beehiiv';
+import { CloudflareNewsletterProvider } from './provider/cloudflare';
 import type { NewsletterProvider, NewsletterProviderName } from './types';
 
 let newsletterProvider: NewsletterProvider | null = null;
@@ -8,8 +8,8 @@ let newsletterProvider: NewsletterProvider | null = null;
 type ProviderFactory = () => NewsletterProvider;
 
 const providerRegistry: Record<NewsletterProviderName, ProviderFactory> = {
-  resend: () => new ResendNewsletterProvider(),
   beehiiv: () => new BeehiivNewsletterProvider(),
+  cloudflare: () => new CloudflareNewsletterProvider(),
 };
 
 function createProvider(): NewsletterProvider {

@@ -39,6 +39,7 @@ export const Route = createFileRoute('/sitemap.xml')({
         }
         if (websiteConfig.payment?.enable) {
           staticUrls.push({ path: '/pricing', changefreq: 'weekly' });
+          staticUrls.push({ path: '/launch-pricing', changefreq: 'weekly' });
         }
 
         const pages = staticUrls.map((page) => ({

@@ -34,6 +34,7 @@ const PUBLIC_PAGE_TYPES: Record<string, string> = {
   '/roadmap': 'WebPage',
   '/waitlist': 'WebPage',
   '/pricing': 'WebPage',
+  '/launch-pricing': 'WebPage',
   '/ai': 'WebPage',
   '/privacy': 'WebPage',
   '/terms': 'WebPage',

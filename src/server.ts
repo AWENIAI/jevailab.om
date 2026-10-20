@@ -95,13 +95,22 @@ export default {
             import('@/lib/video-creator/dispatcher.server'),
             import('@/lib/video-creator/reconciliation.server'),
           ]);
+        const [
+          { dispatchPendingImageJobs },
+          { reconcileImageJobs },
+        ] = await Promise.all([
+          import('@/lib/miniprogram/image-jobs-dispatcher.server'),
+          import('@/lib/miniprogram/image-jobs-reconciliation.server'),
+        ]);
         const outcomes = await Promise.allSettled([
           dispatchPendingVideoJobs(),
           reconcileVideoJobs(),
+          dispatchPendingImageJobs(),
+          reconcileImageJobs(),
         ]);
         if (outcomes.some((outcome) => outcome.status === 'rejected')) {
-          logOperationalEvent.warn('video background work requires review', {
-            reason: 'video_worker_rejected',
+          logOperationalEvent.warn('background generation work requires review', {
+            reason: 'generation_worker_rejected',
           });
         }
       })()

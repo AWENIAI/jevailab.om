@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/workbench/workbench",
+    "pages/history/history",
+    "pages/auth/auth",
+    "pages/result/result"
+  ],
+  "subpackages": [
+    { "root": "subpackages/profile", "pages": ["profile"] },
+    { "root": "subpackages/pay", "pages": ["pay"] }
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0c0c0c",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "Jevailab",
+    "backgroundColor": "#0c0c0c",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#888780",
+    "selectedColor": "#E8A33D",
+    "backgroundColor": "#0c0c0c",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/workbench/workbench", "text": "创作" },
+      { "pagePath": "pages/history/history", "text": "历史" }
+    ]
+  },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "用于保存生成的图片到你的相册"
+    }
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

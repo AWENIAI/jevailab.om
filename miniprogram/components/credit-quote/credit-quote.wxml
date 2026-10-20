@@ -1,0 +1,14 @@
+<view class="quote card">
+  <view class="row">
+    <text class="muted">本次消耗</text>
+    <price-display credits="{{quote.totalCredits}}" size="md"></price-display>
+  </view>
+  <view class="row hint" wx:if="{{quote.unitCredits}}">
+    单张 {{quote.unitCredits}} 积分 × {{count}} 张
+  </view>
+  <view class="row hint" wx:if="{{walletAvailable !== null}}">
+    当前余额 <text class="credit">{{walletAvailable}}</text> 积分
+  </view>
+  <view class="warn" wx:if="{{insufficient}}">余额不足，请先充值</view>
+  <view class="hint">服务端报价 · 5 分钟内有效</view>
+</view>

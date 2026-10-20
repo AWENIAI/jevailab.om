@@ -1,0 +1,14 @@
+<view class="item card" bindtap="onOpen" wx:if="{{job}}">
+  <image
+    class="thumb"
+    src="{{job.coverUrl || (job.outputs[0].url)}}"
+    mode="aspectFill"
+    lazy-load="true"
+  />
+  <view class="meta">
+    <view class="t">{{job.templateName || '自由创作'}}</view>
+    <view class="hint">{{job.mode}} · {{job.ratio}} · {{job.count}} 张</view>
+    <view class="hint">{{job.statusText || job.status}} · {{job.timeText}}</view>
+  </view>
+  <view class="arrow">›</view>
+</view>

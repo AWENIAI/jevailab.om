@@ -1,0 +1,4 @@
+.auth { text-align: center; padding-top: 200rpx; }
+.logo { font-size: 64rpx; font-weight: 600; color: var(--accent); }
+.auth .muted { margin-top: 16rpx; }
+.err { color: var(--danger); font-size: 24rpx; margin-top: 20rpx; }

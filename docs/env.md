@@ -72,11 +72,9 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | `GOOGLE_CLIENT_ID` | Google OAuth | No | Auth when Google login enabled |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth | No | Auth when Google login enabled |
 | `GOOGLE_EXTENSION_CLIENT_ID` | Browser extension Google OAuth | No | Added as a Google ID-token audience, required as the tokeninfo `aud` for extension access tokens, and required by `POST /api/auth/extension/google` (returns `503` without it) |
-| **Mail & newsletter (Resend)** | | | |
-| `RESEND_API_KEY` | Resend API | No | [Mail](./mail.md), [Newsletter](./newsletter.md) (when using Resend) |
 | **Cloudflare API** | | | |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | No | [Mail](./mail.md) (Cloudflare provider), [AI](./ai.md) (Workers AI REST), and drizzle-kit (`drizzle.config.ts`) |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | No | Same consumers as `CLOUDFLARE_ACCOUNT_ID`; the token needs Email Send, Workers AI, and D1 permissions for the features you use |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | No | [AI](./ai.md) (Workers AI REST) and drizzle-kit (`drizzle.config.ts`) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | No | Same consumers as `CLOUDFLARE_ACCOUNT_ID`; the token needs Workers AI and D1 permissions for the features you use |
 | **Newsletter (Beehiiv)** | | | |
 | `BEEHIIV_API_KEY` | Beehiiv API | No | Newsletter when provider is Beehiiv |
 | `BEEHIIV_PUBLICATION_ID` | Beehiiv publication | No | Newsletter when provider is Beehiiv |
@@ -96,6 +94,14 @@ Read at **Worker request time**. Used for secrets, API keys, and server-only con
 | `WAFFO_PRIVATE_KEY` | Waffo RSA private key | No | [Payment](./payment.md); server-only secret; never expose it client-side or prefix it with `VITE_` |
 | **AI** | | | |
 | `FAL_KEY` | fal.ai API key | No | [AI](../src/api/ai.ts); required for image generation/edit via fal.ai |
+| **WeChat Mini Program** | | | |
+| `WECHAT_MINIPROGRAM_APPID` | Mini Program AppID | No | Required for `wx.login`, virtual payment signatures, and message push decryption |
+| `WECHAT_MINIPROGRAM_SECRET` | Mini Program AppSecret | No | Server-only; used by `code2session` and access-token requests |
+| `WECHAT_VIRTUAL_PAY_OFFER_ID` | Virtual-payment OfferID | No | Required to create quota-package orders |
+| `WECHAT_VIRTUAL_PAY_APP_KEY` | Virtual-payment AppKey | No | Server-only; signs `requestVirtualPayment` and `query_order` requests |
+| `WECHAT_VIRTUAL_PAY_ENV` | Virtual-payment environment | No | `0` for production, `1` for sandbox; defaults to `0` |
+| `WECHAT_MESSAGE_PUSH_TOKEN` | Message-push URL token | No | Must match the token configured in WeChat MP |
+| `WECHAT_MESSAGE_PUSH_ENCODING_AES_KEY` | Message-push AES key | No | Required for safe-mode delivery notifications |
 
 ### Tooling-only variables
 
@@ -140,6 +146,7 @@ Bindings are configured in `wrangler.jsonc`, not `serverEnv`.
 | `DB` | Cloudflare D1 | Database / Drizzle |
 | `BUCKET` | Cloudflare R2 | [Storage](./storage.md) |
 | `CACHE` | Cloudflare KV | [Cache](./cache.md), newsletter status caching |
+| `EMAIL` | Cloudflare Email Service | Transactional mail ([Mail](./mail.md)) via native `send_email` binding |
 
 ---
 

@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "generation-preview": "/components/generation-preview/generation-preview"
+  },
+  "navigationBarTitleText": "创作详情"
+}

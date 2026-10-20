@@ -4,7 +4,7 @@ This file provides guidance to Code Agents (Codex, Cursor, etc.) when working wi
 
 ## Project Overview
 
-**jevailab** — a full-stack AI image and video creation product built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem / Waffo), email (Resend / Cloudflare Email), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
+**jevailab** — a full-stack AI image and video creation product built with TanStack Start + React 19, deployed on Cloudflare Workers. Includes auth (Better Auth), payments (Stripe / Creem / Waffo), email (Cloudflare Email Service), storage (Cloudflare R2), database (Cloudflare D1 via Drizzle ORM), blog (Content Collections), and admin dashboard.
 
 ## Commands
 
@@ -63,7 +63,7 @@ Incoming request → Cloudflare Worker (`src/server.ts`) → TanStack Start hand
 
 - **Server functions**: Defined with `createServerFn()` from `@tanstack/react-start`. Located in `src/api/`. Use `.validator()` (Zod) and `.middleware()` chains. Called directly from client code.
 
-- **Provider pattern**: Mail, storage, newsletter, notification, cache, and payment each use a provider abstraction (`src/*/provider/`) so implementations can be swapped (e.g., `src/mail/provider/resend.ts`, `src/storage/provider/r2.ts`).
+- **Provider pattern**: Mail, storage, newsletter, notification, cache, and payment each use a provider abstraction (`src/*/provider/`) so implementations can be swapped (e.g., `src/mail/provider/cloudflare.ts`, `src/storage/provider/r2.ts`).
 
 - **Middleware** (`src/middlewares/`):
   - Route middleware (redirects): `authRouteMiddleware` (login + verified email), `adminRouteMiddleware` (admin role), `guestRouteMiddleware` (signed-out only, for login/register).
@@ -81,10 +81,10 @@ Incoming request → Cloudflare Worker (`src/server.ts`) → TanStack Start hand
 | `src/middlewares/` | Route and server-function middleware (auth, admin, guest) |
 | `src/db/` | Drizzle schemas (`auth.schema.ts` auto-generated, `app.schema.ts` app tables), migrations, types |
 | `src/payment/` | Stripe / Creem / Waffo integration (checkout, portal, webhooks) |
-| `src/mail/` | Resend / Cloudflare Email — provider, templates (React components), rendering |
+| `src/mail/` | Cloudflare Email — provider, templates (React components), rendering |
 | `src/storage/` | Cloudflare R2 file storage |
 | `src/cache/` | Cloudflare KV JSON cache |
-| `src/newsletter/` | Resend and Beehiiv newsletter via API |
+| `src/newsletter/` | Cloudflare D1 and Beehiiv newsletter providers |
 | `src/notification/` | Discord/Feishu webhook notifications |
 | `src/locale/` | Paraglide middleware; `src/locale/paraglide/` is generated (git-ignored) |
 | `src/components/ui/` | shadcn/ui components (auto-generated, excluded from linting) |
