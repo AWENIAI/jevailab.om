@@ -45,6 +45,9 @@ enable real generation until both are working.
    - Token: same as `WECHAT_MESSAGE_PUSH_TOKEN`
    - EncodingAESKey: same as `WECHAT_MESSAGE_PUSH_ENCODING_AES_KEY`
    - Encryption mode: safe mode
+   - Subscribe to both `xpay_goods_deliver_notify` and
+     `xpay_refund_notify`. The route verifies the URL signature and
+     safe-mode payload before processing either event.
 4. Create and publish the virtual-payment goods exactly as follows:
 
 | Product ID | Credits | Price |
@@ -84,6 +87,14 @@ in the mini program.
 - A repeated payment notification credits the wallet once.
 - `wx.requestVirtualPayment` success is not proof of delivery. The server
   always calls `query_order` before granting credits.
+- Refund events are status-only. `xpay_refund_notify` is verified, looked up
+  through `query_order`, and recorded as `REFUNDED` (query status `5` or `8`)
+  or `REFUND_FAILED` (status `7`). Refund handling never subtracts credits
+  automatically, because the user may already have consumed them and a
+  negative wallet balance would corrupt subsequent jobs.
+- If a refund is completed after delivery and the remaining credits are
+  disputed, suspend further manual grants for that order and reconcile the
+  ledger with support. Do not reuse the original `pay:<outTradeNo>` event key.
 
 ## 5. Incident checks
 

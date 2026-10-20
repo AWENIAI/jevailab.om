@@ -63,4 +63,25 @@ describe('WeChat virtual payment delivery push', () => {
       platformOrderId: 'wx_order_1',
     });
   });
+
+  test('parses refund notifications', () => {
+    const push = parseWechatPush(
+      `<xml>
+        <Event><![CDATA[xpay_refund_notify]]></Event>
+        <OpenId><![CDATA[openid_1]]></OpenId>
+        <OutTradeNo><![CDATA[mp_local_1]]></OutTradeNo>
+        <WeChatPayInfo>
+          <MchOrderNo><![CDATA[wx_order_1]]></MchOrderNo>
+        </WeChatPayInfo>
+      </xml>`,
+      'application/xml'
+    );
+
+    expect(push).toMatchObject({
+      event: 'xpay_refund_notify',
+      openid: 'openid_1',
+      outTradeNo: 'mp_local_1',
+      platformOrderId: 'wx_order_1',
+    });
+  });
 });

@@ -27,6 +27,7 @@ import {
   deliverFromNotify,
   listVirtualPayOrders,
   queryAndDeliverOrder,
+  syncRefundFromNotify,
 } from '@/lib/miniprogram/virtualpay.server';
 import {
   logWechatPushParseFailure,
@@ -103,7 +104,10 @@ async function handlePaymentNotify(request: Request): Promise<Response> {
       url.searchParams.get('encrypt_type')
     );
     format = push.format;
-    if (push.event !== 'xpay_goods_deliver_notify') {
+    if (
+      push.event !== 'xpay_goods_deliver_notify' &&
+      push.event !== 'xpay_refund_notify'
+    ) {
       return push.format === 'json'
         ? jsonResponse({ ErrCode: 0, ErrMsg: 'ignored' })
         : new Response(
@@ -112,14 +116,22 @@ async function handlePaymentNotify(request: Request): Promise<Response> {
           );
     }
     if (!push.outTradeNo || !push.openid) {
-      throw new Error('Missing delivery notification fields.');
+      throw new Error('Missing payment notification fields.');
     }
-    const result = await deliverFromNotify(
-      push.outTradeNo,
-      push.openid,
-      raw,
-      push.platformOrderId
-    );
+    const result =
+      push.event === 'xpay_refund_notify'
+        ? await syncRefundFromNotify(
+            push.outTradeNo,
+            push.openid,
+            raw,
+            push.platformOrderId
+          )
+        : await deliverFromNotify(
+            push.outTradeNo,
+            push.openid,
+            raw,
+            push.platformOrderId
+          );
     const ok = result.ok;
     if (format === 'json') {
       return jsonResponse(

@@ -234,6 +234,28 @@ async function markDelivered(
   };
 }
 
+async function updateOrderFromRefundQuery(
+  order: typeof miniprogramOrders.$inferSelect,
+  query: QueryOrderResult,
+  notifyPayload?: string
+) {
+  const plan = getPaymentDeliveryPlan(query);
+  if (plan.kind !== 'refunded' && plan.kind !== 'refund_failed') {
+    return null;
+  }
+  const status = getOrderStatusForPayment(plan);
+  await getDb()
+    .update(miniprogramOrders)
+    .set({
+      wxOrderId: plan.wxOrderId ?? order.wxOrderId,
+      status,
+      notifyPayload: notifyPayload ?? order.notifyPayload,
+      updatedAt: new Date(),
+    })
+    .where(eq(miniprogramOrders.id, order.id));
+  return status;
+}
+
 export async function queryAndDeliverOrder(userId: string, outTradeNo: string) {
   const [order] = await getDb()
     .select()
@@ -247,6 +269,26 @@ export async function queryAndDeliverOrder(userId: string, outTradeNo: string) {
     .limit(1);
   if (!order) throw new MiniProgramApiError('NOT_FOUND', '订单不存在');
   if (order.status === 'DELIVERED') {
+    try {
+      const query = await queryOrder(order.openid, outTradeNo);
+      const refundStatus = await updateOrderFromRefundQuery(order, query);
+      if (refundStatus) {
+        return {
+          outTradeNo,
+          status: refundStatus,
+          delivered: false,
+          paid: false,
+          wallet: await getWalletSummary(userId),
+        };
+      }
+    } catch (error) {
+      // A delivered order must remain usable when the optional refund refresh
+      // is temporarily unavailable. The payment push will retry separately.
+      logOperationalEvent.warn(
+        'miniprogram delivered order refund refresh failed',
+        error
+      );
+    }
     return {
       outTradeNo,
       status: 'DELIVERED',
@@ -315,6 +357,17 @@ export async function deliverFromNotify(
     return { ok: false as const, retryable: false };
   }
   if (order.status === 'DELIVERED') {
+    try {
+      const query = await queryOrder(order.openid, order.outTradeNo);
+      await updateOrderFromRefundQuery(order, query, payload);
+    } catch (error) {
+      // The delivery itself is already complete; do not make the platform
+      // resend a delivery notification just because refund lookup failed.
+      logOperationalEvent.warn(
+        'miniprogram delivered order refund refresh failed',
+        error
+      );
+    }
     return { ok: true as const, credited: false };
   }
   const query = await queryOrder(order.openid, order.outTradeNo);
@@ -337,4 +390,54 @@ export async function deliverFromNotify(
         ? result.credited
         : false,
   };
+}
+
+export async function syncRefundFromNotify(
+  outTradeNo: string,
+  openid: string,
+  payload: string,
+  platformOrderId?: string
+) {
+  const [order] = await getDb()
+    .select()
+    .from(miniprogramOrders)
+    .where(eq(miniprogramOrders.outTradeNo, outTradeNo))
+    .limit(1);
+  if (!order) {
+    logOperationalEvent.warn('miniprogram refund notify unknown order', {
+      outTradeNo,
+    });
+    return { ok: false as const, retryable: false };
+  }
+  if (order.openid !== openid) {
+    logOperationalEvent.warn('miniprogram refund notify openid mismatch', {
+      outTradeNo,
+    });
+    return { ok: false as const, retryable: false };
+  }
+
+  const query = await queryOrder(order.openid, order.outTradeNo);
+  if (
+    platformOrderId &&
+    query.order?.wx_order_id &&
+    query.order.wx_order_id !== platformOrderId
+  ) {
+    logOperationalEvent.warn(
+      'miniprogram refund notify platform order mismatch',
+      { outTradeNo }
+    );
+    return { ok: false as const, retryable: false };
+  }
+
+  const status = await updateOrderFromRefundQuery(order, query, payload);
+  if (!status) {
+    // A refund push can arrive before query_order reflects the terminal state.
+    // Acknowledge it, but never alter wallet credits from a refund event.
+    logOperationalEvent.info('miniprogram refund notify pending', {
+      outTradeNo,
+      queryStatus: query.order?.status,
+    });
+    return { ok: true as const, updated: false };
+  }
+  return { ok: true as const, updated: true, status };
 }

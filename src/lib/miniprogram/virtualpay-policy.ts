@@ -15,7 +15,7 @@ export type PaymentDeliveryPlan =
       wxOrderId: string | null;
     }
   | {
-      kind: 'pending' | 'closed' | 'refunded';
+      kind: 'pending' | 'closed' | 'refunded' | 'refund_failed';
       wxOrderId: string | null;
     };
 
@@ -39,7 +39,8 @@ export function getPaymentDeliveryPlan(
     return { kind: 'paid', wxOrderId };
   }
   if (status === 6) return { kind: 'closed', wxOrderId };
-  if (status === 5 || status === 7 || status === 8) {
+  if (status === 7) return { kind: 'refund_failed', wxOrderId };
+  if (status === 5 || status === 8) {
     return { kind: 'refunded', wxOrderId };
   }
   return { kind: 'pending', wxOrderId };
@@ -66,8 +67,9 @@ export function validatePaidOrderAmount({
 
 export function getOrderStatusForPayment(
   plan: PaymentDeliveryPlan
-): 'PENDING' | 'CLOSED' | 'REFUNDED' {
+): 'PENDING' | 'CLOSED' | 'REFUNDED' | 'REFUND_FAILED' {
   if (plan.kind === 'closed') return 'CLOSED';
   if (plan.kind === 'refunded') return 'REFUNDED';
+  if (plan.kind === 'refund_failed') return 'REFUND_FAILED';
   return 'PENDING';
 }

@@ -97,7 +97,7 @@ describe('mini program virtual payment policy', () => {
     ).toBe(false);
   });
 
-  test('maps paid, pending, closed, and refunded query states', () => {
+  test('maps paid, pending, closed, refunded, and refund-failed query states', () => {
     expect(
       getPaymentDeliveryPlan({
         order: { status: 2, wx_order_id: 'wx_1' },
@@ -118,6 +118,20 @@ describe('mini program virtual payment policy', () => {
       getOrderStatusForPayment(
         getPaymentDeliveryPlan({
           order: { status: 8 },
+        })
+      )
+    ).toBe('REFUNDED');
+    expect(
+      getOrderStatusForPayment(
+        getPaymentDeliveryPlan({
+          order: { status: 7 },
+        })
+      )
+    ).toBe('REFUND_FAILED');
+    expect(
+      getOrderStatusForPayment(
+        getPaymentDeliveryPlan({
+          order: { status: 5 },
         })
       )
     ).toBe('REFUNDED');
