@@ -1,11 +1,9 @@
 import { getKieImageGenerationStatus } from '@/api/ai';
 import {
-  deleteImageCreatorReference,
   getImageCreatorPolicy,
   getImageCreatorTemplates,
   quoteImageCreatorDraft,
   startImageCreatorGeneration,
-  uploadImageCreatorReference,
 } from '@/api/image-creator';
 import { authClient } from '@/auth/client';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +12,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import {
   buildImageCreatorAuthHref,
@@ -23,14 +20,10 @@ import {
   getLocalizedImageTemplate,
   JEVAILAB_TEMPLATE_SELECTION_EVENT,
   resolveExternalTemplateSelection,
-  validateImageCreatorReferenceFile,
 } from '@/lib/image-creator/ui-state';
 import {
-  clearImageCreatorReference,
   loadImageCreatorDraft,
-  loadImageCreatorReference,
   saveImageCreatorDraft,
-  saveImageCreatorReference,
 } from '@/lib/image-creator/draft-storage';
 import { getLocale } from '@/lib/locale';
 import type {
@@ -42,16 +35,13 @@ import { getPathWithLocale } from '@/lib/urls';
 import { cn } from '@/lib/utils';
 import {
   IconArrowRight,
-  IconAlertCircle,
   IconCheck,
   IconDownload,
   IconLoader2,
-  IconPhoto,
   IconPlus,
   IconSearch,
   IconSparkles,
   IconWand,
-  IconX,
 } from '@tabler/icons-react';
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -68,6 +58,48 @@ type CreatorLocale = 'zh' | 'en';
 
 function copy(locale: CreatorLocale, zh: string, en: string) {
   return locale === 'zh' ? zh : en;
+}
+
+function localizeCreatorError(
+  locale: CreatorLocale,
+  message: string | undefined,
+  fallback: { zh: string; en: string }
+) {
+  if (locale !== 'zh') return message || fallback.en;
+  if (!message) return fallback.zh;
+
+  const knownMessages: ReadonlyArray<readonly [RegExp, string]> = [
+    [/unauthorized|email not verified/i, '登录状态已失效，请重新登录后再试。'],
+    [/describe what you want to create/i, '请描述你希望生成的图片。'],
+    [
+      /selected template is no longer available/i,
+      '所选模板已不可用，请重新选择。',
+    ],
+    [
+      /selected aspect ratio is not available at this resolution/i,
+      '当前清晰度不支持所选比例，请更换比例。',
+    ],
+    [
+      /kie_api_key is not configured|kie did not return a task id|kie image request failed|could not start image generation/i,
+      '图片生成服务暂时不可用，请稍后重试。',
+    ],
+    [
+      /invalid generation ticket|generation ticket has expired/i,
+      '生成任务已失效，请重新提交。',
+    ],
+    [
+      /generated output is withheld pending content review/i,
+      '生成结果正在接受内容审核，请稍后查看。',
+    ],
+    [/generation failed/i, '图片生成失败，请稍后重试。'],
+    [
+      /prompt.*(rejected|not approved)|content.*(rejected|not approved)|审核/i,
+      '文字描述未通过内容审核，请修改后重试。',
+    ],
+  ];
+  return (
+    knownMessages.find(([pattern]) => pattern.test(message))?.[1] ?? fallback.zh
+  );
 }
 
 function localizedCategory(category: string, locale: CreatorLocale) {
@@ -104,15 +136,6 @@ export default function AiImageCreatorSection() {
   const [mode, setMode] = useState<ImageCreatorMode>('1K_SD');
   const [ratio, setRatio] = useState<ImageCreatorRatio>('3:4');
   const [count, setCount] = useState(1);
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
-  const [referenceName, setReferenceName] = useState<string>();
-  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string>();
-  const [referenceAssetId, setReferenceAssetId] = useState<string | null>(null);
-  const referenceObjectUrlsRef = useRef<Set<string>>(new Set());
-  const [isUploadingReference, setIsUploadingReference] = useState(false);
-  const [isRemovingReference, setIsRemovingReference] = useState(false);
-  const [referenceUploadProgress, setReferenceUploadProgress] = useState(0);
-  const [referenceUploadError, setReferenceUploadError] = useState<string>();
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [quote, setQuote] = useState<Quote>();
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
@@ -120,12 +143,6 @@ export default function AiImageCreatorSection() {
   const [ticket, setTicket] = useState<string>();
   const [pendingGenerate, setPendingGenerate] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(false);
-  const [referenceHydrated, setReferenceHydrated] = useState(false);
-  const uploadReferencePromiseRef = useRef<Promise<string | null> | null>(null);
-  const uploadedReferenceRef = useRef<{
-    file: File;
-    assetId: string;
-  } | null>(null);
   const pendingGenerateRef = useRef(false);
   const resumeStartedRef = useRef(false);
   const creatorFormRef = useRef<HTMLElement>(null);
@@ -167,28 +184,6 @@ export default function AiImageCreatorSection() {
   const [tasks, setTasks] = useState<GenerationTask[]>([]);
   const [error, setError] = useState<string>();
 
-  function createReferencePreviewUrl(file: File) {
-    const previewUrl = URL.createObjectURL(file);
-    referenceObjectUrlsRef.current.add(previewUrl);
-    return previewUrl;
-  }
-
-  function releaseReferencePreviewUrl(previewUrl?: string) {
-    if (!previewUrl || !referenceObjectUrlsRef.current.has(previewUrl)) return;
-    URL.revokeObjectURL(previewUrl);
-    referenceObjectUrlsRef.current.delete(previewUrl);
-  }
-
-  useEffect(
-    () => () => {
-      for (const previewUrl of referenceObjectUrlsRef.current) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      referenceObjectUrlsRef.current.clear();
-    },
-    []
-  );
-
   useEffect(() => {
     void getImageCreatorTemplates().then((result) => {
       setTemplates(result.items);
@@ -200,7 +195,6 @@ export default function AiImageCreatorSection() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
     const storedDraft = loadImageCreatorDraft();
     if (storedDraft) {
       setTemplateId(storedDraft.templateId);
@@ -214,27 +208,7 @@ export default function AiImageCreatorSection() {
       setPendingGenerate(storedDraft.pendingGenerate);
       pendingGenerateRef.current = storedDraft.pendingGenerate;
     }
-
-    void loadImageCreatorReference()
-      .then((file) => {
-        if (cancelled || !file) return;
-        setReferenceFile(file);
-        setReferenceName(file.name);
-        setReferencePreviewUrl(createReferencePreviewUrl(file));
-      })
-      .catch(() => {
-        // A missing or blocked local image must not prevent editing.
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setDraftHydrated(true);
-          setReferenceHydrated(true);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    setDraftHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -279,13 +253,13 @@ export default function AiImageCreatorSection() {
   const draft = useMemo(
     () => ({
       templateId,
-      referenceAssetId,
+      referenceAssetId: null,
       mode,
       ratio,
       count,
       extraPrompt: prompt,
     }),
-    [count, mode, prompt, ratio, referenceAssetId, templateId]
+    [count, mode, prompt, ratio, templateId]
   );
 
   useEffect(() => {
@@ -323,13 +297,14 @@ export default function AiImageCreatorSection() {
       } catch (pollError) {
         if (!stopped) {
           setError(
-            pollError instanceof Error
-              ? pollError.message
-              : copy(
-                  locale,
-                  '无法查询生成进度。',
-                  'Unable to check generation progress.'
-                )
+            localizeCreatorError(
+              locale,
+              pollError instanceof Error ? pollError.message : undefined,
+              {
+                zh: '无法查询生成进度，请稍后重试。',
+                en: 'Unable to check generation progress.',
+              }
+            )
           );
         }
       }
@@ -353,10 +328,7 @@ export default function AiImageCreatorSection() {
     prompt,
   });
 
-  function chooseTemplate(
-    template: PublicImageTemplate | null,
-    { preserveReference = false }: { preserveReference?: boolean } = {}
-  ) {
+  function chooseTemplate(template: PublicImageTemplate | null) {
     setTemplateId(template?.id ?? null);
     if (template) {
       setMode(template.defaultMode);
@@ -366,16 +338,6 @@ export default function AiImageCreatorSection() {
           : '3:4'
       );
       setCount(template.defaultCount);
-      if (template.inputPolicy === 'forbidden' && !preserveReference) {
-        setReferenceFile(null);
-        setReferenceName(undefined);
-        setReferenceAssetId(null);
-        releaseReferencePreviewUrl(referencePreviewUrl);
-        setReferencePreviewUrl(undefined);
-        setReferenceUploadProgress(0);
-        setReferenceUploadError(undefined);
-        void clearImageCreatorReference();
-      }
     }
     setQuote(undefined);
   }
@@ -399,7 +361,7 @@ export default function AiImageCreatorSection() {
       const template = templates.find(
         (candidate) => candidate.id === nextTemplateId
       );
-      if (template) chooseTemplate(template, { preserveReference: true });
+      if (template) chooseTemplate(template);
     }
 
     window.addEventListener(
@@ -413,114 +375,16 @@ export default function AiImageCreatorSection() {
       );
   }, [templateId, templates]);
 
-  async function uploadReference(
-    file: File,
-    previousAssetId: string | null = null
-  ): Promise<string | null> {
-    if (!signedIn) return null;
-    if (uploadReferencePromiseRef.current) {
-      return uploadReferencePromiseRef.current;
-    }
-
-    setReferenceUploadError(undefined);
-    uploadedReferenceRef.current = null;
-    setIsUploadingReference(true);
-    setReferenceUploadProgress(8);
-    const progressTimer = window.setInterval(() => {
-      setReferenceUploadProgress((current) =>
-        Math.min(92, current + Math.max(1, Math.round((92 - current) / 5)))
-      );
-    }, 180);
-
-    const uploadTask = (async () => {
-      try {
-        const form = new FormData();
-        form.set('file', file);
-        const result = await uploadImageCreatorReference({ data: form });
-        setReferenceName(result.fileName);
-        setReferenceAssetId(result.assetId);
-        uploadedReferenceRef.current = { file, assetId: result.assetId };
-        setReferenceUploadProgress(100);
-        setReferenceUploadError(undefined);
-        if (previousAssetId && previousAssetId !== result.assetId) {
-          await deleteImageCreatorReference({
-            data: { assetId: previousAssetId },
-          }).catch(() => undefined);
-        }
-        return result.assetId;
-      } catch (uploadError) {
-        setReferenceUploadProgress(0);
-        const uploadMessage =
-          uploadError instanceof Error ? uploadError.message : '';
-        setReferenceUploadError(
-          /unauthorized|email not verified/i.test(uploadMessage)
-            ? copy(
-                locale,
-                '登录状态已失效，请重新登录后再生成。',
-                'Your session expired. Sign in again before generating.'
-              )
-            : uploadMessage ||
-                copy(
-                  locale,
-                  '参考图上传失败，请稍后重试。',
-                  'Reference image upload failed. Please try again later.'
-                )
-        );
-        return null;
-      } finally {
-        window.clearInterval(progressTimer);
-        setIsUploadingReference(false);
-      }
-    })();
-    uploadReferencePromiseRef.current = uploadTask;
-    try {
-      return await uploadTask;
-    } finally {
-      uploadReferencePromiseRef.current = null;
-    }
-  }
-
-  async function startGeneration(
-    referenceAssetIdOverride: string | null = referenceAssetId,
-    resume = false
-  ) {
+  async function startGeneration(resume = false) {
     setError(undefined);
     setTasks([]);
     setTicket(undefined);
     setIsSubmitting(true);
     try {
-      let generationReferenceAssetId = referenceAssetIdOverride;
-      if (
-        referenceFile &&
-        uploadedReferenceRef.current?.file === referenceFile &&
-        (!generationReferenceAssetId ||
-          generationReferenceAssetId === referenceAssetId)
-      ) {
-        generationReferenceAssetId = uploadedReferenceRef.current.assetId;
-      }
-      if (referenceFile && !generationReferenceAssetId) {
-        generationReferenceAssetId = await uploadReference(referenceFile);
-        if (!generationReferenceAssetId) {
-          pendingGenerateRef.current = false;
-          setPendingGenerate(false);
-          saveImageCreatorDraft({
-            templateId,
-            prompt,
-            mode,
-            ratio,
-            count,
-            consentAccepted,
-            query,
-            category,
-            pendingGenerate: false,
-          });
-          return;
-        }
-      }
       const result = await startImageCreatorGeneration({
         data: {
           ...draft,
-          referenceAssetId: generationReferenceAssetId,
+          referenceAssetId: null,
           consentAccepted: true,
           policyVersion,
         },
@@ -556,9 +420,14 @@ export default function AiImageCreatorSection() {
         });
       }
       setError(
-        startError instanceof Error
-          ? startError.message
-          : copy(locale, '无法开始创作。', 'Unable to start your creation.')
+        localizeCreatorError(
+          locale,
+          startError instanceof Error ? startError.message : undefined,
+          {
+            zh: '无法开始创作，请稍后重试。',
+            en: 'Unable to start your creation.',
+          }
+        )
       );
     } finally {
       setIsSubmitting(false);
@@ -581,9 +450,6 @@ export default function AiImageCreatorSection() {
         category,
         pendingGenerate: true,
       });
-      if (referenceFile) {
-        await saveImageCreatorReference(referenceFile).catch(() => undefined);
-      }
       const callbackUrl = buildImageCreatorCallbackUrl({
         pathname: window.location.pathname,
         search: window.location.search,
@@ -598,49 +464,21 @@ export default function AiImageCreatorSection() {
       return;
     }
 
-    let assetId = referenceAssetId;
-    if (referenceFile && !assetId) {
-      assetId = await uploadReference(referenceFile);
-      if (!assetId) return;
-    }
-    await startGeneration(assetId);
+    await startGeneration();
   }
 
   useEffect(() => {
     if (
       !signedIn ||
       !draftHydrated ||
-      !referenceHydrated ||
       !pendingGenerate ||
       resumeStartedRef.current
     ) {
       return;
     }
     resumeStartedRef.current = true;
-    void (async () => {
-      let assetId = referenceAssetId;
-      if (referenceFile && !assetId) {
-        assetId = await uploadReference(referenceFile);
-        if (!assetId) {
-          pendingGenerateRef.current = false;
-          setPendingGenerate(false);
-          saveImageCreatorDraft({
-            templateId,
-            prompt,
-            mode,
-            ratio,
-            count,
-            consentAccepted,
-            query,
-            category,
-            pendingGenerate: false,
-          });
-          return;
-        }
-      }
-      await startGeneration(assetId, true);
-    })();
-  }, [draftHydrated, pendingGenerate, referenceHydrated, signedIn]);
+    void startGeneration(true);
+  }, [draftHydrated, pendingGenerate, signedIn]);
 
   return (
     <section id="create" className="scroll-mt-16 py-10 sm:py-14">
@@ -652,13 +490,13 @@ export default function AiImageCreatorSection() {
             </div>
             <div>
               <p className="text-lg font-semibold tracking-tight">
-                {copy(locale, 'AI 创作工作台', 'AI creation workspace')}
+                {copy(locale, 'AI 图片工作台', 'AI image workspace')}
               </p>
               <p className="text-sm text-muted-foreground">
                 {copy(
                   locale,
-                  '挑选灵感、补充想法，生成属于你的视觉作品。',
-                  'Choose a direction, add your idea, and create a visual that is yours.'
+                  '选择模板、补充描述，生成属于你的图片。',
+                  'Choose a template, add a description, and create an image.'
                 )}
               </p>
             </div>
@@ -684,103 +522,14 @@ export default function AiImageCreatorSection() {
             prompt={prompt}
             ratio={ratio}
             count={count}
-            referenceName={referenceName}
-            referencePreviewUrl={referencePreviewUrl}
-            referenceUploadProgress={referenceUploadProgress}
-            referenceUploadError={referenceUploadError}
             quote={quote}
             isQuoteLoading={isQuoteLoading}
             consentAccepted={consentAccepted}
             error={error}
             canSubmit={canSubmit}
             isSubmitting={isSubmitting || isGenerating}
-            isUploadingReference={isUploadingReference}
-            isRemovingReference={isRemovingReference}
             onPromptChange={setPrompt}
             onRatioChange={setRatio}
-            onReferenceChange={(file) => {
-              setError(undefined);
-              setReferenceUploadError(undefined);
-              const validation = validateImageCreatorReferenceFile(file);
-              if (validation) {
-                setReferenceUploadError(
-                  validation === 'type'
-                    ? copy(
-                        locale,
-                        '请选择 JPG、PNG 或 WEBP 图片。',
-                        'Choose a JPG, PNG, or WEBP image.'
-                      )
-                    : copy(
-                        locale,
-                        '图片不能超过 10MB。',
-                        'The image must be 10MB or smaller.'
-                      )
-                );
-                return;
-              }
-              const previousAssetId = referenceAssetId;
-              const previousPreviewUrl = referencePreviewUrl;
-              const localPreviewUrl = createReferencePreviewUrl(file);
-              setReferenceFile(file);
-              setReferenceName(file.name);
-              setReferencePreviewUrl(localPreviewUrl);
-              setReferenceAssetId(null);
-              setReferenceUploadProgress(0);
-              if (previousPreviewUrl !== localPreviewUrl) {
-                releaseReferencePreviewUrl(previousPreviewUrl);
-              }
-              uploadedReferenceRef.current = null;
-              void saveImageCreatorReference(file).catch(() => {
-                setReferenceUploadError(
-                  copy(
-                    locale,
-                    '图片无法保存在浏览器中，登录后需要重新选择。',
-                    'This image could not be saved locally. Please select it again after signing in.'
-                  )
-                );
-              });
-              if (signedIn) {
-                void uploadReference(file, previousAssetId);
-              }
-            }}
-            onRemoveReference={async () => {
-              setReferenceFile(null);
-              uploadedReferenceRef.current = null;
-              void clearImageCreatorReference();
-              if (!referenceAssetId) {
-                releaseReferencePreviewUrl(referencePreviewUrl);
-                setReferenceName(undefined);
-                setReferencePreviewUrl(undefined);
-                setReferenceUploadProgress(0);
-                setReferenceUploadError(undefined);
-                setError(undefined);
-                return;
-              }
-              setError(undefined);
-              setIsRemovingReference(true);
-              try {
-                await deleteImageCreatorReference({
-                  data: { assetId: referenceAssetId },
-                });
-                setReferenceName(undefined);
-                setReferenceAssetId(null);
-                setReferencePreviewUrl(undefined);
-                setReferenceUploadProgress(0);
-                setReferenceUploadError(undefined);
-              } catch (removeError) {
-                setError(
-                  removeError instanceof Error
-                    ? removeError.message
-                    : copy(
-                        locale,
-                        '参考图删除失败，请稍后重试。',
-                        'Reference image could not be deleted. Please try again.'
-                      )
-                );
-              } finally {
-                setIsRemovingReference(false);
-              }
-            }}
             onConsentChange={setConsentAccepted}
             onGenerate={handleGenerate}
             locale={locale}
@@ -934,22 +683,14 @@ function CreatorForm({
   prompt,
   ratio,
   count,
-  referenceName,
-  referencePreviewUrl,
-  referenceUploadProgress,
-  referenceUploadError,
   quote,
   isQuoteLoading,
   consentAccepted,
   error,
   canSubmit,
   isSubmitting,
-  isUploadingReference,
-  isRemovingReference,
   onPromptChange,
   onRatioChange,
-  onReferenceChange,
-  onRemoveReference,
   onConsentChange,
   onGenerate,
   locale,
@@ -959,22 +700,14 @@ function CreatorForm({
   prompt: string;
   ratio: ImageCreatorRatio;
   count: number;
-  referenceName?: string;
-  referencePreviewUrl?: string;
-  referenceUploadProgress: number;
-  referenceUploadError?: string;
   quote?: Quote;
   isQuoteLoading: boolean;
   consentAccepted: boolean;
   error?: string;
   canSubmit: boolean;
   isSubmitting: boolean;
-  isUploadingReference: boolean;
-  isRemovingReference: boolean;
   onPromptChange: (value: string) => void;
   onRatioChange: (value: ImageCreatorRatio) => void;
-  onReferenceChange: (file: File) => void;
-  onRemoveReference: () => void;
   onConsentChange: (value: boolean) => void;
   onGenerate: () => void;
   locale: CreatorLocale;
@@ -982,14 +715,6 @@ function CreatorForm({
   const displayTemplate = selectedTemplate
     ? getLocalizedImageTemplate(selectedTemplate, locale)
     : undefined;
-  const referenceForbidden = selectedTemplate?.inputPolicy === 'forbidden';
-  const referenceHint = copy(
-    locale,
-    '该模板不使用参考图。',
-    'This template does not use a reference image.'
-  );
-  const referenceBusy = isUploadingReference || isRemovingReference;
-
   return (
     <main
       ref={formRef}
@@ -1030,172 +755,16 @@ function CreatorForm({
               {displayTemplate?.name}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {selectedTemplate.inputPolicy === 'required'
-                ? copy(
-                    locale,
-                    '此模板需要一张参考图。',
-                    'This template requires a reference image.'
-                  )
-                : selectedTemplate.inputPolicy === 'forbidden'
-                  ? copy(
-                      locale,
-                      '此模板不接收参考图。',
-                      'This template does not accept reference images.'
-                    )
-                  : copy(
-                      locale,
-                      '可选上传一张参考图。',
-                      'You may upload one reference image.'
-                    )}
+              {copy(
+                locale,
+                '使用模板风格，并结合你的文字描述生成图片。',
+                'Use this visual style with your text description.'
+              )}
             </p>
           </div>
         </div>
       )}
       <div className="space-y-5">
-        <div className="space-y-2">
-          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <Label htmlFor="creator-reference">
-              {copy(locale, '上传参考图片', 'Upload a reference image')}{' '}
-              <span className="font-normal text-muted-foreground">
-                {copy(
-                  locale,
-                  '（可选，最多 1 张）',
-                  '(Optional, up to 1 image)'
-                )}
-              </span>
-            </Label>
-            <span className="text-xs text-muted-foreground">
-              JPG / PNG / WEBP · ≤10MB
-            </span>
-          </div>
-          <label
-            htmlFor="creator-reference"
-            className={cn(
-              'flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed bg-muted/15 px-4 text-center transition-colors',
-              referenceForbidden || referenceBusy
-                ? 'cursor-not-allowed opacity-50'
-                : 'cursor-pointer hover:border-primary/60',
-              referencePreviewUrl && 'items-stretch p-2'
-            )}
-            aria-busy={isUploadingReference}
-          >
-            {referencePreviewUrl ? (
-              <div className="relative overflow-hidden rounded-lg border bg-background">
-                <img
-                  src={referencePreviewUrl}
-                  alt={
-                    referenceName ??
-                    copy(locale, '参考图片预览', 'Reference image preview')
-                  }
-                  className="mx-auto max-h-56 w-full object-contain"
-                />
-                <div className="absolute inset-x-2 bottom-2 rounded-md bg-background/90 px-3 py-2 text-left text-xs shadow-sm backdrop-blur-sm">
-                  <p className="truncate font-medium">{referenceName}</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    {copy(
-                      locale,
-                      '点击图片替换参考图',
-                      'Click the image to replace it'
-                    )}
-                  </p>
-                </div>
-                {isUploadingReference && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/75 px-4 text-center backdrop-blur-[1px]">
-                    <IconLoader2 className="size-7 animate-spin text-primary" />
-                    <p className="text-sm font-semibold">
-                      {copy(
-                        locale,
-                        '图片正在上传中…',
-                        'Your image is uploading…'
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {referenceUploadProgress}%
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <IconPhoto className="mb-2 size-5 text-primary" />
-                <span className="text-sm font-medium">
-                  {isUploadingReference
-                    ? copy(
-                        locale,
-                        '正在上传参考图…',
-                        'Uploading your reference…'
-                      )
-                    : copy(
-                        locale,
-                        '选择一张图片作为参考',
-                        'Choose an image as reference'
-                      )}
-                </span>
-                {referenceForbidden && (
-                  <span className="mt-1 text-xs text-muted-foreground">
-                    {referenceHint}
-                  </span>
-                )}
-              </>
-            )}
-            {isUploadingReference && (
-              <div className="mt-3 w-full max-w-sm text-left">
-                <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{copy(locale, '上传进度', 'Upload progress')}</span>
-                  <span>{referenceUploadProgress}%</span>
-                </div>
-                <Progress
-                  value={referenceUploadProgress}
-                  aria-label={copy(locale, '上传进度', 'Upload progress')}
-                />
-              </div>
-            )}
-          </label>
-          {referenceUploadError && (
-            <div
-              role="alert"
-              className="flex items-start gap-2 rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{referenceUploadError}</span>
-            </div>
-          )}
-          {referencePreviewUrl && (
-            <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 truncate text-xs text-muted-foreground">
-                {referenceName}
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="shrink-0 text-destructive hover:text-destructive"
-                disabled={referenceBusy}
-                onClick={onRemoveReference}
-              >
-                <IconX className="size-4" />
-                {isRemovingReference
-                  ? copy(locale, '删除中…', 'Deleting…')
-                  : copy(locale, '删除图片', 'Delete image')}
-              </Button>
-            </div>
-          )}
-          <Input
-            id="creator-reference"
-            data-testid="image-creator-reference"
-            className="sr-only"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={referenceBusy || referenceForbidden}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                onReferenceChange(file);
-                event.target.value = '';
-              }
-            }}
-          />
-        </div>
         <div className="space-y-2">
           <Label htmlFor="creator-prompt">
             {copy(locale, '补充创意要求', 'Additional creative direction')}
@@ -1316,8 +885,8 @@ function CreatorForm({
           <span className="leading-5 text-muted-foreground">
             {copy(
               locale,
-              '我确认拥有所上传内容的使用权，并同意将文字、参考图与生成结果交由内容安全审核接口处理。',
-              'I confirm I have the right to use all uploaded content and agree to submit text, reference images, and generated results to the content-safety review interface.'
+              '我确认拥有所提交内容的使用权，并同意将文字描述与生成结果交由内容安全审核接口处理。',
+              'I confirm I have the right to use the content I submit and agree to submit my text description and generated results to the content-safety review interface.'
             )}
           </span>
         </label>
@@ -1442,19 +1011,19 @@ function GenerationPreview({
       </div>
       <div className="mt-4 rounded-xl border p-4">
         <p className="font-semibold">
-          {copy(locale, '创作记录', 'Creation history')}
+          {copy(locale, '当前任务', 'Current task')}
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
           {ticket
             ? copy(
                 locale,
-                '当前任务正在此处跟踪。私有历史会在审核与数据迁移完成后启用。',
-                'Your current task is tracked here. Private history will be enabled after review and data migration are complete.'
+                '本次生成任务正在此处跟踪。结果会显示在上方预览区。',
+                'This generation is being tracked here. Results appear in the preview above.'
               )
             : copy(
                 locale,
-                '还没有创作记录。完成第一张图片后会显示在这里。',
-                'There is no creation history yet. Your first completed image will appear here.'
+                '提交生成后，可在此查看当前任务的进度。',
+                'After you submit a generation, its progress will appear here.'
               )}
         </p>
       </div>

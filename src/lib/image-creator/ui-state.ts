@@ -116,7 +116,7 @@ const zhTemplateCopy: Record<
   },
   'minimal-product': {
     name: '极简产品',
-    description: '基于产品参考图创建干净高级的广告视觉。',
+    description: '用简洁构图与质感光线生成干净高级的产品广告视觉。',
     category: '海报',
   },
 };
@@ -153,7 +153,7 @@ const enTemplateCopy: Record<
   'minimal-product': {
     name: 'Minimal product',
     description:
-      'A clean, premium advertising visual from a product reference.',
+      'A clean, premium product advertising visual with restrained styling.',
     category: 'Poster',
   },
 };
@@ -180,13 +180,13 @@ const spreadsheetTemplateCopy: Record<string, SpreadsheetTemplateCopy> = {
   'image-template-1014': {
     zh: {
       name: '趣味猫咪蜡笔海报',
-      description: '真实照片结合童趣蜡笔插画的轻松海报风格。',
+      description: '童趣蜡笔插画与温暖日常氛围结合的轻松海报风格。',
       category: '图片创作',
     },
     en: {
       name: 'Playful Cat Crayon Poster',
       description:
-        'A lighthearted poster style blending a photo with crayon illustration.',
+        'A lighthearted poster style blending crayon illustration with cozy everyday moments.',
       category: 'Image creation',
     },
   },

@@ -1,58 +1,47 @@
 ---
 title: Cookie Policy
-description: How we use cookies and similar technologies on our website
-date: 2026-02-15
+description: How jevailab uses cookies, local storage, and similar technologies
+date: 2026-10-21
 ---
 
-## Introduction
+## 1. Scope
 
-This Cookie Policy explains how we use cookies and similar technologies on our website. By using our website, you consent to the use of cookies as described in this policy.
+This Cookie Policy explains how jevailab uses cookies and similar browser storage when you visit jevailab.com or use the image workspace. It should be read together with our [Privacy Policy](/privacy).
 
-## What Are Cookies
+## 2. Technologies we use
 
-Cookies are small text files that are stored on your device when you visit a website. They are widely used to make websites work more efficiently and provide information to the website owners.
+We use cookies, local storage, and similar technologies to keep the website working, remember choices, protect accounts, and store unfinished image drafts.
 
-## How We Use Cookies
+## 3. Essential cookies
 
-We use cookies for the following purposes:
+Essential cookies may be used to:
 
-- **Essential Cookies**: These cookies are necessary for the website to function properly and cannot be switched off in our systems.
-- **Performance Cookies**: These cookies allow us to count visits and traffic sources so we can measure and improve the performance of our site.
-- **Functional Cookies**: These cookies enable the website to provide enhanced functionality and personalization.
-- **Targeting Cookies**: These cookies may be set through our site by our advertising partners to build a profile of your interests.
+- maintain an authenticated session and route requests securely;
+- protect forms, accounts, and checkout flows against fraud and abuse; and
+- apply security and load-balancing settings required to operate the site.
 
-## Types of Cookies We Use
+These technologies are necessary for requested features. Blocking them may prevent sign-in, checkout, or other parts of the Service from working.
 
-### Essential Cookies
-- Session cookies for maintaining user sessions
-- Security cookies for protecting against fraud and abuse
+## 4. Preferences and interface settings
 
-### Performance Cookies
-- Analytics cookies to understand how visitors interact with our website
-- Load balancing cookies to distribute traffic to servers
+We may store your selected language and light or dark appearance in browser storage or cookies so the site opens with your preferences. You can change these settings in the interface or clear the relevant browser data.
 
-### Functional Cookies
-- Preference cookies to remember your settings and choices
-- Language cookies to remember your language preference
+## 5. Local image-workspace drafts
 
-### Targeting Cookies
-- Advertising cookies to deliver relevant advertisements
-- Social media cookies to enable sharing content on social platforms
+The image workspace can save an unfinished text-based draft in your browser's local storage, including template choice, text description, ratio, generation settings, and consent selection. This lets the workspace resume after authentication. Drafts are kept for a limited period and can also be removed by clearing site data in your browser. The draft does not include uploaded source images.
 
-## Managing Cookies
+## 6. Analytics and support tools
 
-Most web browsers allow you to control cookies through their settings. You can:
+When configured and enabled, we may use privacy-oriented or standard analytics tools to understand aggregate site usage, diagnose errors, and improve the Service. We may also load a customer-support chat tool so you can contact us. These providers may receive technical information such as your IP address, device and browser details, and interaction data, subject to their terms and our configuration. We do not currently use these technologies for targeted advertising.
 
-- Delete cookies from your device
-- Block cookies by activating the setting on your browser that allows you to refuse all or some cookies
-- Set your browser to notify you when you receive a cookie
+## 7. Managing cookies and storage
 
-Please note that if you choose to block or delete cookies, you may not be able to access certain areas or features of our website.
+Most browsers let you view, delete, or block cookies and site data through their settings. You can clear jevailab site data to remove locally stored preferences and drafts. If you block essential storage or cookies, some account, checkout, preference, or image-workspace functions may not work. Browser controls vary by product and device.
 
-## Changes to This Cookie Policy
+## 8. Changes to this policy
 
-We may update our Cookie Policy from time to time. We will notify you of any changes by posting the new Cookie Policy on this page.
+We may update this Cookie Policy when our technologies or legal requirements change. We will post the revised policy with a new effective date and provide additional notice where required.
 
-## Contact Us
+## 9. Contact
 
-If you have any questions about this Cookie Policy, please [contact us](/contact).
+For questions about cookies or browser storage, email [support@jevailab.com](mailto:support@jevailab.com) or use our [contact page](/contact).

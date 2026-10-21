@@ -229,9 +229,9 @@ export function JevailabHomepageSections({
       </section>
 
       <section
-        id="photo-tips"
+        id="prompt-tips"
         className={sectionClassName}
-        aria-labelledby="photo-tips-title"
+        aria-labelledby="prompt-tips-title"
       >
         <div className="grid gap-6 rounded-3xl border border-border/70 bg-card p-5 sm:p-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
@@ -239,17 +239,17 @@ export function JevailabHomepageSections({
               <IconBulb className="size-6" aria-hidden="true" />
             </span>
             <h2
-              id="photo-tips-title"
+              id="prompt-tips-title"
               className="mt-5 text-2xl font-semibold tracking-tight"
             >
-              {content.photoTips.title}
+              {content.promptTips.title}
             </h2>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {content.photoTips.description}
+              {content.promptTips.description}
             </p>
           </div>
           <ul className="grid gap-3 self-center">
-            {content.photoTips.tips.map((tip) => (
+            {content.promptTips.tips.map((tip) => (
               <li
                 key={tip}
                 className="flex gap-3 rounded-xl bg-muted/60 p-4 text-sm leading-6"
@@ -337,7 +337,7 @@ export function JevailabHomepageSections({
             id="faq-title"
             className="text-center text-3xl font-semibold tracking-tight sm:text-4xl"
           >
-            FAQ
+            {content.faqTitle}
           </h2>
           <div className="mt-8 divide-y divide-border rounded-3xl border border-border/70 bg-card px-5 sm:px-7">
             {content.faq.map((item) => (
@@ -371,7 +371,7 @@ export function JevailabHomepageSections({
           <div className="relative max-w-2xl">
             <div className="flex items-center gap-2 text-sm font-semibold text-primary-foreground/80">
               <IconLock className="size-4" aria-hidden="true" />
-              Private by default
+              {content.finalCta.eyebrow}
             </div>
             <h2
               id="start-now-title"

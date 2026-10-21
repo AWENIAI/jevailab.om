@@ -9,8 +9,7 @@ import {
 const publicPages = [
   { path: '/', name: 'home' },
   { path: '/blog', name: 'blog index' },
-  { path: '/blog/getting-started', name: 'blog detail' },
-  { path: '/ai', name: 'ai playground' },
+  { path: '/blog/create-with-templates', name: 'blog detail' },
   { path: '/about', name: 'about' },
   { path: '/contact', name: 'contact' },
   { path: '/changelog', name: 'changelog' },
@@ -118,20 +117,62 @@ test.describe('public page smoke coverage', () => {
             await page.locator('body').innerText(),
           ].join('\n');
 
-          expect(publicCopy, `${publicPage.name} contains video copy`).not.toMatch(
-            /video|视频/i
+          expect(
+            publicCopy,
+            `${publicPage.name} contains unsupported product copy`
+          ).not.toMatch(
+            /video|视频|reference (image|photo)|参考图|参考图片|上传照片|priority generation queue|优先生成队列/i
           );
         });
       }
     });
   }
+
+  test('renders localized homepage and pricing details in both languages', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: '常见问题' })).toBeVisible();
+    await expect(page.getByText('默认私密', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Private by default', { exact: true })
+    ).toHaveCount(0);
+
+    await page.goto('/en');
+    await expect(page.getByRole('heading', { name: 'FAQ' })).toBeVisible();
+    await expect(
+      page.getByText('Private by default', { exact: true })
+    ).toBeVisible();
+
+    await page.goto('/launch-pricing');
+    await expect(page.getByTestId('launch-cta-monthly')).toContainText(
+      '选择方案'
+    );
+    await expect(page.getByText(/立即试用|免费试用/)).toHaveCount(0);
+
+    await page.goto('/en/launch-pricing');
+    await expect(page.getByTestId('launch-cta-monthly')).toContainText(
+      'Choose plan'
+    );
+    await expect(page.getByText(/Start trial|Free Trial/i)).toHaveCount(0);
+
+    const canonical = page.locator('link[rel="canonical"]');
+    await expect(canonical).toHaveAttribute('href', /\/en\/launch-pricing$/);
+    await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(
+      3
+    );
+  });
 });
 
 test('localized content metadata and sitemap agree', async ({
   page,
   request,
 }) => {
-  for (const path of ['/terms', '/blog/getting-started']) {
+  for (const path of [
+    '/terms',
+    '/blog/create-with-templates',
+    '/launch-pricing',
+  ]) {
     for (const locale of locales) {
       const localized = localizedPath(path, locale);
       await page.goto(localized);
@@ -156,8 +197,8 @@ test('localized content metadata and sitemap agree', async ({
   for (const path of [
     '/terms',
     '/en/terms',
-    '/blog/getting-started',
-    '/en/blog/getting-started',
+    '/blog/create-with-templates',
+    '/en/blog/create-with-templates',
   ]) {
     expect(xml).toContain(`<loc>${siteOrigin}${path}</loc>`);
   }

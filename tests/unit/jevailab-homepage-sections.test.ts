@@ -15,6 +15,8 @@ describe('Jevailab homepage sections', () => {
 
     expect(markup).toContain('What is jevailab?');
     expect(markup).toContain('Create an AI image in three steps');
+    expect(markup).toContain('FAQ');
+    expect(markup).toContain('Private by default');
     expect(markup).toContain('AI image creation');
     expect(markup).toContain('Create now');
     expect(markup).not.toMatch(/video|视频/i);
@@ -23,5 +25,17 @@ describe('Jevailab homepage sections', () => {
     expect(markup).toContain('Summer Sky Editorial Portrait');
     expect(markup).not.toContain('The latest image creation template.');
   });
-});
 
+  it('renders localized FAQ and privacy labels on Chinese pages', () => {
+    const markup = renderToStaticMarkup(
+      createElement(JevailabHomepageSections, {
+        content: getJevailabHomepageContent('zh'),
+        onSelectTemplate: vi.fn(),
+      })
+    );
+
+    expect(markup).toContain('常见问题');
+    expect(markup).toContain('默认私密');
+    expect(markup).not.toContain('Private by default');
+  });
+});

@@ -23,14 +23,14 @@ test.describe('authentication and protected routes', () => {
     await expect(page.locator('input[name="email"]')).toBeVisible();
   });
 
-  test('allows a verified user to sign in and view dashboard', async ({
+  test('allows a verified user to sign in and view billing', async ({
     page,
     request,
   }) => {
     const user = await registerE2EUser(request);
 
     await loginByForm(page, user);
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(page).toHaveURL(/\/settings\/billing\/?$/);
   });
 
   test('allows a user to register from the register page', async ({
@@ -58,7 +58,7 @@ test.describe('authentication and protected routes', () => {
       role: 'user',
     });
     await loginByForm(page, user);
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(page).toHaveURL(/\/settings\/billing\/?$/);
   });
 
   test('validates the registration password before requesting an account', async ({

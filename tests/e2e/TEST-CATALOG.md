@@ -64,7 +64,7 @@ errors or page errors.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Public pages render successfully | Open `/`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
+| 1 | Public pages render successfully | Open `/`, `/blog`, `/blog/create-with-templates`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/launch-pricing`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
 | 1a | Localized content indexing | Blog and legal documents use each available translation as canonical and reciprocal hreflang; sitemap lists each available URL. Missing translations are omitted from sitemap/alternates, and explicit unavailable language URLs redirect to a real version while preserving the query. |
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
 | 3 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls are usable, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
@@ -123,8 +123,15 @@ precondition for editing.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Guest edits locally without uploading | Open `/#create`, select a template, choose a supported image, edit the prompt and ratio, accept the content notice, and verify the local preview appears while no reference-upload request is sent. |
-| 2 | Generate resumes after sign-in | Click Generate as a guest, verify navigation to login with a callback URL, switch to registration and back, sign in as a verified E2E user, return to the editor with the same draft and preview, and verify the reference uploads only after authentication. |
+| 1 | Guest edits an image-only draft locally | Open `/#create`, select a template, enter a text prompt, choose a ratio, accept the content notice, and verify the draft is ready without any reference-image control or upload request. |
+| 2 | Generate resumes after sign-in | Click Generate as a guest, verify navigation to login with a callback URL, switch to registration and back, sign in as a verified E2E user, and verify the editor returns with the same prompt, template, ratio, and accepted content notice. |
+
+### Retired AI playground redirect
+
+**File:** `specs/public-pages.spec.ts` | **Priority:** P0
+
+Open `/ai` and `/en/ai` and verify each redirects to the image workspace at
+`/#create`, with no retired playground controls or provider demos rendered.
 
 ## 3. Protected Page Smoke Test
 
@@ -415,12 +422,6 @@ The Playwright suite does not yet cover:
 - Real-time renewal and past-due recovery flows (their webhook contracts are
   unit-covered via `tests/unit/payment/waffo-provider.test.ts`)
 
-## Clef decision demo
-
-At `/ai#decision-model`, select Clef or Clef Flash, load a support-ticket preset or enter a ticket, and submit it. The selected model receives the state and three typed questions; the page displays urgency, team probabilities and severity. Empty input disables submission; provider failures are surfaced and the user can retry. Local UI tests mock the server-function response; live Workers AI verification is separate.
-
-AI model refresh: summaries, taglines and captions use Gemma 4 chat-completion responses; speech uses Aura 2 supported voices and MP3; FLUX.2 image generation uses multipart input. The model picker uses the shared Select controls. Verify real provider output separately from deterministic local tests.
-
 ### Authentication mail recovery
 
 - Registration success exposes verification resend; an unverified credential
@@ -431,7 +432,3 @@ AI model refresh: summaries, taglines and captions use Gemma 4 chat-completion r
   sender: immediate success, recovery on the third attempt, persistent failure,
   wrong-password boundary, and uniform password-reset responses for unknown users
   and failed delivery. No external mail provider is invoked.
-
-## Web search demo
-
-At `/ai#web-search`, load one of three query presets or enter a query, select Ceramic.ai, Exa or Linkup, and search. Empty input disables submission. Results expose source links and descriptions; changing input/provider clears stale output. Provider failures allow retry. Local UI tests intercept server-function requests; live provider evidence is separate.

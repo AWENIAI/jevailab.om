@@ -1,5 +1,5 @@
 import { m } from '@/locale/paraglide/messages';
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { createFileRoute, notFound, redirect } from '@tanstack/react-router';
 import Container from '@/components/layout/container';
 import { BlogGrid } from '@/components/blog/blog-grid';
 import { BlogPagination } from '@/components/blog/blog-pagination';
@@ -88,6 +88,9 @@ function BlogListPage() {
   const { posts, totalPages, currentPage } = Route.useLoaderData();
   if (!websiteConfig.blog?.enable) {
     throw notFound();
+  }
+  if (posts.length === 0) {
+    throw redirect({ to: '/', hash: 'create' });
   }
   return (
     <Container className="py-16 px-4">

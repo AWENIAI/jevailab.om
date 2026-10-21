@@ -111,28 +111,30 @@ describe('launch pricing content', () => {
     expect(enAnnual?.footnote).toContain('Credits refresh monthly');
   });
 
-  it('uses the concise trial CTA and omits the launch preview notice', () => {
+  it('uses accurate plan CTAs and omits trial and preview claims', () => {
     const zh = getLaunchPricingContent('zh');
     const en = getLaunchPricingContent('en');
     const zhSerialized = JSON.stringify(zh);
     const enSerialized = JSON.stringify(en);
 
     expect(zh.plans.items.map((plan) => plan.actionLabel)).toEqual([
-      '立即试用',
-      '立即试用',
-      '立即试用',
+      '选择方案',
+      '选择方案',
+      '选择方案',
     ]);
-    expect(zh.finalCta.secondaryAction).toBe('立即试用');
+    expect(zh.finalCta.secondaryAction).toBe('选择方案');
     expect(zhSerialized).not.toContain('立即免费试用');
+    expect(zhSerialized).not.toMatch(/试用|免费试用/);
     expect(zhSerialized).not.toContain('这是首发方案预览');
 
     expect(en.plans.items.map((plan) => plan.actionLabel)).toEqual([
-      'Start trial',
-      'Start trial',
-      'Start trial',
+      'Choose plan',
+      'Choose plan',
+      'Choose plan',
     ]);
-    expect(en.finalCta.secondaryAction).toBe('Start trial');
+    expect(en.finalCta.secondaryAction).toBe('Choose plan');
     expect(enSerialized).not.toContain('Start Free Trial');
+    expect(enSerialized).not.toMatch(/trial/i);
     expect(enSerialized).not.toContain('This is a launch-plan preview');
   });
 

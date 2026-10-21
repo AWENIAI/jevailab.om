@@ -1,13 +1,11 @@
-import { m } from '@/locale/paraglide/messages';
 import { Badge } from '@/components/ui/badge';
+import { m } from '@/locale/paraglide/messages';
 import { cn } from '@/lib/utils';
 interface Task {
   id: string;
   title: string;
   priority: 'low' | 'medium' | 'high';
-  description?: string;
-  assignee?: string;
-  dueDate?: string;
+  status: 'available' | 'planned';
 }
 export function Roadmap() {
   const columnTitles = {
@@ -20,39 +18,34 @@ export function Roadmap() {
       {
         id: '1',
         title: m.roadmap_board_tasks_backlog_0_title(),
-        priority: 'high',
-        assignee: 'John Doe',
-        dueDate: '2026-04-01',
+        priority: 'medium',
+        status: 'planned',
       },
       {
         id: '2',
         title: m.roadmap_board_tasks_backlog_1_title(),
         priority: 'medium',
-        assignee: 'Jane Smith',
-        dueDate: '2026-04-05',
+        status: 'planned',
       },
       {
         id: '3',
         title: m.roadmap_board_tasks_backlog_2_title(),
         priority: 'low',
-        assignee: 'Bob Johnson',
-        dueDate: '2026-04-10',
+        status: 'planned',
       },
     ],
     inProgress: [
       {
         id: '4',
         title: m.roadmap_board_tasks_in_progress_0_title(),
-        priority: 'high',
-        assignee: 'Alice Brown',
-        dueDate: '2026-03-28',
+        priority: 'medium',
+        status: 'planned',
       },
       {
         id: '5',
         title: m.roadmap_board_tasks_in_progress_1_title(),
         priority: 'medium',
-        assignee: 'Charlie Wilson',
-        dueDate: '2026-04-02',
+        status: 'planned',
       },
     ],
     done: [
@@ -60,15 +53,13 @@ export function Roadmap() {
         id: '7',
         title: m.roadmap_board_tasks_done_0_title(),
         priority: 'high',
-        assignee: 'Eve Davis',
-        dueDate: '2026-03-25',
+        status: 'available',
       },
       {
         id: '8',
         title: m.roadmap_board_tasks_done_1_title(),
         priority: 'low',
-        assignee: 'Frank White',
-        dueDate: '2026-03-24',
+        status: 'available',
       },
     ],
   } satisfies Record<string, Task[]>;
@@ -92,11 +83,6 @@ interface TaskCardProps {
   task: Task;
 }
 function TaskCard({ task }: TaskCardProps) {
-  const priority = {
-    high: m.roadmap_board_priority_high(),
-    medium: m.roadmap_board_priority_medium(),
-    low: m.roadmap_board_priority_low(),
-  }[task.priority];
   return (
     <div className="rounded-md border bg-card p-3 shadow-sm">
       <div className="flex flex-col gap-2">
@@ -105,27 +91,16 @@ function TaskCard({ task }: TaskCardProps) {
           <Badge
             variant="outline"
             className={cn(
-              'pointer-events-none h-5 rounded-sm px-1.5 text-[11px] capitalize border-transparent',
-              task.priority === 'high'
-                ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                : task.priority === 'medium'
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
-                  : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+              'pointer-events-none h-5 rounded-sm border-transparent px-1.5 text-[11px]',
+              task.status === 'available'
+                ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                : 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
             )}
           >
-            {priority}
+            {task.status === 'available'
+              ? m.roadmap_board_status_available()
+              : m.roadmap_board_status_planned()}
           </Badge>
-        </div>
-        <div className="flex items-center justify-between text-muted-foreground text-xs">
-          {task.assignee && (
-            <div className="flex items-center gap-1">
-              <div className="size-2 rounded-full bg-primary/20" />
-              <span className="line-clamp-1">{task.assignee}</span>
-            </div>
-          )}
-          {task.dueDate && (
-            <time className="text-[10px] tabular-nums">{task.dueDate}</time>
-          )}
         </div>
       </div>
     </div>

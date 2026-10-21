@@ -24,11 +24,11 @@ export const Route = createFileRoute('/sitemap.xml')({
         }[] = [
           { path: '/', changefreq: 'daily', priority: '1.0' },
           { path: '/about', changefreq: 'monthly' },
-          { path: '/ai', changefreq: 'monthly' },
           { path: '/changelog', changefreq: 'weekly' },
           { path: '/roadmap', changefreq: 'monthly' },
           { path: '/contact', changefreq: 'monthly' },
           { path: '/waitlist', changefreq: 'monthly' },
+          { path: '/launch-pricing', changefreq: 'weekly', priority: '0.9' },
           { path: '/terms', changefreq: 'monthly' },
           { path: '/privacy', changefreq: 'monthly' },
           { path: '/cookie', changefreq: 'monthly' },

@@ -16,7 +16,7 @@ describe('Jevailab homepage content', () => {
     const content = getJevailabHomepageContent(locale);
 
     expect(content.hero.h1.trim()).not.toHaveLength(0);
-    expect(content.faq).toHaveLength(11);
+    expect(content.faq).toHaveLength(10);
     expect(Object.values(JEVAILAB_ANCHORS)).toEqual([
       '#create',
       '#gallery',
@@ -24,7 +24,7 @@ describe('Jevailab homepage content', () => {
       '#features',
       '#how-it-works',
       '#use-cases',
-      '#photo-tips',
+      '#prompt-tips',
       '#tools',
       '#pricing',
       '#faq',
@@ -38,7 +38,7 @@ describe('Jevailab homepage content', () => {
         JEVAILAB_ANCHORS.features,
         JEVAILAB_ANCHORS.howItWorks,
         JEVAILAB_ANCHORS.useCases,
-        JEVAILAB_ANCHORS.photoTips,
+        JEVAILAB_ANCHORS.promptTips,
         JEVAILAB_ANCHORS.tools,
         JEVAILAB_ANCHORS.pricing,
         JEVAILAB_ANCHORS.faq,
@@ -93,8 +93,9 @@ describe('Jevailab homepage content', () => {
       expect(Object.values(messages).join(' ')).not.toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
-      expect.arrayContaining(['/#image', '/launch-pricing'])
+      expect.arrayContaining(['/#create', '/launch-pricing'])
     );
+    expect(hrefs).not.toContain('/#image');
     expect(hrefs).not.toContain('/pricing');
     expect(hrefs).not.toContain('/#gallery');
     expect(hrefs).not.toContain('/#how-it-works');

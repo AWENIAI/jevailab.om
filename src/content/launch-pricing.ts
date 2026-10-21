@@ -62,14 +62,15 @@ const zh: LaunchPricingContent = {
   plans: {
     eyebrow: 'jevailab 首发方案',
     title: '选择你的创作方式',
-    description: 'GPT Image 2，1K 分辨率。选一个套餐，30 秒开始生成。',
+    description:
+      'GPT Image 2，1K 分辨率。选择套餐，使用已发布模板与文字描述生成图片。',
     highlights: ['66 积分 ≈ 22 张 1K 图片', '商用授权', '无水印'],
     items: [
       {
         id: 'starter',
         eyebrow: 'STARTER PACK',
         name: '入门包',
-        description: '一次性购买积分，用于后续图片生成与编辑。',
+        description: '一次性购买积分，用于后续图片生成。',
         price: '$9.90',
         regularPrice: '$19.80',
         discountLabel: '50% OFF',
@@ -80,13 +81,13 @@ const zh: LaunchPricingContent = {
         countdownExpiredLabel: '首发优惠已结束',
         features: [
           '66 积分 ≈ 22 张 1K 图片',
-          '积分用于图片生成与编辑',
+          '积分用于图片生成',
           '一次性付款，无订阅',
           '积分有效期 12 个月',
           '商用授权',
           '无水印',
         ],
-        actionLabel: '立即试用',
+        actionLabel: '选择方案',
         footnote: '一次性付款，购买后积分立即到账。',
       },
       {
@@ -102,9 +103,8 @@ const zh: LaunchPricingContent = {
           '积分每月刷新',
           '商用授权',
           '无水印',
-          '优先生成队列',
         ],
-        actionLabel: '立即试用',
+        actionLabel: '选择方案',
         footnote: '按月计费，可在账户中随时取消。',
       },
       {
@@ -120,9 +120,8 @@ const zh: LaunchPricingContent = {
           '240 积分/月 ≈ 80 张 1K 图片（全年共 2,880 积分）',
           '积分每月刷新，非一次性到账',
           '商用授权',
-          '优先生成队列',
         ],
-        actionLabel: '立即试用',
+        actionLabel: '选择方案',
         footnote: '一次付款，积分按月刷新，全年按自己的节奏生成。',
       },
     ],
@@ -135,7 +134,7 @@ const zh: LaunchPricingContent = {
       {
         question: '什么是积分？',
         answer:
-          '积分是图片生成与编辑时使用的额度。按当前 1K 图片消耗估算，约 3 积分生成 1 张；实际消耗以提交时工作台显示的服务端报价为准。',
+          '积分是图片生成时使用的额度。实际消耗以提交时工作台显示的服务端报价为准。',
       },
       {
         question: '积分会过期吗？',
@@ -150,7 +149,7 @@ const zh: LaunchPricingContent = {
       {
         question: '图片可以商用吗？',
         answer:
-          '所有付费方案均包含商用使用权。你仍需确保上传素材、提示词和最终用途不侵犯第三方权利。',
+          '所有付费方案均包含商用使用权。你仍需确保提示词和最终用途不侵犯第三方权利。',
       },
       {
         question: '订阅可以取消吗？',
@@ -164,7 +163,7 @@ const zh: LaunchPricingContent = {
     title: '把下一次灵感，变成一张真实图片。',
     description: '选择一个方向，写下你的想法，先在 jevailab 试试看。',
     primaryAction: '开始创作',
-    secondaryAction: '立即试用',
+    secondaryAction: '选择方案',
   },
 };
 
@@ -178,7 +177,7 @@ const en: LaunchPricingContent = {
     eyebrow: 'jevailab launch pricing',
     title: 'Choose how you create',
     description:
-      'GPT Image 2 at 1K resolution. Pick a pack and start generating in 30 seconds.',
+      'GPT Image 2 at 1K resolution. Choose a plan and create images from published templates and text descriptions.',
     highlights: [
       '66 credits ≈ 22 images at 1K',
       'Commercial rights',
@@ -189,7 +188,7 @@ const en: LaunchPricingContent = {
         id: 'starter',
         eyebrow: 'STARTER PACK',
         name: 'Starter Pack',
-        description: 'Buy credits once for image generation and editing.',
+        description: 'Buy credits once for image generation.',
         price: '$9.90',
         regularPrice: '$19.80',
         discountLabel: '50% OFF',
@@ -200,13 +199,13 @@ const en: LaunchPricingContent = {
         countdownExpiredLabel: 'Launch offer ended',
         features: [
           '66 credits ≈ 22 images at 1K',
-          'Credits work for image generation and editing',
+          'Credits work for image generation',
           'One-time payment, no subscription',
           'Credits valid for 12 months',
           'Commercial usage rights',
           'No watermark',
         ],
-        actionLabel: 'Start trial',
+        actionLabel: 'Choose plan',
         footnote: 'One-time payment. Credits are available immediately.',
       },
       {
@@ -222,9 +221,8 @@ const en: LaunchPricingContent = {
           'Credits refresh every month',
           'Commercial usage rights',
           'No watermark',
-          'Priority generation queue',
         ],
-        actionLabel: 'Start trial',
+        actionLabel: 'Choose plan',
         footnote: 'Billed monthly. Cancel anytime from your account.',
       },
       {
@@ -241,9 +239,8 @@ const en: LaunchPricingContent = {
           '240 credits/month ≈ 80 images at 1K (2,880 credits/year)',
           'Credits refresh monthly, not all at once',
           'Commercial usage rights',
-          'Priority generation queue',
         ],
-        actionLabel: 'Start trial',
+        actionLabel: 'Choose plan',
         footnote:
           'One payment. Credits refresh monthly so you can create at your own pace all year.',
       },
@@ -258,7 +255,7 @@ const en: LaunchPricingContent = {
       {
         question: "What's a credit?",
         answer:
-          'Credits are used for image generation and editing. At current 1K image usage, about 3 credits generate 1 image; the server quote shown in the workspace at submission is the source of truth.',
+          'Credits are used for image generation. The server quote shown in the workspace at submission is the source of truth.',
       },
       {
         question: 'Do credits expire?',
@@ -273,7 +270,7 @@ const en: LaunchPricingContent = {
       {
         question: 'Can I use the images commercially?',
         answer:
-          'Yes. Every paid plan includes commercial usage rights. You are still responsible for ensuring your reference materials, prompts, and final use do not infringe third-party rights.',
+          'Yes. Every paid plan includes commercial usage rights. You are still responsible for ensuring your prompts and final use do not infringe third-party rights.',
       },
       {
         question: 'Can I cancel a subscription?',
@@ -288,7 +285,7 @@ const en: LaunchPricingContent = {
     description:
       'Choose a direction, describe your idea, and give jevailab a try.',
     primaryAction: 'Start creating',
-    secondaryAction: 'Start trial',
+    secondaryAction: 'Choose plan',
   },
 };
 

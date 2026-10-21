@@ -1,5 +1,10 @@
 import { m } from '@/locale/paraglide/messages';
-import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  notFound,
+  redirect,
+} from '@tanstack/react-router';
 import Container from '@/components/layout/container';
 import { Markdown } from '@/components/markdown/markdown';
 import { Button } from '@/components/ui/button';
@@ -20,7 +25,7 @@ import { formatDate } from '@/lib/formatter';
 export const Route = createFileRoute('/blog/$slug')({
   loader: async ({ params }) => {
     const post = getPostBySlug(params.slug);
-    if (!post) throw notFound();
+    if (!post) throw redirect({ to: '/blog', search: { page: 1 } });
     const markdown = await renderMarkdown(post.content);
     return { ...post, markdown };
   },
