@@ -53,9 +53,9 @@ export function SocialLoginButton({
         disabled={isLoading === 'google'}
       >
         {isLoading === 'google' ? (
-          <IconLoader2 className="mr-2 size-4 animate-spin" />
+          <IconLoader2 className="me-2 size-4 animate-spin" />
         ) : (
-          <IconBrandGoogleFilled className="size-4 mr-2" />
+          <IconBrandGoogleFilled className="size-4 me-2" />
         )}
         <span>{m.auth_social_sign_in_with_google()}</span>
       </Button>

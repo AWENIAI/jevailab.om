@@ -32,7 +32,7 @@ interface NavbarProps {
 export function Navbar({ scroll = true }: NavbarProps) {
   const pathname = useLocation().pathname;
   const scrolled = useScroll(50);
-  const menuLinks = getNavbarLinks();
+  const menuLinks = getNavbarLinks().filter((item) => !item.hidden);
   const [mounted, setMounted] = useState(false);
   const [menuValue, setMenuValue] = useState<string | null>(null);
   const { data: session, isPending } = authClient.useSession();
@@ -83,7 +83,7 @@ export function Navbar({ scroll = true }: NavbarProps) {
                 className="gap-1"
               >
                 {menuLinks?.map((item) =>
-                  item.items ? (
+                  item.items?.some((sub) => !sub.hidden) ? (
                     <NavigationMenuItem key={item.title} value={item.title}>
                       <NavigationMenuTrigger
                         className={cn(
@@ -97,49 +97,53 @@ export function Navbar({ scroll = true }: NavbarProps) {
                       </NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <ul className="grid w-100 gap-3 p-3 md:w-125 md:grid-cols-2 lg:w-150">
-                          {item.items.map((sub) => (
-                            <li key={sub.title}>
-                              <NavigationMenuLink
-                                closeOnClick
-                                className={cn(
-                                  'group flex select-none flex-row items-center gap-4 rounded-md',
-                                  'p-2 leading-none no-underline outline-hidden transition-colors',
-                                  'hover:bg-accent hover:text-accent-foreground',
-                                  'focus:bg-accent focus:text-accent-foreground',
-                                  isLinkActive(sub.href, pathname) &&
-                                    'bg-accent text-accent-foreground'
-                                )}
-                                render={
-                                  <Link
-                                    to={sub.href ?? '#'}
-                                    target={sub.external ? '_blank' : undefined}
-                                    rel={
-                                      sub.external
-                                        ? 'noopener noreferrer'
-                                        : undefined
-                                    }
-                                  />
-                                }
-                              >
-                                {sub.icon ? (
-                                  <sub.icon className="size-4 shrink-0" />
-                                ) : null}
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium">
-                                    {sub.title}
-                                  </div>
-                                  {sub.description ? (
-                                    <p className="text-xs text-muted-foreground">
-                                      {sub.description}
-                                    </p>
+                          {item.items
+                            .filter((sub) => !sub.hidden)
+                            .map((sub) => (
+                              <li key={sub.title}>
+                                <NavigationMenuLink
+                                  closeOnClick
+                                  className={cn(
+                                    'group flex select-none flex-row items-center gap-4 rounded-md',
+                                    'p-2 leading-none no-underline outline-hidden transition-colors',
+                                    'hover:bg-accent hover:text-accent-foreground',
+                                    'focus:bg-accent focus:text-accent-foreground',
+                                    isLinkActive(sub.href, pathname) &&
+                                      'bg-accent text-accent-foreground'
+                                  )}
+                                  render={
+                                    <Link
+                                      to={sub.href ?? '#'}
+                                      target={
+                                        sub.external ? '_blank' : undefined
+                                      }
+                                      rel={
+                                        sub.external
+                                          ? 'noopener noreferrer'
+                                          : undefined
+                                      }
+                                    />
+                                  }
+                                >
+                                  {sub.icon ? (
+                                    <sub.icon className="size-4 shrink-0" />
                                   ) : null}
-                                </div>
-                                {sub.external ? (
-                                  <IconArrowUpRight className="size-4 shrink-0" />
-                                ) : null}
-                              </NavigationMenuLink>
-                            </li>
-                          ))}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium">
+                                      {sub.title}
+                                    </div>
+                                    {sub.description ? (
+                                      <p className="text-xs text-muted-foreground">
+                                        {sub.description}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  {sub.external ? (
+                                    <IconArrowUpRight className="size-4 shrink-0" />
+                                  ) : null}
+                                </NavigationMenuLink>
+                              </li>
+                            ))}
                         </ul>
                       </NavigationMenuContent>
                     </NavigationMenuItem>

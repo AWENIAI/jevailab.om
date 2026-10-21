@@ -74,14 +74,15 @@ errors or page errors.
 
 **File:** `specs/launch-pricing.spec.ts` | **Priority:** P0
 
-Verifies that checkout routes guests through login, starts the configured
-default checkout for signed-in users without rendering a plan page, and
-retires the legacy `/pricing` entry.
+Verifies that every launch-pricing CTA checks the session. Guests stay on the
+pricing page and can choose login or registration in a dialog; a successful
+login continues into checkout. Signed-in users start checkout directly. The
+legacy `/pricing` entry stays retired.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Guests sign in before checkout starts | Open `/launch-pricing`, verify it redirects to login with `/launch-pricing` as the callback, then sign in and verify checkout starts. |
-| 2 | Signed-in users go straight to the default checkout | Sign in, open `/launch-pricing`, verify a checkout server-function request is sent for the monthly plan and no plan cards render. |
+| 1 | Guests sign in before checkout starts | Open `/launch-pricing`, click a plan CTA, verify the URL stays on the pricing page and a dialog exposes both login and registration tabs, then sign in and verify checkout starts. |
+| 2 | Signed-in users go straight to checkout | Sign in, open `/launch-pricing`, verify a checkout server-function request is sent for the selected plan. |
 | 3 | Retires the legacy pricing page | Open `/pricing` and verify it redirects to the home page. |
 
 ## 2. Authentication And Protected Routes

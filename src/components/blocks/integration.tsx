@@ -92,7 +92,7 @@ function IntegrationCard({
 }) {
   const linkClasses = cn(
     buttonVariants({ variant: 'outline', size: 'sm' }),
-    'gap-1 pr-2 shadow-none'
+    'gap-1 pe-2 shadow-none'
   );
   return (
     <Card className="bg-transparent p-6 transition-colors duration-200 hover:bg-accent dark:hover:bg-card">
@@ -114,7 +114,7 @@ function IntegrationCard({
             className={linkClasses}
           >
             {learnMore}
-            <IconChevronRight className="ml-0 size-3.5 opacity-50" />
+            <IconChevronRight className="ms-0 size-3.5 opacity-50 rtl:rotate-180" />
           </a>
         </div>
       </div>

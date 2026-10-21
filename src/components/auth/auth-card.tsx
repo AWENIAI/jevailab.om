@@ -17,6 +17,8 @@ interface AuthCardProps {
   bottomButtonHref: string;
   callbackUrl?: string;
   className?: string;
+  hideFooter?: boolean;
+  hideHeader?: boolean;
 }
 
 export function AuthCard({
@@ -26,26 +28,32 @@ export function AuthCard({
   bottomButtonHref,
   callbackUrl,
   className,
+  hideFooter = false,
+  hideHeader = false,
 }: AuthCardProps) {
   return (
     <Card
       className={cn('shadow-xs border border-border pt-6', className)}
       size="default"
     >
-      <CardHeader className="flex flex-col items-center">
-        <Link to="/">
-          <Logo className="mb-2" />
-        </Link>
-        <CardDescription>{headerLabel}</CardDescription>
-      </CardHeader>
+      {hideHeader ? null : (
+        <CardHeader className="flex flex-col items-center">
+          <Link to="/">
+            <Logo className="mb-2" />
+          </Link>
+          <CardDescription>{headerLabel}</CardDescription>
+        </CardHeader>
+      )}
       <CardContent>{children}</CardContent>
-      <CardFooter data-testid="auth-card-footer">
-        <BottomLink
-          label={bottomButtonLabel}
-          href={bottomButtonHref}
-          callbackUrl={callbackUrl}
-        />
-      </CardFooter>
+      {hideFooter ? null : (
+        <CardFooter data-testid="auth-card-footer">
+          <BottomLink
+            label={bottomButtonLabel}
+            href={bottomButtonHref}
+            callbackUrl={callbackUrl}
+          />
+        </CardFooter>
+      )}
     </Card>
   );
 }

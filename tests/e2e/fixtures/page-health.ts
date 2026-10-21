@@ -1,6 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
-export type LocaleMode = 'en' | 'zh';
+export const supportedLocales = ['en', 'zh'] as const;
+
+export type LocaleMode = (typeof supportedLocales)[number];
 
 export interface PageHealthMonitor {
   reset: () => void;
@@ -31,8 +33,8 @@ export function installPageHealthMonitor(page: Page): PageHealthMonitor {
 }
 
 export function localizedPath(path: string, locale: LocaleMode) {
-  if (locale === 'zh') return path;
-  return path === '/' ? '/en' : `/en${path}`;
+  if (locale === 'en') return path;
+  return path === '/' ? `/${locale}` : `/${locale}${path}`;
 }
 
 export async function expectHealthyPage(

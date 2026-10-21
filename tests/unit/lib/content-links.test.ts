@@ -9,19 +9,17 @@ const onlyChinese = () => ['zh'] as const;
 
 describe('content links for missing translations', () => {
   it('links to the available source document', () => {
-    expect(getContentHref('/terms', 'zh', onlyEnglish())).toBe('/en/terms');
+    expect(getContentHref('/terms', 'zh', onlyEnglish())).toBe('/zh/terms');
     expect(getContentHref('/blog/post', 'en', onlyChinese())).toBe(
-      '/blog/post'
+      '/zh/blog/post'
     );
   });
 
   it('redirects missing localized content while leaving available and unrelated URLs alone', () => {
-    expect(getUnavailableContentRedirect('/en/blog/post', onlyChinese)).toBe(
-      '/blog/post'
-    );
-    expect(getUnavailableContentRedirect('/en/terms', onlyChinese)).toBe(
-      '/terms'
-    );
+    expect(
+      getUnavailableContentRedirect('/en/blog/post', onlyChinese)
+    ).toBeNull();
+    expect(getUnavailableContentRedirect('/en/terms', onlyChinese)).toBeNull();
     expect(
       getUnavailableContentRedirect('/en/privacy', onlyEnglish)
     ).toBeNull();

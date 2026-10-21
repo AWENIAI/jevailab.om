@@ -76,6 +76,7 @@ export function LocaleSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        data-testid="locale-switcher-trigger"
         type="button"
         className={cn(
           'flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-transparent p-0 hover:bg-accent',
@@ -85,7 +86,11 @@ export function LocaleSwitcher({
       >
         <IconLanguage className="size-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent
+        data-testid="locale-switcher-menu"
+        align="end"
+        className="max-h-80 overflow-y-auto"
+      >
         {locales.map((locale) => (
           <DropdownMenuItem
             key={locale}
@@ -94,7 +99,7 @@ export function LocaleSwitcher({
             disabled={locale === currentLocale}
           >
             {localeConfig[locale].flag ? (
-              <span className="mr-2 text-base">
+              <span className="me-2 text-base">
                 {localeConfig[locale].flag}
               </span>
             ) : null}

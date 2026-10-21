@@ -8,6 +8,7 @@ import {
   expectHealthyPage,
   installPageHealthMonitor,
   localizedPath,
+  supportedLocales,
   type LocaleMode,
 } from '../fixtures/page-health';
 
@@ -23,7 +24,7 @@ const protectedPages = [
   { path: '/settings/notifications', name: 'notification settings' },
 ] as const;
 
-const locales: LocaleMode[] = ['en', 'zh'];
+const locales: LocaleMode[] = [...supportedLocales];
 
 test.describe('protected page smoke coverage', () => {
   test.beforeAll(async ({ request }) => {
@@ -87,7 +88,12 @@ test.describe('protected page smoke coverage', () => {
     const user = await registerE2EUser(request, { role: 'user' });
     await loginByForm(page, user);
 
-    await page.getByRole('link', { name: '升级方案' }).click();
+    await expect(
+      page.getByRole('heading', { name: /账单|Billing/ })
+    ).toBeVisible();
+    await page
+      .getByRole('link', { name: /升级方案|Upgrade (to a paid )?plan/i })
+      .click();
 
     await expect(page).toHaveURL(/\/launch-pricing\/?$/);
     await expect(page.getByTestId('launch-plan-starter')).toBeVisible();

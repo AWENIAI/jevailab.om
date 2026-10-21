@@ -1,3 +1,5 @@
+import type { Locale } from '@/lib/locale';
+
 export const JEVAILAB_ANCHORS = {
   create: '#create',
   gallery: '#gallery',
@@ -21,7 +23,7 @@ export const PUBLISHED_IMAGE_TEMPLATE_IDS = [
   'image-template-1010',
 ] as const;
 
-export type JevailabLocale = 'zh' | 'en';
+export type JevailabLocale = Extract<Locale, 'en' | 'zh'>;
 export type PublishedImageTemplateId =
   (typeof PUBLISHED_IMAGE_TEMPLATE_IDS)[number];
 
@@ -481,10 +483,15 @@ const en: JevailabHomepageContent = {
   },
 };
 
+const homepageContent: Record<JevailabLocale, JevailabHomepageContent> = {
+  en,
+  zh,
+};
+
 export function getJevailabHomepageContent(
   locale: JevailabLocale
 ): JevailabHomepageContent {
-  return locale === 'zh' ? zh : en;
+  return homepageContent[locale];
 }
 
 export type { FaqItem, GalleryExample, JevailabHomepageContent };

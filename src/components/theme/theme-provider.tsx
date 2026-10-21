@@ -23,7 +23,7 @@ type ThemeProviderState = {
 const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
-  resolvedTheme: 'dark',
+  resolvedTheme: 'light',
   systemTheme: undefined,
 };
 
@@ -32,12 +32,14 @@ const ThemeProviderContext =
 
 const themeScript = `(function() {
   try {
-    var theme = localStorage.getItem('theme') || '${websiteConfig.ui?.mode?.defaultMode ?? 'dark'}';
+    var theme = localStorage.getItem('theme') || '${websiteConfig.ui?.mode?.defaultMode ?? 'light'}';
     var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     var resolved = theme === 'system' ? systemTheme : theme;
+    document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(resolved);
   } catch (e) {
-    document.documentElement.classList.add('${websiteConfig.ui?.mode?.defaultMode ?? 'dark'}');
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add('${websiteConfig.ui?.mode?.defaultMode ?? 'light'}');
   }
 })();`;
 
@@ -72,12 +74,10 @@ export function ThemeProvider({
   const [systemTheme, setSystemTheme] = React.useState<
     'light' | 'dark' | undefined
   >(() => {
-    // During SSR, return undefined
     if (typeof window === 'undefined') {
       return undefined;
     }
 
-    // Client-side: detect system theme
     return window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
       : 'light';
@@ -145,8 +145,8 @@ export function ThemeProvider({
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? 'dark' : 'light');
+    const handleSystemThemeChange = (event: MediaQueryListEvent) => {
+      setSystemTheme(event.matches ? 'dark' : 'light');
     };
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);
@@ -182,7 +182,7 @@ export function ThemeProvider({
       theme,
       setTheme,
       resolvedTheme:
-        isMounted && resolvedTheme ? resolvedTheme : systemTheme || 'dark',
+        isMounted && resolvedTheme ? resolvedTheme : systemTheme || 'light',
       systemTheme: isMounted ? systemTheme : undefined,
     }),
     [theme, setTheme, resolvedTheme, systemTheme, isMounted]
@@ -208,7 +208,7 @@ export const useTheme = () => {
 
 export function useResolvedTheme() {
   const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>(
-    'dark'
+    'light'
   );
 
   React.useEffect(() => {

@@ -8,11 +8,21 @@ vi.mock('@/config/website', () => ({
 }));
 vi.mock('@/lib/urls', () => ({
   getCanonicalUrlForLocale: (path: string, locale: string) =>
-    `https://example.com${locale === 'en' ? '/en' : ''}${path}`,
+    `https://example.com${locale === 'en' ? '' : `/${locale}`}${path}`,
   getImageUrl: (path: string) => `https://example.com${path}`,
 }));
 vi.mock('@/lib/locale', () => ({
-  localeConfig: { en: { hreflang: 'en' }, zh: { hreflang: 'zh-CN' } },
+  localeConfig: {
+    en: { hreflang: 'en' },
+    zh: { hreflang: 'zh-CN' },
+    hi: { hreflang: 'hi' },
+    es: { hreflang: 'es' },
+    ar: { hreflang: 'ar' },
+    fr: { hreflang: 'fr' },
+    de: { hreflang: 'de' },
+    ja: { hreflang: 'ja' },
+    ko: { hreflang: 'ko' },
+  },
 }));
 
 import { jsonLdScript, pageStructuredData } from '@/lib/structured-data';

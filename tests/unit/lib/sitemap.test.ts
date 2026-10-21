@@ -10,16 +10,16 @@ describe('renderSitemap', () => {
       renderSitemap('https://example.com/', [{ path: '/about' }])
     );
     expect(urls).toHaveLength(2);
-    expect(urls.map((url) => url.match(/<loc>(.*?)<\/loc>/)?.[1])).toEqual([
-      'https://example.com/about',
-      'https://example.com/en/about',
-    ]);
+    expect(urls.map((url) => url.match(/<loc>(.*?)<\/loc>/)?.[1])).toEqual(
+      expect.arrayContaining([
+        'https://example.com/about',
+        'https://example.com/zh/about',
+      ])
+    );
     for (const url of urls) {
+      expect(url).toContain('hreflang="en" href="https://example.com/about"');
       expect(url).toContain(
-        'hreflang="en" href="https://example.com/en/about"'
-      );
-      expect(url).toContain(
-        'hreflang="zh-CN" href="https://example.com/about"'
+        'hreflang="zh-CN" href="https://example.com/zh/about"'
       );
       expect(url).toContain(
         'hreflang="x-default" href="https://example.com/about"'
@@ -37,14 +37,14 @@ describe('renderSitemap', () => {
     );
     expect(urls).toHaveLength(2);
     expect(urls[0]).toContain(
-      '<loc>https://example.com/en/blog/english-only</loc>'
+      '<loc>https://example.com/blog/english-only</loc>'
     );
     expect(urls[0]).not.toContain('hreflang="zh-CN"');
     expect(urls[1]).toContain(
-      '<loc>https://example.com/blog/chinese-only</loc>'
+      '<loc>https://example.com/zh/blog/chinese-only</loc>'
     );
     expect(urls[1]).not.toContain('hreflang="en"');
-    expect(urls[1]).toContain('hreflang="x-default"');
+    expect(urls[1]).not.toContain('hreflang="x-default"');
     expect(urls.join('')).not.toContain('/blog/missing');
   });
 

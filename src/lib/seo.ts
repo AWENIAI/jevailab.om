@@ -39,7 +39,9 @@ export function seo(
   const localized = isLocalizedPath(path);
   const alternateLocales = options.alternateLocales ?? locales;
   const alternateLinks =
-    localized && currentLocale === canonicalLocale
+    localized &&
+    (currentLocale === canonicalLocale ||
+      !alternateLocales.includes(currentLocale))
       ? [
           ...alternateLocales.map((locale) => ({
             rel: 'alternate',

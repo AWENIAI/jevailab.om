@@ -12,9 +12,18 @@ function getPageSize(): number {
 }
 
 export function getSortedPosts(locale: Locale = getLocale()): BlogPost[] {
+  return getPostsForLocale(locale);
+}
+
+function getPostsForLocale(locale: Locale): BlogPost[] {
   return [...(allBlogs as BlogPost[])]
     .filter((p) => p.locale === locale)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+function getPostsWithFallback(locale: Locale): BlogPost[] {
+  const localized = getPostsForLocale(locale);
+  return localized.length > 0 ? localized : getPostsForLocale(baseLocale);
 }
 
 export function getPostBySlug(
@@ -29,13 +38,20 @@ export function getPostBySlug(
   );
 }
 
-export function getPaginatedPosts(page: number): {
+export function getPaginatedPosts(
+  page: number,
+  locale: Locale = getLocale(),
+  options: { fallbackToBase?: boolean } = {}
+): {
   posts: BlogPost[];
   totalPages: number;
   currentPage: number;
 } {
   const pageSize = getPageSize();
-  const sorted = getSortedPosts();
+  const sorted =
+    options.fallbackToBase === false
+      ? getPostsForLocale(locale)
+      : getPostsWithFallback(locale);
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.max(1, Math.min(page, totalPages));
   const start = (currentPage - 1) * pageSize;

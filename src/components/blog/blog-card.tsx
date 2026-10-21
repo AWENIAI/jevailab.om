@@ -1,7 +1,6 @@
 import type { BlogPost } from '@/lib/blog';
 import { Link } from '@tanstack/react-router';
 import { formatDate } from '@/lib/formatter';
-import { getContentHref } from '@/lib/content-links';
 import { getLocale } from '@/lib/locale';
 import {
   Card,
@@ -34,7 +33,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
           {post.category}
         </span>
         <span className="text-xs text-muted-foreground">
-          {formatDate(new Date(post.date))}
+          {formatDate(new Date(post.date), getLocale())}
         </span>
       </CardHeader>
       <CardContent className="pb-4">
@@ -49,14 +48,6 @@ export function BlogCard({ post }: { post: BlogPost }) {
       </CardContent>
     </Card>
   );
-
-  if (post.locale !== getLocale()) {
-    return (
-      <a href={getContentHref(`/blog/${slug}`, getLocale())} className="h-full">
-        {card}
-      </a>
-    );
-  }
 
   return (
     <Link to="/blog/$slug" params={{ slug }} className="h-full">

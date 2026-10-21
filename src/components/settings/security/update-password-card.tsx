@@ -109,6 +109,7 @@ export function UpdatePasswordCard({ className }: UpdatePasswordCardProps) {
                       <Input
                         type={showCurrent ? 'text' : 'password'}
                         placeholder={m.settings_security_update_password_placeholder_current()}
+                        className="pe-10"
                         {...field}
                       />
                     </FormControl>
@@ -116,7 +117,7 @@ export function UpdatePasswordCard({ className }: UpdatePasswordCardProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowCurrent(!showCurrent)}
                     >
                       {showCurrent ? (
@@ -148,6 +149,7 @@ export function UpdatePasswordCard({ className }: UpdatePasswordCardProps) {
                       <Input
                         type={showNew ? 'text' : 'password'}
                         placeholder={m.settings_security_update_password_placeholder_new()}
+                        className="pe-10"
                         {...field}
                       />
                     </FormControl>
@@ -155,7 +157,7 @@ export function UpdatePasswordCard({ className }: UpdatePasswordCardProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowNew(!showNew)}
                     >
                       {showNew ? (

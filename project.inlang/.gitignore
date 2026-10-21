@@ -21,3 +21,5 @@
 !paraglide.config.mjs
 !paraglide.config.ts
 !paraglide.config.cjs
+!messages/
+!messages/*.json

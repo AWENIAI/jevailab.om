@@ -89,7 +89,7 @@ export default function Integration2Section() {
             </ScrollReveal>
             <ScrollReveal
               delay={200}
-              className="mx-auto max-w-lg space-y-6 text-center sm:text-left"
+              className="mx-auto max-w-lg space-y-6 text-center sm:text-start"
             >
               <h2 className="text-balance text-3xl font-semibold md:text-4xl">
                 {m.home_integration2_title()}

@@ -1,4 +1,3 @@
-import { authClient } from '@/auth/client';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -13,12 +12,14 @@ import type {
   LaunchPricingPlan,
 } from '@/content/launch-pricing';
 import { getPricePlans } from '@/lib/price-plan';
-import { Routes } from '@/lib/routes';
+import type { Locale } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 import { IconArrowRight, IconCheck, IconClock } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { CheckoutButton } from './create-checkout-button';
+import { getPathWithLocale } from '@/lib/urls';
+import { Routes } from '@/lib/routes';
+import { CheckoutAuthButton } from './checkout-auth-button';
 
 type LaunchPricingProps = {
   content: LaunchPricingContent;
@@ -41,10 +42,54 @@ type CountdownValue = {
 };
 
 const countdownUnits = [
-  { key: 'days', label: '天', englishLabel: 'D' },
-  { key: 'hours', label: '时', englishLabel: 'H' },
-  { key: 'minutes', label: '分', englishLabel: 'M' },
-  { key: 'seconds', label: '秒', englishLabel: 'S' },
+  {
+    key: 'days',
+    zh: '天',
+    en: 'D',
+    hi: 'दिन',
+    es: 'D',
+    ar: 'ي',
+    fr: 'J',
+    de: 'T',
+    ja: '日',
+    ko: '일',
+  },
+  {
+    key: 'hours',
+    zh: '时',
+    en: 'H',
+    hi: 'घं',
+    es: 'H',
+    ar: 'س',
+    fr: 'H',
+    de: 'Std',
+    ja: '時',
+    ko: '시간',
+  },
+  {
+    key: 'minutes',
+    zh: '分',
+    en: 'M',
+    hi: 'मि',
+    es: 'M',
+    ar: 'د',
+    fr: 'Min',
+    de: 'Min',
+    ja: '分',
+    ko: '분',
+  },
+  {
+    key: 'seconds',
+    zh: '秒',
+    en: 'S',
+    hi: 'से',
+    es: 'S',
+    ar: 'ث',
+    fr: 'S',
+    de: 'Sek',
+    ja: '秒',
+    ko: '초',
+  },
 ] as const;
 
 function getCountdownValue(endsAt: string, now: number): CountdownValue {
@@ -89,7 +134,7 @@ function LaunchCountdown({
   endsAt: string;
   expiredLabel: string;
   label: string;
-  locale: 'zh' | 'en';
+  locale: Locale;
 }) {
   const countdown = useCountdown(endsAt, true);
 
@@ -115,7 +160,7 @@ function LaunchCountdown({
                   {countdown[unit.key]}
                 </span>
                 <span className="mt-1 block text-[0.6rem] text-muted-foreground">
-                  {locale === 'zh' ? unit.label : unit.englishLabel}
+                  {unit[locale]}
                 </span>
               </div>
             ))}
@@ -170,16 +215,6 @@ function LaunchPricingCta({
   featured?: boolean;
   variant?: 'default' | 'outline';
 }) {
-  const { data: session, isPending: isSessionPending } =
-    authClient.useSession();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isAuthenticated = mounted && !!session?.user;
-  const isCheckingSession = !mounted || isSessionPending;
   const ctaClassName = cn(
     buttonVariants({ variant, size: 'lg' }),
     'h-10 rounded-xl sm:h-11',
@@ -188,57 +223,18 @@ function LaunchPricingCta({
     className
   );
 
-  if (!checkoutTarget) {
-    return (
-      <button
-        type="button"
-        disabled
-        className={ctaClassName}
-        data-testid={dataTestId}
-      >
-        {children}
-      </button>
-    );
-  }
-
-  if (isCheckingSession) {
-    return (
-      <button
-        type="button"
-        disabled
-        className={ctaClassName}
-        data-testid={dataTestId}
-        aria-busy="true"
-      >
-        {children}
-      </button>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Link
-        to={Routes.Login}
-        search={{ callbackUrl: Routes.LaunchPricing }}
-        className={ctaClassName}
-        data-testid={dataTestId}
-      >
-        {children}
-      </Link>
-    );
-  }
-
   return (
-    <CheckoutButton
-      planId={checkoutTarget.planId}
-      priceId={checkoutTarget.priceId}
+    <CheckoutAuthButton
+      planId={checkoutTarget?.planId ?? null}
+      priceId={checkoutTarget?.priceId ?? null}
+      callbackUrl={getPathWithLocale(Routes.LaunchPricing)}
       variant={variant}
       size="lg"
       className={ctaClassName}
-      data-testid={dataTestId}
+      dataTestId={dataTestId}
     >
       {children}
-    </CheckoutButton>
+    </CheckoutAuthButton>
   );
 }
 
@@ -246,7 +242,7 @@ function PlanCard({
   locale,
   plan,
 }: {
-  locale: 'zh' | 'en';
+  locale: Locale;
   plan: LaunchPricingPlan;
 }) {
   const featured = plan.id === 'annual';
@@ -415,7 +411,10 @@ function PlanCard({
           className="w-full"
         >
           {plan.actionLabel}
-          <IconArrowRight className="size-4" aria-hidden="true" />
+          <IconArrowRight
+            className="size-4 rtl:rotate-180"
+            aria-hidden="true"
+          />
         </LaunchPricingCta>
         <p
           className={cn(
@@ -434,7 +433,7 @@ export function LaunchPricing({
   content,
   locale,
 }: LaunchPricingProps & {
-  locale: 'zh' | 'en';
+  locale: Locale;
 }) {
   const annualCheckoutTarget = getCheckoutTarget('annual');
 
@@ -573,7 +572,10 @@ export function LaunchPricing({
                 )}
               >
                 {content.finalCta.primaryAction}
-                <IconArrowRight className="size-4" aria-hidden="true" />
+                <IconArrowRight
+                  className="size-4 rtl:rotate-180"
+                  aria-hidden="true"
+                />
               </Link>
               <LaunchPricingCta
                 variant="outline"

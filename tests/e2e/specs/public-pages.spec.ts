@@ -3,6 +3,7 @@ import {
   expectHealthyPage,
   installPageHealthMonitor,
   localizedPath,
+  supportedLocales,
   type LocaleMode,
 } from '../fixtures/page-health';
 
@@ -25,9 +26,63 @@ const publicPages = [
   { path: '/auth/reset-password', name: 'reset password' },
 ] as const;
 
-const locales: LocaleMode[] = ['en', 'zh'];
+const locales: LocaleMode[] = [...supportedLocales];
 
 test.describe('public page smoke coverage', () => {
+  test('defaults to English and light mode without the retired AI tab', async ({
+    page,
+  }) => {
+    const monitor = installPageHealthMonitor(page);
+
+    await expectHealthyPage(page, monitor, '/', {
+      expectedPath: /\/$/,
+    });
+
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('html')).toHaveClass(/\blight\b/);
+    await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+    await expect(
+      page.getByRole('heading', {
+        name: 'Create AI images from a template and your words',
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'AI', exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'AI', exact: true })
+    ).toHaveCount(0);
+
+    await page.waitForLoadState('networkidle');
+    await page.getByTestId('locale-switcher-trigger').click();
+    const languageMenu = page.getByRole('menu');
+    await expect(languageMenu).toBeVisible();
+    await expect(languageMenu.getByRole('menuitem')).toHaveCount(2);
+    await expect(
+      languageMenu.getByRole('menuitem', { name: /English/ })
+    ).toBeVisible();
+    await expect(
+      languageMenu.getByRole('menuitem', { name: /中文/ })
+    ).toBeVisible();
+    await languageMenu.getByRole('menuitem', { name: /中文/ }).click();
+    await expect(page).toHaveURL(/\/zh\/?$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    await expect(
+      page.getByRole('heading', {
+        name: '从模板与文字，创作你的 AI 图片',
+      })
+    ).toBeVisible();
+    monitor.expectNoErrors('default locale and theme');
+  });
+
+  test('redirects explicit English locale URLs to the default path', async ({
+    page,
+  }) => {
+    await page.goto('/en/launch-pricing');
+    await expect(page).toHaveURL(/\/launch-pricing\/?$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+
   for (const locale of locales) {
     test(`renders all public pages in ${locale}`, async ({ page }) => {
       const monitor = installPageHealthMonitor(page);
@@ -77,6 +132,9 @@ test.describe('public page smoke coverage', () => {
 
     const mobileNavigation = page.getByTestId('mobile-navigation');
     await expect(mobileNavigation).toBeVisible();
+    await expect(
+      mobileNavigation.getByRole('link', { name: 'AI', exact: true })
+    ).toHaveCount(0);
     await expect(
       mobileNavigation.getByTestId('mobile-nav-login-trigger')
     ).toBeVisible();
@@ -128,36 +186,36 @@ test.describe('public page smoke coverage', () => {
     });
   }
 
-  test('renders localized homepage and pricing details in both languages', async ({
+  test('renders localized homepage and pricing details in all languages', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto('/zh');
     await expect(page.getByRole('heading', { name: '常见问题' })).toBeVisible();
     await expect(page.getByText('默认私密', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Private by default', { exact: true })
     ).toHaveCount(0);
 
-    await page.goto('/en');
+    await page.goto('/');
     await expect(page.getByRole('heading', { name: 'FAQ' })).toBeVisible();
     await expect(
       page.getByText('Private by default', { exact: true })
     ).toBeVisible();
 
+    await page.goto('/zh/launch-pricing');
+    await expect(page.getByTestId('launch-cta-monthly')).toContainText(
+      '立即试用'
+    );
+    await expect(page.getByText(/免费试用/)).toHaveCount(0);
+
     await page.goto('/launch-pricing');
     await expect(page.getByTestId('launch-cta-monthly')).toContainText(
-      '选择方案'
+      'Try now'
     );
-    await expect(page.getByText(/立即试用|免费试用/)).toHaveCount(0);
-
-    await page.goto('/en/launch-pricing');
-    await expect(page.getByTestId('launch-cta-monthly')).toContainText(
-      'Choose plan'
-    );
-    await expect(page.getByText(/Start trial|Free Trial/i)).toHaveCount(0);
+    await expect(page.getByText(/Free Trial/i)).toHaveCount(0);
 
     const canonical = page.locator('link[rel="canonical"]');
-    await expect(canonical).toHaveAttribute('href', /\/en\/launch-pricing$/);
+    await expect(canonical).toHaveAttribute('href', /\/launch-pricing$/);
     await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(
       3
     );
@@ -189,16 +247,12 @@ test('localized content metadata and sitemap agree', async ({
   const response = await request.get('/sitemap.xml');
   expect(response.ok()).toBe(true);
   const xml = await response.text();
-  const canonicalHref = await page
-    .locator('link[rel="canonical"]')
-    .getAttribute('href');
-  expect(canonicalHref).not.toBeNull();
-  const siteOrigin = new URL(canonicalHref as string).origin;
+  const siteOrigin = new URL(response.url()).origin;
   for (const path of [
     '/terms',
-    '/en/terms',
+    '/zh/terms',
     '/blog/create-with-templates',
-    '/en/blog/create-with-templates',
+    '/zh/blog/create-with-templates',
   ]) {
     expect(xml).toContain(`<loc>${siteOrigin}${path}</loc>`);
   }

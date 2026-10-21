@@ -29,17 +29,21 @@ export function getAvailableLocales(path: string): Locale[] | undefined {
   });
 }
 
-/** Link directly to the published translation, or to the source document. */
+/**
+ * Keep translated content under the requested locale when an English source
+ * exists. The page loaders can then render the source document as a fallback.
+ */
 export function getContentHref(
   path: string,
   locale: Locale,
   available: readonly Locale[] | undefined = getAvailableLocales(path)
 ): string {
-  const target = available?.includes(locale)
-    ? locale
-    : available?.includes(baseLocale)
-      ? baseLocale
-      : (available?.[0] ?? locale);
+  const target =
+    !available?.length ||
+    available.includes(locale) ||
+    available.includes(baseLocale)
+      ? locale
+      : available[0];
   return localizeHref(path, { locale: target });
 }
 
@@ -58,6 +62,12 @@ export function getUnavailableContentRedirect(
   const path = `/${parts.join('/')}`;
   const available = getLocales(path);
   if (!available?.length || available.includes(localePart as Locale)) {
+    return null;
+  }
+
+  // Legal pages and blog posts fall back to English inside the requested
+  // locale route, so only redirect when no base-language source exists.
+  if (available.includes(baseLocale)) {
     return null;
   }
 

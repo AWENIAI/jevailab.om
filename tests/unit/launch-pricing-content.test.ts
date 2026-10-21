@@ -4,9 +4,9 @@ import { getLaunchPricingContent } from '@/content/launch-pricing';
 
 describe('launch pricing content', () => {
   it.each([
-    'zh',
     'en',
-  ] as const)('defines the complete bilingual %s launch offer', (locale) => {
+    'zh',
+  ] as const)('defines the complete localized %s launch offer', (locale) => {
     const content = getLaunchPricingContent(locale);
 
     expect(content.plans.title.trim()).not.toHaveLength(0);
@@ -64,7 +64,16 @@ describe('launch pricing content', () => {
   });
 
   it('shows the starter launch offer with its regular price and discount', () => {
-    for (const locale of ['zh', 'en'] as const) {
+    const discountNotes = {
+      en: 'Limited-time offer. Save $9.90',
+      zh: '限时优惠，省 $9.90',
+    } as const satisfies Record<
+      Parameters<typeof getLaunchPricingContent>[0],
+      string
+    >;
+
+    for (const locale of ['en', 'zh'] as const) {
+      const discountNote = discountNotes[locale];
       const starter = getLaunchPricingContent(locale).plans.items.find(
         (plan) => plan.id === 'starter'
       );
@@ -73,10 +82,7 @@ describe('launch pricing content', () => {
         price: '$9.90',
         regularPrice: '$19.80',
         discountLabel: '50% OFF',
-        discountNote:
-          locale === 'zh'
-            ? '限时优惠，省 $9.90'
-            : 'Limited-time offer. Save $9.90',
+        discountNote,
         countdownEndsAt: '2026-11-20T00:00:00+08:00',
       });
     }
@@ -111,36 +117,34 @@ describe('launch pricing content', () => {
     expect(enAnnual?.footnote).toContain('Credits refresh monthly');
   });
 
-  it('uses accurate plan CTAs and omits trial and preview claims', () => {
+  it('uses immediate-trial CTAs without free-trial or preview claims', () => {
     const zh = getLaunchPricingContent('zh');
     const en = getLaunchPricingContent('en');
     const zhSerialized = JSON.stringify(zh);
     const enSerialized = JSON.stringify(en);
 
     expect(zh.plans.items.map((plan) => plan.actionLabel)).toEqual([
-      '选择方案',
-      '选择方案',
-      '选择方案',
+      '立即试用',
+      '立即试用',
+      '立即试用',
     ]);
-    expect(zh.finalCta.secondaryAction).toBe('选择方案');
-    expect(zhSerialized).not.toContain('立即免费试用');
-    expect(zhSerialized).not.toMatch(/试用|免费试用/);
+    expect(zh.finalCta.secondaryAction).toBe('立即试用');
+    expect(zhSerialized).not.toMatch(/免费试用/);
     expect(zhSerialized).not.toContain('这是首发方案预览');
 
     expect(en.plans.items.map((plan) => plan.actionLabel)).toEqual([
-      'Choose plan',
-      'Choose plan',
-      'Choose plan',
+      'Try now',
+      'Try now',
+      'Try now',
     ]);
-    expect(en.finalCta.secondaryAction).toBe('Choose plan');
-    expect(enSerialized).not.toContain('Start Free Trial');
-    expect(enSerialized).not.toMatch(/trial/i);
+    expect(en.finalCta.secondaryAction).toBe('Try now');
+    expect(enSerialized).not.toMatch(/free trial/i);
     expect(enSerialized).not.toContain('This is a launch-plan preview');
   });
 
   it.each([
-    'zh',
     'en',
+    'zh',
   ] as const)('keeps image creation as the only public %s feature', (locale) => {
     const homepage = getJevailabHomepageContent(locale);
 
@@ -150,8 +154,8 @@ describe('launch pricing content', () => {
   });
 
   it.each([
-    'zh',
     'en',
+    'zh',
   ] as const)('describes starter credits as image-only in %s', (locale) => {
     const starter = getLaunchPricingContent(locale).plans.items.find(
       (plan) => plan.id === 'starter'

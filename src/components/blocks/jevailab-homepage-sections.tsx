@@ -103,7 +103,7 @@ export function JevailabHomepageSections({
               type="button"
               data-template-id={example.templateId}
               onClick={() => onSelectTemplate(example.templateId)}
-              className="group relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm outline-none transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-primary/35"
+              className="group relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-start shadow-sm outline-none transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-primary/35"
             >
               <img
                 src={example.imageUrl}
@@ -156,7 +156,7 @@ export function JevailabHomepageSections({
               <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                 {imageFeature.actionLabel}
                 <IconArrowRight
-                  className="size-4 transition group-hover:translate-x-1"
+                  className="size-4 transition group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1"
                   aria-hidden="true"
                 />
               </span>
@@ -290,7 +290,10 @@ export function JevailabHomepageSections({
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
           >
             {content.hero.primaryAction}
-            <IconArrowRight className="size-4" aria-hidden="true" />
+            <IconArrowRight
+              className="size-4 rtl:rotate-180"
+              aria-hidden="true"
+            />
           </a>
         </div>
       </section>
@@ -342,14 +345,14 @@ export function JevailabHomepageSections({
           <div className="mt-8 divide-y divide-border rounded-3xl border border-border/70 bg-card px-5 sm:px-7">
             {content.faq.map((item) => (
               <details key={item.question} className="group py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-primary/35">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-start text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-primary/35">
                   {item.question}
                   <IconArrowRight
-                    className="size-4 shrink-0 transition group-open:rotate-90"
+                    className="size-4 shrink-0 transition group-open:rotate-90 rtl:rotate-180 rtl:group-open:-rotate-90"
                     aria-hidden="true"
                   />
                 </summary>
-                <p className="pt-3 pr-8 text-sm leading-6 text-muted-foreground">
+                <p className="pt-3 pe-8 text-sm leading-6 text-muted-foreground">
                   {item.answer}
                 </p>
               </details>
@@ -387,7 +390,10 @@ export function JevailabHomepageSections({
               className="mt-7 inline-flex h-10 items-center gap-2 rounded-lg bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-background/85"
             >
               {content.finalCta.actionLabel}
-              <IconArrowRight className="size-4" aria-hidden="true" />
+              <IconArrowRight
+                className="size-4 rtl:rotate-180"
+                aria-hidden="true"
+              />
             </a>
           </div>
         </div>

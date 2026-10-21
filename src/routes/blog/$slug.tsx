@@ -13,7 +13,7 @@ import { getPostBySlug, getPostLocales } from '@/lib/blog';
 import { renderMarkdown } from '@/lib/markdown';
 import { websiteConfig } from '@/config/website';
 import { getCanonicalUrlForLocale, getImageUrl } from '@/lib/urls';
-import { localeConfig } from '@/lib/locale';
+import { getLocale, localeConfig } from '@/lib/locale';
 import {
   jsonLdScript,
   organizationStructuredData,
@@ -83,7 +83,7 @@ function BlogPostPage() {
           nativeButton={false}
           render={<Link to="/blog" search={{ page: 1 }} />}
         >
-          <IconArrowLeft className="size-4" aria-hidden="true" />
+          <IconArrowLeft className="size-4 rtl:rotate-180" aria-hidden="true" />
           {m.blog_all_posts()}
         </Button>
 
@@ -94,7 +94,7 @@ function BlogPostPage() {
                 {post.category}
               </span>
               <time dateTime={post.date}>
-                {formatDate(new Date(post.date))}
+                {formatDate(new Date(post.date), getLocale())}
               </time>
             </div>
 

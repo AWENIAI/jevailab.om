@@ -1,9 +1,9 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 
-const MESSAGE_FILES = [
-  'project.inlang/messages/en.json',
-  'project.inlang/messages/zh.json',
-] as const;
+const MESSAGE_FILES = (await readdir('project.inlang/messages'))
+  .filter((file) => file.endsWith('.json'))
+  .sort()
+  .map((file) => `project.inlang/messages/${file}`);
 
 async function sortMessages(file: string) {
   const raw = await readFile(file, 'utf8');

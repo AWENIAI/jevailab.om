@@ -158,10 +158,11 @@ const enTemplateCopy: Record<
   },
 };
 
-type SpreadsheetTemplateCopy = {
-  zh: Pick<LocalizableTemplate, 'name' | 'description' | 'category'>;
-  en: Pick<LocalizableTemplate, 'name' | 'description' | 'category'>;
-};
+type LocalizedTemplateCopy = Pick<
+  LocalizableTemplate,
+  'name' | 'description' | 'category'
+>;
+type SpreadsheetTemplateCopy = Partial<Record<Locale, LocalizedTemplateCopy>>;
 
 const spreadsheetTemplateCopy: Record<string, SpreadsheetTemplateCopy> = {
   'image-template-1015': {
@@ -647,17 +648,24 @@ const spreadsheetTemplateCopy: Record<string, SpreadsheetTemplateCopy> = {
 
 function getSpreadsheetTemplateCopy(
   templateId: string,
-  locale: 'zh' | 'en'
-): Pick<LocalizableTemplate, 'name' | 'description' | 'category'> | undefined {
-  return spreadsheetTemplateCopy[templateId]?.[locale];
+  locale: Locale
+): LocalizedTemplateCopy | undefined {
+  return (
+    spreadsheetTemplateCopy[templateId]?.[locale] ??
+    spreadsheetTemplateCopy[templateId]?.en
+  );
 }
 
 export function getLocalizedImageTemplate<T extends LocalizableTemplate>(
   template: T,
-  locale: 'zh' | 'en'
+  locale: Locale
 ): T {
-  const copy =
-    (locale === 'zh' ? zhTemplateCopy : enTemplateCopy)[template.id] ??
-    getSpreadsheetTemplateCopy(template.id, locale);
-  return copy ? { ...template, ...copy } : template;
+  const copy = {
+    ...enTemplateCopy[template.id],
+    ...(locale === 'zh'
+      ? zhTemplateCopy[template.id]
+      : getSpreadsheetTemplateCopy(template.id, locale)),
+  };
+  return Object.keys(copy).length > 0 ? { ...template, ...copy } : template;
 }
+import type { Locale } from '@/lib/locale';

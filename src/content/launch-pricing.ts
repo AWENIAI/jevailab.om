@@ -87,7 +87,7 @@ const zh: LaunchPricingContent = {
           '商用授权',
           '无水印',
         ],
-        actionLabel: '选择方案',
+        actionLabel: '立即试用',
         footnote: '一次性付款，购买后积分立即到账。',
       },
       {
@@ -104,7 +104,7 @@ const zh: LaunchPricingContent = {
           '商用授权',
           '无水印',
         ],
-        actionLabel: '选择方案',
+        actionLabel: '立即试用',
         footnote: '按月计费，可在账户中随时取消。',
       },
       {
@@ -121,7 +121,7 @@ const zh: LaunchPricingContent = {
           '积分每月刷新，非一次性到账',
           '商用授权',
         ],
-        actionLabel: '选择方案',
+        actionLabel: '立即试用',
         footnote: '一次付款，积分按月刷新，全年按自己的节奏生成。',
       },
     ],
@@ -163,7 +163,7 @@ const zh: LaunchPricingContent = {
     title: '把下一次灵感，变成一张真实图片。',
     description: '选择一个方向，写下你的想法，先在 jevailab 试试看。',
     primaryAction: '开始创作',
-    secondaryAction: '选择方案',
+    secondaryAction: '立即试用',
   },
 };
 
@@ -205,7 +205,7 @@ const en: LaunchPricingContent = {
           'Commercial usage rights',
           'No watermark',
         ],
-        actionLabel: 'Choose plan',
+        actionLabel: 'Try now',
         footnote: 'One-time payment. Credits are available immediately.',
       },
       {
@@ -222,7 +222,7 @@ const en: LaunchPricingContent = {
           'Commercial usage rights',
           'No watermark',
         ],
-        actionLabel: 'Choose plan',
+        actionLabel: 'Try now',
         footnote: 'Billed monthly. Cancel anytime from your account.',
       },
       {
@@ -240,7 +240,7 @@ const en: LaunchPricingContent = {
           'Credits refresh monthly, not all at once',
           'Commercial usage rights',
         ],
-        actionLabel: 'Choose plan',
+        actionLabel: 'Try now',
         footnote:
           'One payment. Credits refresh monthly so you can create at your own pace all year.',
       },
@@ -285,12 +285,17 @@ const en: LaunchPricingContent = {
     description:
       'Choose a direction, describe your idea, and give jevailab a try.',
     primaryAction: 'Start creating',
-    secondaryAction: 'Choose plan',
+    secondaryAction: 'Try now',
   },
+};
+
+const launchPricingContent: Record<JevailabLocale, LaunchPricingContent> = {
+  en,
+  zh,
 };
 
 export function getLaunchPricingContent(
   locale: JevailabLocale
 ): LaunchPricingContent {
-  return locale === 'zh' ? zh : en;
+  return launchPricingContent[locale];
 }

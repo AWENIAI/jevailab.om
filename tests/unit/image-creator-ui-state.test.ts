@@ -115,16 +115,16 @@ describe('image creator submit state', () => {
   it('returns to the same editor after authentication', () => {
     expect(
       buildImageCreatorCallbackUrl({
-        pathname: '/en/',
+        pathname: '/',
         search: '?tab=image',
         hash: '#create',
       })
-    ).toBe('/en/?tab=image&create=1');
+    ).toBe('/?tab=image&create=1');
     expect(
       buildImageCreatorAuthHref({
         loginPath: '/auth/login',
-        callbackUrl: '/en/?tab=image&create=1',
+        callbackUrl: '/?tab=image&create=1',
       })
-    ).toBe('/auth/login?callbackUrl=%2Fen%2F%3Ftab%3Dimage%26create%3D1');
+    ).toBe('/auth/login?callbackUrl=%2F%3Ftab%3Dimage%26create%3D1');
   });
 });

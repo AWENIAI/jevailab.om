@@ -269,7 +269,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: 'target',
     header: () => (
-      <div className="w-full text-right">{m.dashboard_table_target()}</div>
+      <div className="w-full text-end">{m.dashboard_table_target()}</div>
     ),
     cell: ({ row }) => (
       <form
@@ -288,7 +288,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           {m.dashboard_table_target()}
         </Label>
         <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
+          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-end shadow-none focus-visible:border dark:bg-transparent"
           defaultValue={row.original.target}
           id={`${row.original.id}-target`}
         />
@@ -298,7 +298,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: 'limit',
     header: () => (
-      <div className="w-full text-right">{m.dashboard_table_limit()}</div>
+      <div className="w-full text-end">{m.dashboard_table_limit()}</div>
     ),
     cell: ({ row }) => (
       <form
@@ -317,7 +317,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           {m.dashboard_table_limit()}
         </Label>
         <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
+          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-end shadow-none focus-visible:border dark:bg-transparent"
           defaultValue={row.original.limit}
           id={`${row.original.id}-limit`}
         />
@@ -637,7 +637,7 @@ export function DataTable({
                 pages: table.getPageCount(),
               })}
             </div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <div className="ms-auto flex items-center gap-2 lg:ms-0">
               <Button
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
@@ -751,7 +751,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         render={
           <Button
             variant="link"
-            className="text-foreground w-fit px-0 text-left"
+            className="text-foreground w-fit px-0 text-start"
           />
         }
       >

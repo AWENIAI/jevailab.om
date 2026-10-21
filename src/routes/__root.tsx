@@ -51,7 +51,7 @@ export const Route = createRootRouteWithContext<{
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { title: websiteConfig.metadata?.title },
         { name: 'description', content: websiteConfig.metadata?.description },
-        { name: 'theme-color', content: '#09090b' },
+        { name: 'theme-color', content: '#f8f6f0' },
         // Default OG / Twitter / canonical — pages with their own head()
         // override these with page-specific values. These ensure 404 / error
         // pages and any future route that forgets to call seo() still get
@@ -164,14 +164,18 @@ function RootComponent() {
  */
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={localeConfig[getLocale()].hreflang} suppressHydrationWarning>
+    <html
+      lang={localeConfig[getLocale()].hreflang}
+      dir={localeConfig[getLocale()].dir}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
       </head>
       <body>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-primary"
+          className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-primary"
         >
           {m.common_skip_to_content()}
         </a>

@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { m } from '@/locale/paraglide/messages';
 
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getLocale } from '@/lib/locale';
+import { getLocale, localeConfig } from '@/lib/locale';
 import {
   Card,
   CardAction,
@@ -139,7 +139,7 @@ const chartConfig = {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
-  const dateLocale = getLocale() === 'zh' ? 'zh-CN' : 'en-US';
+  const dateLocale = localeConfig[getLocale()].hreflang;
   const [timeRange, setTimeRange] = React.useState('90d');
 
   React.useEffect(() => {

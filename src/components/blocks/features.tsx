@@ -96,7 +96,7 @@ export default function FeaturesSection() {
         <ScrollReveal delay={150}>
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-24">
             <div className="flex flex-col gap-8 lg:col-span-5">
-              <div className="text-left lg:pr-0">
+              <div className="text-start lg:pe-0">
                 <h3 className="py-1 text-3xl font-semibold leading-normal text-foreground lg:text-4xl">
                   {m.home_features_title()}
                 </h3>

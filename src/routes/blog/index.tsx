@@ -21,7 +21,7 @@ export const Route = createFileRoute('/blog/')({
   }),
   loader: ({ location }) => {
     const page = Number(new URLSearchParams(location.search).get('page')) || 1;
-    return getPaginatedPosts(page);
+    return getPaginatedPosts(page, getLocale());
   },
   head: ({ loaderData }) => {
     const path = '/blog';

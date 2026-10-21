@@ -34,7 +34,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
   const [mounted, setMounted] = useState(false);
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
-  const menuLinks = getNavbarLinks();
+  const menuLinks = getNavbarLinks().filter((item) => !item.hidden);
   // Sync mount (avoid hydration mismatch) and close drawer on route change
   useEffect(() => {
     setMounted(true);
@@ -121,7 +121,7 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
                   : item.items?.some((sub) => isLinkActive(sub.href, pathname));
                 return (
                   <li key={item.title} className="py-1">
-                    {item.items ? (
+                    {item.items?.some((sub) => !sub.hidden) ? (
                       <Collapsible>
                         <CollapsibleTrigger
                           render={
@@ -135,42 +135,44 @@ export function NavbarMobile({ className, ...props }: NavbarMobileProps) {
                               variant="ghost"
                               className={cn(
                                 mobileLinkClass,
-                                'justify-between bg-transparent text-left',
+                                'justify-between bg-transparent text-start',
                                 active && mobileLinkActiveClass
                               )}
                             >
                               {item.title}
-                              <IconChevronRight className="size-4" />
+                              <IconChevronRight className="size-4 rtl:rotate-180" />
                             </Button>
                           }
                           nativeButton={false}
                         />
-                        <CollapsibleContent className="pl-2">
+                        <CollapsibleContent className="ps-2">
                           <ul className="mt-2 space-y-2">
-                            {item.items.map((sub) => (
-                              <li key={sub.title}>
-                                <Link
-                                  to={sub.href ?? '#'}
-                                  target={sub.external ? '_blank' : undefined}
-                                  rel={
-                                    sub.external
-                                      ? 'noopener noreferrer'
-                                      : undefined
-                                  }
-                                  onClick={() => setOpen(false)}
-                                  className={cn(
-                                    mobileSubLinkClass,
-                                    isLinkActive(sub.href, pathname) &&
-                                      mobileLinkActiveClass
-                                  )}
-                                >
-                                  {sub.icon ? (
-                                    <sub.icon className="size-4 shrink-0" />
-                                  ) : null}
-                                  {sub.title}
-                                </Link>
-                              </li>
-                            ))}
+                            {item.items
+                              .filter((sub) => !sub.hidden)
+                              .map((sub) => (
+                                <li key={sub.title}>
+                                  <Link
+                                    to={sub.href ?? '#'}
+                                    target={sub.external ? '_blank' : undefined}
+                                    rel={
+                                      sub.external
+                                        ? 'noopener noreferrer'
+                                        : undefined
+                                    }
+                                    onClick={() => setOpen(false)}
+                                    className={cn(
+                                      mobileSubLinkClass,
+                                      isLinkActive(sub.href, pathname) &&
+                                        mobileLinkActiveClass
+                                    )}
+                                  >
+                                    {sub.icon ? (
+                                      <sub.icon className="size-4 shrink-0" />
+                                    ) : null}
+                                    {sub.title}
+                                  </Link>
+                                </li>
+                              ))}
                           </ul>
                         </CollapsibleContent>
                       </Collapsible>

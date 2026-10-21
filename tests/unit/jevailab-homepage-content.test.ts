@@ -10,8 +10,8 @@ import {
 
 describe('Jevailab homepage content', () => {
   it.each([
-    'zh',
     'en',
+    'zh',
   ] as const)('defines complete, crawler-readable %s homepage content', (locale) => {
     const content = getJevailabHomepageContent(locale);
 
@@ -74,27 +74,32 @@ describe('Jevailab homepage content', () => {
 
   it('uses image-only metadata and only active homepage destinations', () => {
     const projectRoot = fileURLToPath(new URL('../..', import.meta.url));
-    const zhMessages = JSON.parse(
-      readFileSync(`${projectRoot}/project.inlang/messages/zh.json`, 'utf8')
-    ) as Record<string, string>;
-    const enMessages = JSON.parse(
-      readFileSync(`${projectRoot}/project.inlang/messages/en.json`, 'utf8')
-    ) as Record<string, string>;
+    const locales = ['en', 'zh'];
+    const localizedMessages = locales.map(
+      (locale) =>
+        JSON.parse(
+          readFileSync(
+            `${projectRoot}/project.inlang/messages/${locale}.json`,
+            'utf8'
+          )
+        ) as Record<string, string>
+    );
     const items = getNavbarLinks().flatMap((item) => [
       item,
       ...(item.items ?? []),
     ]);
     const hrefs = items.flatMap((item) => (item.href ? [item.href] : []));
 
-    for (const messages of [zhMessages, enMessages]) {
+    for (const messages of localizedMessages) {
       expect(messages.site_name).toContain('jevailab');
-      expect(messages.site_title).toMatch(/AI|图片|Image/);
+      expect(messages.site_title).toMatch(/AI/i);
       expect(messages.site_description.toLowerCase()).toContain('ai');
       expect(Object.values(messages).join(' ')).not.toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
       expect.arrayContaining(['/#create', '/launch-pricing'])
     );
+    expect(items.map((item) => item.title)).not.toContain('AI');
     expect(hrefs).not.toContain('/#image');
     expect(hrefs).not.toContain('/pricing');
     expect(hrefs).not.toContain('/#gallery');

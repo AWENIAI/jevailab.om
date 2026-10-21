@@ -102,14 +102,14 @@ export function ResetPasswordForm() {
                         disabled={isPending}
                         placeholder={m.auth_reset_password_placeholder_password()}
                         type={showPassword ? 'text' : 'password'}
-                        className="pr-10"
+                        className="pe-10"
                       />
                     </FormControl>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent"
+                      className="absolute end-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent"
                       onClick={togglePasswordVisibility}
                       disabled={isPending}
                     >
@@ -138,7 +138,7 @@ export function ResetPasswordForm() {
             type="submit"
             className="w-full flex items-center justify-center gap-2"
           >
-            {isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+            {isPending && <IconLoader2 className="me-2 size-4 animate-spin" />}
             <span>{m.auth_reset_password_reset()}</span>
           </Button>
         </form>

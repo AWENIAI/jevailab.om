@@ -34,6 +34,9 @@ type WaffoEvent = WebhookEvent<WebhookEventData>;
 const WAFFO_LANGUAGES: Record<string, CashierLanguage> = {
   en: 'en',
   zh: 'zh-Hans',
+  es: 'es-MX',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
 };
 
 type SubscriptionUpdate = {

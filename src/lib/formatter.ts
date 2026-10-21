@@ -30,11 +30,12 @@ export function formatBytes(bytes: number): string {
  * @param date Date to format
  * @returns Formatted date string in the format "Year/Month/Day"
  */
-export function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}/${month}/${day}`;
+export function formatDate(date: Date, locale: Locale = getLocale()): string {
+  return new Intl.DateTimeFormat(localeConfig[locale].hreflang, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 }
 
 /**
@@ -42,12 +43,17 @@ export function formatDate(date: Date): string {
  * @param date Date and time to format
  * @returns Formatted date string in the format "Year/Month/Day HH:MM:SS"
  */
-export function formatDateTime(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-  const second = String(date.getSeconds()).padStart(2, '0');
-  return `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+export function formatDateTime(
+  date: Date,
+  locale: Locale = getLocale()
+): string {
+  return new Intl.DateTimeFormat(localeConfig[locale].hreflang, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date);
 }
+import { getLocale, localeConfig, type Locale } from '@/lib/locale';

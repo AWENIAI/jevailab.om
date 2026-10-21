@@ -85,13 +85,13 @@ export function SidebarUser({ user }: SidebarUserProps) {
                   image={user.image ?? null}
                   className="size-8 border"
                 />
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>
                   <span className="truncate text-xs text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
-                <IconSelector className="ml-auto size-4" />
+                <IconSelector className="ms-auto size-4" />
               </SidebarMenuButton>
             }
           />
@@ -103,13 +103,13 @@ export function SidebarUser({ user }: SidebarUserProps) {
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                   <UserAvatar
                     name={user.name ?? null}
                     image={user.image ?? null}
                     className="size-8 border"
                   />
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                  <div className="grid flex-1 text-start text-sm leading-tight">
                     <span className="truncate font-semibold text-foreground">
                       {user.name}
                     </span>
@@ -125,20 +125,20 @@ export function SidebarUser({ user }: SidebarUserProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <ThemeIcon className="mr-2 size-4" />
+                      <ThemeIcon className="me-2 size-4" />
                       {m.common_mode_theme()}
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
                       <DropdownMenuItem onClick={() => setTheme('light')}>
-                        <IconSun className="mr-2 size-4" />
+                        <IconSun className="me-2 size-4" />
                         {m.common_mode_light()}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setTheme('dark')}>
-                        <IconMoon className="mr-2 size-4" />
+                        <IconMoon className="me-2 size-4" />
                         {m.common_mode_dark()}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setTheme('system')}>
-                        <IconDeviceDesktop className="mr-2 size-4" />
+                        <IconDeviceDesktop className="me-2 size-4" />
                         {m.common_mode_system()}
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
@@ -150,10 +150,10 @@ export function SidebarUser({ user }: SidebarUserProps) {
                 <>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <IconLanguage className="mr-2 size-4" />
+                      <IconLanguage className="me-2 size-4" />
                       {m.common_switch_language()}
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
                       {locales.map((locale: Locale) => (
                         <DropdownMenuItem
                           key={locale}
@@ -162,7 +162,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
                           disabled={locale === currentLocale}
                         >
                           {localeConfig[locale].flag ? (
-                            <span className="mr-2 text-base">
+                            <span className="me-2 text-base">
                               {localeConfig[locale].flag}
                             </span>
                           ) : null}
@@ -183,7 +183,7 @@ export function SidebarUser({ user }: SidebarUserProps) {
                   await handleSignOut();
                 }}
               >
-                <IconLogout className="mr-2 size-4" />
+                <IconLogout className="me-2 size-4" />
                 {m.auth_common_logout()}
               </DropdownMenuItem>
             </DropdownMenuGroup>

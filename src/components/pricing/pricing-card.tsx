@@ -18,10 +18,10 @@ import type {
 } from '@/payment/types';
 import { PlanIntervals, PaymentTypes } from '@/payment/types';
 import { IconCircleCheck, IconCircleX } from '@tabler/icons-react';
-import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckoutButton } from './create-checkout-button';
+import { LoginDialog } from '@/components/auth/login-dialog';
+import { CheckoutAuthButton } from './checkout-auth-button';
 import { Routes } from '@/lib/routes';
 function getPriceForPlan(
   plan: PricePlan,
@@ -54,6 +54,7 @@ export function PricingCard({
   const price = getPriceForPlan(plan, interval, paymentType);
   const { data: session } = authClient.useSession();
   const [mounted, setMounted] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const currentUser = session?.user;
   const isAuthenticated = mounted && !!currentUser;
 
@@ -118,15 +119,17 @@ export function PricingCard({
               {m.pricing_card_get_started_for_free()}
             </Button>
           ) : (
-            <Link
-              to={Routes.Login}
-              className={cn(
+            <LoginDialog
+              callbackUrl={Routes.Pricing}
+              open={authDialogOpen}
+              onOpenChange={setAuthDialogOpen}
+              triggerClassName={cn(
                 buttonVariants({ variant: 'outline' }),
                 'mt-4 w-full'
               )}
             >
               {m.pricing_card_get_started_for_free()}
-            </Link>
+            </LoginDialog>
           )
         ) : isCurrentPlan ? (
           <Button
@@ -136,31 +139,22 @@ export function PricingCard({
             {m.pricing_card_your_current_plan()}
           </Button>
         ) : isPaidPlan && price ? (
-          isAuthenticated && hasValidPriceId ? (
-            <CheckoutButton
+          hasValidPriceId ? (
+            <CheckoutAuthButton
               planId={plan.id}
               priceId={price.priceId}
+              callbackUrl={Routes.Pricing}
               metadata={metadata}
               className="mt-4 w-full"
             >
               {plan.isLifetime
                 ? m.pricing_card_get_lifetime_access()
                 : m.pricing_card_get_started()}
-            </CheckoutButton>
-          ) : isAuthenticated && !hasValidPriceId ? (
+            </CheckoutAuthButton>
+          ) : (
             <Button disabled className="mt-4 w-full">
               {m.pricing_card_not_available()}
             </Button>
-          ) : (
-            <Link
-              to={Routes.Login}
-              className={cn(
-                buttonVariants({ variant: 'default' }),
-                'mt-4 w-full'
-              )}
-            >
-              {m.pricing_card_get_started()}
-            </Link>
           )
         ) : (
           <Button disabled className="mt-4 w-full">

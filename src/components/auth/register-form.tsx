@@ -28,9 +28,17 @@ import {
 import { SocialLoginButton } from './social-login-button';
 interface RegisterFormProps {
   callbackUrl?: string;
+  className?: string;
+  hideCardFooter?: boolean;
+  hideCardHeader?: boolean;
+  onSuccess?: () => void;
 }
 export function RegisterForm({
   callbackUrl: propCallbackUrl,
+  className,
+  hideCardFooter = false,
+  hideCardHeader = false,
+  onSuccess,
 }: RegisterFormProps) {
   const paramCallbackUrl =
     typeof window !== 'undefined'
@@ -76,6 +84,7 @@ export function RegisterForm({
         onSuccess: () => {
           setVerificationEmail(values.email);
           setSuccess(m.auth_register_check_email());
+          onSuccess?.();
         },
         onError: (ctx) => {
           setError(getAuthErrorMessage(ctx.error));
@@ -92,6 +101,9 @@ export function RegisterForm({
       bottomButtonLabel={m.auth_register_sign_in_hint()}
       bottomButtonHref={Routes.Login}
       callbackUrl={callbackUrl}
+      hideFooter={hideCardFooter}
+      hideHeader={hideCardHeader}
+      className={className}
     >
       <div className="space-y-6">
         <SocialLoginButton
@@ -150,14 +162,14 @@ export function RegisterForm({
                             disabled={isPending}
                             placeholder={m.auth_register_placeholder_password()}
                             type={showPassword ? 'text' : 'password'}
-                            className="pr-10"
+                            className="pe-10"
                           />
                         </FormControl>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent"
+                          className="absolute end-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent"
                           onClick={togglePasswordVisibility}
                           disabled={isPending}
                         >

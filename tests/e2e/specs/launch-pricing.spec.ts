@@ -43,9 +43,15 @@ test.describe('launch pricing checkout entry', () => {
       /^\d{2}$/
     );
     const annualPlan = page.getByTestId('launch-plan-annual');
-    await expect(annualPlan).toContainText('积分每月刷新，非一次性到账');
-    await expect(annualPlan).toContainText('全年共 2,880 积分');
-    await expect(annualPlan).not.toContainText('全年积分一次到账');
+    await expect(annualPlan).toContainText(
+      /积分每月刷新，非一次性到账|Credits refresh monthly, not all at once/
+    );
+    await expect(annualPlan).toContainText(
+      /全年共 2,880 积分|2,880 credits\/year/
+    );
+    await expect(annualPlan).not.toContainText(
+      /全年积分一次到账|allowance upfront/
+    );
     await expect(page.getByText(/立即免费试用|Start Free Trial/)).toHaveCount(
       0
     );
@@ -55,19 +61,47 @@ test.describe('launch pricing checkout entry', () => {
     await expect(
       page.getByText(/同样的积分，不同的节奏|Same credits, a different rhythm/)
     ).toHaveCount(0);
+    const loginDialog = page.getByTestId('auth-login-dialog');
+    for (const ctaId of [
+      'launch-cta-starter',
+      'launch-cta-monthly',
+      'launch-cta-annual',
+      'launch-cta-final',
+    ]) {
+      const cta = page.getByTestId(ctaId);
+      await expect(cta).toBeEnabled();
+      await cta.click();
+      await expect(page).toHaveURL(/\/launch-pricing\/?$/);
+      await expect(loginDialog).toBeVisible();
+      await expect(
+        loginDialog.getByRole('tab', { name: /登录|Log in/i })
+      ).toBeVisible();
+      await expect(
+        loginDialog.getByRole('tab', { name: /注册|Sign up/i })
+      ).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(loginDialog).toBeHidden();
+    }
+
     await page.getByTestId('launch-cta-monthly').click();
-    await expect(page).toHaveURL(
-      /\/auth\/login\?callbackUrl=%2Flaunch-pricing/
-    );
+    await expect(loginDialog).toBeVisible();
 
     const user = await registerE2EUser(request);
-    await page.locator('input[name="email"]').fill(user.email);
-    await page.locator('input[name="password"]').fill(user.password);
-    await page
+    await loginDialog.getByRole('tab', { name: /登录|Log in/i }).click();
+    await loginDialog.locator('input[name="email"]').fill(user.email);
+    await loginDialog.locator('input[name="password"]').fill(user.password);
+    const checkoutRequest = page.waitForRequest(
+      (candidate) =>
+        candidate.method() === 'POST' &&
+        candidate.url().includes('/_serverFn/') &&
+        candidate.headers()['x-tsr-serverfn'] === 'true'
+    );
+    await loginDialog
       .locator('form')
       .filter({ has: page.locator('input[name="email"]') })
       .locator('button[type="submit"]')
       .click();
+    await checkoutRequest;
     await expect(page).toHaveURL(/\/launch-pricing\/?$/);
     await expect(page.getByTestId('launch-plan-starter')).toBeVisible();
     await expect(page.getByTestId('launch-plan-monthly')).toBeVisible();

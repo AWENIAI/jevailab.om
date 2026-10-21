@@ -38,7 +38,7 @@ export function DashboardHeader({
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full min-w-0 items-center gap-2 px-4 lg:px-6">
-        <SidebarTrigger className="-ml-1 shrink-0" />
+        <SidebarTrigger className="-ms-1 shrink-0" />
         <Separator
           orientation="vertical"
           className="mx-2 h-4 data-vertical:self-auto"
@@ -75,7 +75,7 @@ export function DashboardHeader({
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="ml-auto flex shrink-0 items-center gap-3 pl-4">
+        <div className="ms-auto flex shrink-0 items-center gap-3 ps-4">
           {actions}
           <LocaleSwitcher />
           {showModeSwitch && <ModeSwitcher />}

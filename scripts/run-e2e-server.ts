@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 import { getDatabaseName } from './get-db-name';
 
 const port = Number(process.env.PORT ?? 3000);
@@ -7,28 +8,19 @@ const persistPath = process.env.E2E_PERSIST_PATH ?? './.wrangler/e2e-state';
 const databaseName = getDatabaseName();
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const useShell = process.platform === 'win32';
+const execFileAsync = promisify(execFile);
 
-function run(command: string, args: string[], useShell = false) {
-  return new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, {
-      env: process.env,
-      stdio: 'inherit',
-      ...(useShell ? { shell: true } : {}),
-    });
-
-    child.on('error', reject);
-    child.on('exit', (code, signal) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(
-        new Error(
-          `${command} exited with ${signal ? `signal ${signal}` : `code ${code}`}`
-        )
-      );
-    });
+async function run(command: string, args: string[], useShell = false) {
+  const { stdout, stderr } = await execFileAsync(command, args, {
+    env: {
+      ...process.env,
+      // Wrangler auto-confirms the isolated local migration when CI is set.
+      CI: '1',
+    },
+    shell: useShell,
   });
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
 }
 
 async function main() {
@@ -74,10 +66,6 @@ async function main() {
           ...process.env,
           E2E_PERSIST_PATH: persistPath,
           VITE_BASE_URL: baseURL,
-          VITE_PAYMENT_PROVIDER: 'stripe',
-          VITE_STRIPE_PRICE_PRO_MONTHLY: 'price_test_monthly',
-          VITE_STRIPE_PRICE_PRO_YEARLY: 'price_test_yearly',
-          VITE_STRIPE_PRICE_LIFETIME: 'price_test_lifetime',
           BETTER_AUTH_SECRET: 'e2e-better-auth-secret',
         },
         stdio: 'inherit',

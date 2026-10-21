@@ -32,7 +32,7 @@ export function Footer({ className }: React.HTMLAttributes<HTMLElement>) {
                 {websiteConfig.metadata?.name}
               </span>
             </div>
-            <p className="text-muted-foreground text-base py-2 md:pr-12">
+            <p className="text-muted-foreground text-base py-2 md:pe-12">
               {m.footer_tagline()}
             </p>
           </div>

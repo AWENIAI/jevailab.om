@@ -2,25 +2,26 @@ import {
   baseLocale,
   deLocalizeHref,
   getLocale,
-  locales,
   localizeHref,
   type Locale,
 } from '@/locale/paraglide/runtime';
 import { m } from '@/locale/paraglide/messages';
 
-export {
-  baseLocale,
-  deLocalizeHref,
-  getLocale,
-  locales,
-  localizeHref,
-  type Locale,
-};
+/**
+ * Languages exposed by the public website.
+ *
+ * Keep this explicit so generated locale files or a stale inlang cache can
+ * never add extra language entries to the navigation.
+ */
+export const locales = ['en', 'zh'] as const;
+
+export { baseLocale, deLocalizeHref, getLocale, localizeHref, type Locale };
 
 type LocaleConfig = {
   flag?: string;
   name: string;
   hreflang: string;
+  dir: 'ltr' | 'rtl';
 };
 
 export const localeConfig = {
@@ -28,11 +29,13 @@ export const localeConfig = {
     flag: '🇺🇸',
     name: 'English',
     hreflang: 'en',
+    dir: 'ltr',
   },
   zh: {
     flag: '🇨🇳',
     name: '中文',
     hreflang: 'zh-CN',
+    dir: 'ltr',
   },
 } satisfies Record<Locale, LocaleConfig>;
 
@@ -106,7 +109,7 @@ export const LOCALIZED_PATHS = new Set([
 
 /**
  * True for any user-visible path that exists in every locale and therefore
- * needs hreflang alternates (English ↔ Chinese, x-default). Used by both
+ * needs hreflang alternates (all configured languages, x-default). Used by both
  * `seo()` metadata and the dynamic sitemap.
  */
 export function isLocalizedPath(path: string): boolean {

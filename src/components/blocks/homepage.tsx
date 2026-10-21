@@ -11,7 +11,7 @@ import { getLocale } from '@/lib/locale';
 import { useEffect } from 'react';
 
 export function HomePage() {
-  const locale = getLocale() === 'zh' ? 'zh' : 'en';
+  const locale = getLocale();
   const content = getJevailabHomepageContent(locale);
 
   useEffect(() => {

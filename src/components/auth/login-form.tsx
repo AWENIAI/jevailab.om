@@ -28,11 +28,15 @@ import { ResendVerificationButton } from './resend-verification-button';
 import { SocialLoginButton } from './social-login-button';
 interface LoginFormProps {
   className?: string;
+  hideCardFooter?: boolean;
+  hideCardHeader?: boolean;
   callbackUrl?: string;
   onSuccess?: () => void;
 }
 export function LoginForm({
   className,
+  hideCardFooter = false,
+  hideCardHeader = false,
   callbackUrl: propCallbackUrl,
   onSuccess,
 }: LoginFormProps) {
@@ -99,6 +103,8 @@ export function LoginForm({
       bottomButtonLabel={m.auth_login_sign_up_hint()}
       bottomButtonHref={Routes.Register}
       callbackUrl={callbackUrl}
+      hideFooter={hideCardFooter}
+      hideHeader={hideCardHeader}
       className={cn('', className)}
     >
       <div className="space-y-6">
@@ -149,14 +155,14 @@ export function LoginForm({
                             disabled={isPending}
                             placeholder={m.auth_login_placeholder_password()}
                             type={showPassword ? 'text' : 'password'}
-                            className="pr-10"
+                            className="pe-10"
                           />
                         </FormControl>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent"
+                          className="absolute end-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent"
                           onClick={togglePasswordVisibility}
                           disabled={isPending}
                         >

@@ -7,7 +7,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/(pages)/launch-pricing')({
   head: () => {
-    const content = getLaunchPricingContent(getLocale() === 'zh' ? 'zh' : 'en');
+    const content = getLaunchPricingContent(getLocale());
     return seo('/launch-pricing', {
       title: `${content.meta.title} | ${websiteConfig.metadata?.name}`,
       description: content.meta.description,
@@ -17,7 +17,7 @@ export const Route = createFileRoute('/(pages)/launch-pricing')({
 });
 
 function LaunchPricingPage() {
-  const locale = getLocale() === 'zh' ? 'zh' : 'en';
+  const locale = getLocale();
   return (
     <LaunchPricing content={getLaunchPricingContent(locale)} locale={locale} />
   );

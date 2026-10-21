@@ -27,7 +27,7 @@ export default function HeroSection() {
         style={{ zIndex: 10 }}
       >
         <Container className="px-6">
-          <div className="pointer-events-auto text-center sm:mx-auto lg:mr-auto lg:mt-0">
+          <div className="pointer-events-auto text-center sm:mx-auto lg:ms-auto lg:mt-0">
             {/* title */}
             <h1 className="animate-fade-up delay-1 mt-8 text-balance text-3xl font-bold sm:text-4xl md:text-5xl lg:mt-16 xl:text-[4rem]">
               {m.home_hero_title()}
