@@ -2,7 +2,7 @@
 
 Create More with AI, Keep Your Workflow Private
 
-jevailab is a private AI image and video creation workspace for turning photos, templates, and ideas into finished visual content.
+jevailab is a private AI image creation workspace for turning photos, templates, and ideas into finished images.
 
 ## Author
 

@@ -39,6 +39,13 @@ const testAddress = {
   postalCode: '94105',
 };
 
+function getCheckoutTestId(scenario: CheckoutScenario) {
+  if (scenario.planId === 'lifetime') return 'launch-cta-starter';
+  return scenario.interval === 'year'
+    ? 'launch-cta-annual'
+    : 'launch-cta-monthly';
+}
+
 function productId(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required for Creem sandbox E2E`);
@@ -167,15 +174,8 @@ async function startCreemCheckout(
   scenario: CheckoutScenario
 ) {
   await loginByForm(page, user);
-  await page.goto('/pricing');
-  await page.waitForLoadState('networkidle');
-
-  if (scenario.interval === 'year') {
-    await page.getByTestId('pricing-interval-year').click();
-  }
-
-  const planCard = page.getByTestId(`pricing-card-${scenario.planId}`);
-  await planCard.getByRole('button').click();
+  await page.goto('/launch-pricing');
+  await page.getByTestId(getCheckoutTestId(scenario)).click();
 
   await page.waitForURL(/https:\/\/(?:www\.)?creem\.io\//, {
     timeout: 60_000,

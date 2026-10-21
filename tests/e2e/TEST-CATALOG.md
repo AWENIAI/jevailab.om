@@ -64,11 +64,25 @@ errors or page errors.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Public pages render successfully | Open `/`, `/pricing`, `/launch-pricing`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
+| 1 | Public pages render successfully | Open `/`, `/blog`, `/blog/getting-started`, `/ai`, `/about`, `/contact`, `/changelog`, `/roadmap`, `/waitlist`, `/cookie`, `/privacy`, `/terms`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` for `en` and `zh`. Verify each returns 2xx, renders a document body, and emits no browser errors. |
 | 1a | Localized content indexing | Blog and legal documents use each available translation as canonical and reciprocal hreflang; sitemap lists each available URL. Missing translations are omitted from sitemap/alternates, and explicit unavailable language URLs redirect to a real version while preserving the query. |
 | 2 | Home login modal opens | Open `/`, click the navbar login button, verify the login dialog and credential inputs are visible, and assert no browser errors. |
 | 3 | Mobile auth actions avoid hydration errors | Open the mobile navigation, verify its login and registration controls are usable, assert that it emits no nested-button hydration error, then verify the login control routes to `/auth/login`. |
 | 4 | Health check responds with pong | Call `/api/ping` and verify `{ "message": "pong" }`. |
+
+### Launch pricing checkout entry
+
+**File:** `specs/launch-pricing.spec.ts` | **Priority:** P0
+
+Verifies that checkout routes guests through login, starts the configured
+default checkout for signed-in users without rendering a plan page, and
+retires the legacy `/pricing` entry.
+
+| # | Test name | Flow |
+|---|---|---|
+| 1 | Guests sign in before checkout starts | Open `/launch-pricing`, verify it redirects to login with `/launch-pricing` as the callback, then sign in and verify checkout starts. |
+| 2 | Signed-in users go straight to the default checkout | Sign in, open `/launch-pricing`, verify a checkout server-function request is sent for the monthly plan and no plan cards render. |
+| 3 | Retires the legacy pricing page | Open `/pricing` and verify it redirects to the home page. |
 
 ## 2. Authentication And Protected Routes
 
@@ -411,8 +425,8 @@ AI model refresh: summaries, taglines and captions use Gemma 4 chat-completion r
 
 - Registration success exposes verification resend; an unverified credential
   login exposes the same recovery control without granting a session.
-- Resend uses the existing verification endpoint, remains available after a
-  delivery failure, and prevents repeated clicks for 60 seconds after acceptance.
+- Registration and successful resend each start a 60-second resend cooldown;
+  delivery failures leave resend available for retry.
 - Local unit integration exercises the installed auth handler with a fake mail
   sender: immediate success, recovery on the third attempt, persistent failure,
   wrong-password boundary, and uniform password-reset responses for unknown users

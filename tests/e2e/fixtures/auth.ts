@@ -71,7 +71,7 @@ export async function loginByForm(page: Page, user: E2EUser) {
     .locator('button[type="submit"]');
   await expect(signInButton).toBeEnabled();
   await signInButton.click();
-  await expect(page).toHaveURL(/\/dashboard\/?$/);
+  await expect(page).toHaveURL(/\/settings\/billing\/?$/);
 }
 
 /**

@@ -112,10 +112,8 @@ test.describe('Waffo sandbox payment', () => {
     currentUserEmail = user.email;
     await loginByForm(page, user);
 
-    await page.goto('/pricing');
-    await page.waitForTimeout(1500);
-
-    await page.getByTestId('pricing-card-pro').getByRole('button').click();
+    await page.goto('/launch-pricing');
+    await page.getByTestId('launch-cta-monthly').click();
 
     const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Subscribe',
@@ -142,10 +140,8 @@ test.describe('Waffo sandbox payment', () => {
     const user = await registerE2EUser(request);
     currentUserEmail = user.email;
     await loginByForm(page, user);
-    await page.goto('/pricing');
-    await page.waitForTimeout(1_500);
-    await page.getByTestId('pricing-interval-year').click();
-    await page.getByTestId('pricing-card-pro').getByRole('button').click();
+    await page.goto('/launch-pricing');
+    await page.getByTestId('launch-cta-annual').click();
     const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Subscribe',
       baseURL: baseURL ?? 'http://localhost:3018',
@@ -171,8 +167,8 @@ test.describe('Waffo sandbox payment', () => {
     const user = await registerE2EUser(request);
     currentUserEmail = user.email;
     await loginByForm(page, user);
-    await page.goto('/pricing');
-    await page.getByTestId('pricing-card-lifetime').getByRole('button').click();
+    await page.goto('/launch-pricing');
+    await page.getByTestId('launch-cta-starter').click();
     const checkoutReference = await completeHostedCheckout(page, {
       paymentButton: 'Pay',
       baseURL: baseURL ?? 'http://localhost:3018',
@@ -199,10 +195,8 @@ test.describe('Waffo sandbox payment', () => {
     currentUserEmail = user.email;
     await loginByForm(page, user);
 
-    await page.goto('/pricing');
-    await page.waitForTimeout(1_500);
-
-    await page.getByTestId('pricing-card-pro').getByRole('button').click();
+    await page.goto('/launch-pricing');
+    await page.getByTestId('launch-cta-monthly').click();
 
     await completeHostedCheckout(page, {
       paymentButton: 'Subscribe',

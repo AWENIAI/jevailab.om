@@ -5,17 +5,24 @@ import { authClient } from '@/auth/client';
 import { guestRouteMiddleware } from '@/middlewares/guest-middleware';
 import { websiteConfig } from '@/config/website';
 import { DEFAULT_LOGIN_REDIRECT, Routes } from '@/lib/routes';
+import { getSafeInternalRedirect } from '@/lib/safe-redirect';
 
 export const Route = createFileRoute('/auth/login')({
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     if (!websiteConfig.auth?.enable) {
       throw redirect({ to: Routes.Root });
     }
-    // Client-side navigation: check session via auth client
+    // Server middleware handles full-page navigation. This check covers
+    // client-side navigation from pricing or a login modal.
     if (typeof window !== 'undefined') {
       const { data: session } = await authClient.getSession();
       if (session?.user) {
-        throw redirect({ to: DEFAULT_LOGIN_REDIRECT });
+        throw redirect({
+          href:
+            getSafeInternalRedirect(search.callbackUrl) ??
+            getSafeInternalRedirect(DEFAULT_LOGIN_REDIRECT) ??
+            Routes.Root,
+        });
       }
     }
   },

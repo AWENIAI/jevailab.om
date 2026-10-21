@@ -2,7 +2,6 @@ import { defineConfig, devices } from '@playwright/test';
 
 const port = Number(process.env.PORT ?? 3000);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
-const persistPath = './.wrangler/e2e-state';
 
 export default defineConfig({
   testDir: './tests/e2e/specs',
@@ -14,32 +13,14 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry',
   },
-  webServer: {
-    command: [
-      'pnpm exec tsx scripts/prepare-e2e-state.ts',
-      [
-        'pnpm exec wrangler d1 migrations apply',
-        'ai-image',
-        '--local',
-        `--persist-to ${persistPath}`,
-      ].join(' '),
-      [
-        "$env:E2E_PERSIST_PATH='" + persistPath + "';",
-        "$env:VITE_BASE_URL='" + baseURL + "';",
-        "$env:VITE_PAYMENT_PROVIDER='stripe';",
-        "$env:BETTER_AUTH_SECRET='e2e-better-auth-secret';",
-        [
-          'pnpm exec vite dev --mode e2e',
-          '--host 127.0.0.1',
-          `--port ${port}`,
-          '--strictPort',
-        ].join(' '),
-      ].join(' '),
-    ].join(' && '),
-    url: baseURL,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: process.env.PLAYWRIGHT_TEST_SKIP_WEB_SERVER
+    ? undefined
+    : {
+        command: 'pnpm exec tsx scripts/run-e2e-server.ts',
+        url: baseURL,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      },
   projects: [
     {
       name: 'chromium',

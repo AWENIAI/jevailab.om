@@ -110,24 +110,36 @@ describe('payment security boundaries', () => {
 
   afterAll(() => client.close());
 
-  test.each([
-    [
-      'success URL',
-      { successUrl: 'https://attacker.example/payment-complete' },
-    ],
-    ['cancel URL', { cancelUrl: '//attacker.example/payment-canceled' }],
-  ])('rejects an external checkout %s', async (_name, urls) => {
+  test('rejects an external checkout cancel URL', async () => {
     await expect(
       checkout({
         context: { userId: 'user_a' },
         data: {
           planId: 'pro',
           priceId: 'price_monthly',
-          ...urls,
+          cancelUrl: '//attacker.example/payment-canceled',
         },
       })
     ).rejects.toThrow('Payment return URL must use the application origin');
     expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  test('does not let callers override the checkout success URL', async () => {
+    await checkout({
+      context: { userId: 'user_a' },
+      data: {
+        planId: 'pro',
+        priceId: 'price_monthly',
+        successUrl: '/dashboard',
+      },
+    });
+
+    expect(mocks.createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        successUrl:
+          'https://example.test/settings/payment?session_id={CHECKOUT_SESSION_ID}',
+      })
+    );
   });
 
   test.each([
@@ -152,7 +164,6 @@ describe('payment security boundaries', () => {
       data: {
         planId: 'pro',
         priceId: 'price_monthly',
-        successUrl: '/settings/payment?complete=true',
         cancelUrl: 'pricing',
       },
     });
@@ -163,7 +174,6 @@ describe('payment security boundaries', () => {
 
     expect(mocks.createCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
-        successUrl: 'https://example.test/settings/payment?complete=true',
         cancelUrl: 'https://example.test/pricing',
       })
     );
@@ -197,7 +207,7 @@ describe('payment security boundaries', () => {
     const successUrl = new URL(params.successUrl);
     expect(successUrl.pathname).toBe('/settings/payment');
     expect(successUrl.searchParams.get('checkout_id')).toBe(paymentReference);
-    expect(successUrl.searchParams.get('callback')).toBe('/settings/billing');
+    expect(successUrl.searchParams.has('callback')).toBe(false);
   });
 
   test('does not reveal another user payment through its session ID', async () => {

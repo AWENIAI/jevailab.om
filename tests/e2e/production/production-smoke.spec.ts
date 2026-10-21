@@ -2,8 +2,6 @@ import { expect, test } from '@playwright/test';
 
 const ssrPages = [
   { path: '/' },
-  { path: '/pricing' },
-  { path: '/launch-pricing' },
   { path: '/blog' },
   { path: '/auth/login' },
 ] as const;

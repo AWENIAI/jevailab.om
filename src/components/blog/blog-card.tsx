@@ -17,7 +17,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
   const card = (
     <Card className="h-full border border-border py-0 ring-0 transition-colors hover:border-primary">
       {post.image && (
-        <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-muted">
+        <div className="aspect-[16/9] w-full overflow-hidden rounded-t-xl bg-muted">
           <img
             src={post.image}
             alt={post.title}

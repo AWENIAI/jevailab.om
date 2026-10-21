@@ -24,6 +24,7 @@ function useFilteredSidebarLinks(user: SessionUser): MenuItemConfig[] {
     const filterByRole = (items: MenuItemConfig[]): MenuItemConfig[] => {
       return items
         .filter((item) => {
+          if (item.hidden) return false;
           if (!item.authorizeOnly) return true;
           if (!userRole) return false;
           return item.authorizeOnly.includes(userRole);

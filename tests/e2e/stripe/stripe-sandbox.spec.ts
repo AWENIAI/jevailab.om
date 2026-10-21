@@ -37,6 +37,13 @@ type CheckoutArtifacts = {
   paymentIntentId?: string;
 };
 
+function getCheckoutTestId(scenario: CheckoutScenario) {
+  if (scenario.planId === 'lifetime') return 'launch-cta-starter';
+  return scenario.interval === 'year'
+    ? 'launch-cta-annual'
+    : 'launch-cta-monthly';
+}
+
 async function fillStripeField(page: Page, label: RegExp, value: string) {
   const field = page.getByRole('textbox', { name: label }).first();
   await field.waitFor({ state: 'visible', timeout: 60_000 });
@@ -148,15 +155,8 @@ async function fillStripeCheckout(
   scenario: CheckoutScenario
 ): Promise<Locator> {
   await loginByForm(page, user);
-  await page.goto('/pricing');
-  await page.waitForLoadState('networkidle');
-
-  if (scenario.interval === 'year') {
-    await page.getByTestId('pricing-interval-year').click();
-  }
-
-  const planCard = page.getByTestId(`pricing-card-${scenario.planId}`);
-  await planCard.getByRole('button').click();
+  await page.goto('/launch-pricing');
+  await page.getByTestId(getCheckoutTestId(scenario)).click();
 
   await page.waitForURL(/https:\/\/checkout\.stripe\.com\//, {
     timeout: 60_000,

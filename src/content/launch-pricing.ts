@@ -10,9 +10,14 @@ export type LaunchPricingPlan = {
   price: string;
   priceSuffix?: string;
   regularPrice?: string;
+  discountLabel?: string;
+  discountNote?: string;
   priceNote: string;
   secondaryPrice?: string;
   badge?: string;
+  countdownLabel?: string;
+  countdownEndsAt?: string;
+  countdownExpiredLabel?: string;
   features: readonly string[];
   actionLabel: string;
   footnote: string;
@@ -30,22 +35,6 @@ export type LaunchPricingContent = {
     highlights: readonly string[];
     items: readonly LaunchPricingPlan[];
   };
-  comparison: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    left: {
-      label: string;
-      price: string;
-      detail: string;
-    };
-    right: {
-      label: string;
-      price: string;
-      detail: string;
-    };
-    actionLabel: string;
-  };
   faq: {
     eyebrow: string;
     title: string;
@@ -54,12 +43,6 @@ export type LaunchPricingContent = {
       question: string;
       answer: string;
     }[];
-  };
-  notice: {
-    title: string;
-    description: string;
-    points: readonly string[];
-    actionLabel: string;
   };
   finalCta: {
     eyebrow: string;
@@ -86,20 +69,25 @@ const zh: LaunchPricingContent = {
         id: 'starter',
         eyebrow: 'STARTER PACK',
         name: '入门包',
-        description: '无需订阅，先体验 GPT Image 2 的出图质量。',
+        description: '一次性购买积分，用于后续图片生成与编辑。',
         price: '$9.90',
         regularPrice: '$19.80',
+        discountLabel: '50% OFF',
+        discountNote: '限时优惠，省 $9.90',
         priceNote: '一次性付款',
-        badge: '首发价',
+        countdownLabel: '首发优惠剩余',
+        countdownEndsAt: '2026-11-20T00:00:00+08:00',
+        countdownExpiredLabel: '首发优惠已结束',
         features: [
           '66 积分 ≈ 22 张 1K 图片',
+          '积分用于图片生成与编辑',
           '一次性付款，无订阅',
           '积分有效期 12 个月',
           '商用授权',
           '无水印',
         ],
-        actionLabel: '查看当前方案',
-        footnote: '首发价 $9.90，活动结束后恢复为 $19.80。',
+        actionLabel: '立即试用',
+        footnote: '一次性付款，购买后积分立即到账。',
       },
       {
         id: 'monthly',
@@ -116,7 +104,7 @@ const zh: LaunchPricingContent = {
           '无水印',
           '优先生成队列',
         ],
-        actionLabel: '查看当前方案',
+        actionLabel: '立即试用',
         footnote: '按月计费，可在账户中随时取消。',
       },
       {
@@ -129,32 +117,15 @@ const zh: LaunchPricingContent = {
         priceNote: '约 $12.42/月',
         badge: '最划算',
         features: [
-          '2,880 积分/年 ≈ 960 张 1K 图片（月均 80 张）',
-          '全年积分一次到账',
+          '240 积分/月 ≈ 80 张 1K 图片（全年共 2,880 积分）',
+          '积分每月刷新，非一次性到账',
           '商用授权',
           '优先生成队列',
         ],
-        actionLabel: '查看当前方案',
-        footnote: '一次付款，全年按自己的节奏生成。',
+        actionLabel: '立即试用',
+        footnote: '一次付款，积分按月刷新，全年按自己的节奏生成。',
       },
     ],
-  },
-  comparison: {
-    eyebrow: '同样的积分，不同的节奏',
-    title: '66 积分 ≈ 22 张，2,880 积分 ≈ 960 张 1K 图片。',
-    description:
-      '入门包适合先试试，年付适合持续创作。积分也可用于后续视频生成，图片张数仅为当前 1K 图片的估算。',
-    left: {
-      label: '入门包',
-      price: '$9.90',
-      detail: '66 积分 ≈ 22 张 1K 图片',
-    },
-    right: {
-      label: '专业年付',
-      price: '$12.42/月',
-      detail: '2,880 积分 ≈ 960 张 1K 图片',
-    },
-    actionLabel: '查看当前方案',
   },
   faq: {
     eyebrow: 'FAQ',
@@ -164,7 +135,7 @@ const zh: LaunchPricingContent = {
       {
         question: '什么是积分？',
         answer:
-          '积分是生成内容时使用的通用额度，目前可用于生成图片，后续也可用于生成视频。按当前 1K 图片消耗估算，约 3 积分生成 1 张；实际消耗以提交时工作台显示的服务端报价为准。',
+          '积分是图片生成与编辑时使用的额度。按当前 1K 图片消耗估算，约 3 积分生成 1 张；实际消耗以提交时工作台显示的服务端报价为准。',
       },
       {
         question: '积分会过期吗？',
@@ -188,23 +159,12 @@ const zh: LaunchPricingContent = {
       },
     ],
   },
-  notice: {
-    title: '这是首发方案预览',
-    description:
-      '附件中的价格与积分方案正在整理中。当前支付页展示的是已配置方案，购买前请以结算页的价格、额度和条款为准。',
-    points: [
-      '购买按钮会带你查看当前可用的方案',
-      '实际积分消耗以提交生成时的服务端报价为准',
-      '首发价格与活动时间以正式上线信息为准',
-    ],
-    actionLabel: '查看当前方案',
-  },
   finalCta: {
     eyebrow: '准备好开始了吗？',
     title: '把下一次灵感，变成一张真实图片。',
     description: '选择一个方向，写下你的想法，先在 jevailab 试试看。',
     primaryAction: '开始创作',
-    secondaryAction: '查看当前方案',
+    secondaryAction: '立即试用',
   },
 };
 
@@ -229,21 +189,25 @@ const en: LaunchPricingContent = {
         id: 'starter',
         eyebrow: 'STARTER PACK',
         name: 'Starter Pack',
-        description:
-          'Try GPT Image 2 output quality without starting a subscription.',
+        description: 'Buy credits once for image generation and editing.',
         price: '$9.90',
         regularPrice: '$19.80',
+        discountLabel: '50% OFF',
+        discountNote: 'Limited-time offer. Save $9.90',
         priceNote: 'one-time payment',
-        badge: 'Launch price',
+        countdownLabel: 'Launch offer ends in',
+        countdownEndsAt: '2026-11-20T00:00:00+08:00',
+        countdownExpiredLabel: 'Launch offer ended',
         features: [
           '66 credits ≈ 22 images at 1K',
+          'Credits work for image generation and editing',
           'One-time payment, no subscription',
           'Credits valid for 12 months',
           'Commercial usage rights',
           'No watermark',
         ],
-        actionLabel: 'View current plans',
-        footnote: 'Launch price $9.90. Regular price $19.80 after the launch.',
+        actionLabel: 'Start trial',
+        footnote: 'One-time payment. Credits are available immediately.',
       },
       {
         id: 'monthly',
@@ -260,7 +224,7 @@ const en: LaunchPricingContent = {
           'No watermark',
           'Priority generation queue',
         ],
-        actionLabel: 'View current plans',
+        actionLabel: 'Start trial',
         footnote: 'Billed monthly. Cancel anytime from your account.',
       },
       {
@@ -274,32 +238,16 @@ const en: LaunchPricingContent = {
         priceNote: 'About $12.42/month',
         badge: 'Best value',
         features: [
-          '2,880 credits/year ≈ 960 images at 1K (80/month)',
-          'Full annual credit allowance upfront',
+          '240 credits/month ≈ 80 images at 1K (2,880 credits/year)',
+          'Credits refresh monthly, not all at once',
           'Commercial usage rights',
           'Priority generation queue',
         ],
-        actionLabel: 'View current plans',
-        footnote: 'One payment. A full year of images at your own pace.',
+        actionLabel: 'Start trial',
+        footnote:
+          'One payment. Credits refresh monthly so you can create at your own pace all year.',
       },
     ],
-  },
-  comparison: {
-    eyebrow: 'Same credits, a different rhythm',
-    title: '66 credits ≈ 22 images, or 2,880 credits ≈ 960 images at 1K.',
-    description:
-      'Starter is for trying the product. Annual is for keeping a steady flow. Credits will also work for future video generation; image counts are estimates for current 1K images only.',
-    left: {
-      label: 'Starter Pack',
-      price: '$9.90',
-      detail: '66 credits ≈ 22 images at 1K',
-    },
-    right: {
-      label: 'Pro Annual',
-      price: '$12.42/month',
-      detail: '2,880 credits ≈ 960 images at 1K',
-    },
-    actionLabel: 'View current plans',
   },
   faq: {
     eyebrow: 'FAQ',
@@ -310,7 +258,7 @@ const en: LaunchPricingContent = {
       {
         question: "What's a credit?",
         answer:
-          'Credits are a shared allowance for content generation. They can currently be used for images and will also work for video generation later. At current 1K image usage, about 3 credits generate 1 image; the server quote shown in the workspace at submission is the source of truth.',
+          'Credits are used for image generation and editing. At current 1K image usage, about 3 credits generate 1 image; the server quote shown in the workspace at submission is the source of truth.',
       },
       {
         question: 'Do credits expire?',
@@ -334,24 +282,13 @@ const en: LaunchPricingContent = {
       },
     ],
   },
-  notice: {
-    title: 'This is a launch-plan preview',
-    description:
-      'The prices and credit allowances in this brief are still being prepared. The current pricing page shows the plans that are configured today. Check the checkout page for the applicable price, allowance, and terms before buying.',
-    points: [
-      'Purchase buttons take you to the plans available today',
-      'The server quote at generation time controls actual credit use',
-      'Launch pricing and timing will be confirmed when the offer goes live',
-    ],
-    actionLabel: 'View current plans',
-  },
   finalCta: {
     eyebrow: 'Ready to begin?',
     title: 'Turn your next idea into a real image.',
     description:
       'Choose a direction, describe your idea, and give jevailab a try.',
     primaryAction: 'Start creating',
-    secondaryAction: 'View current plans',
+    secondaryAction: 'Start trial',
   },
 };
 

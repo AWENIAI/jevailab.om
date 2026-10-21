@@ -8,9 +8,9 @@ date: 2026-02-15
 
 These Terms of Service ("Terms") govern your use of our website and services. By accessing or using our services, you agree to be bound by these Terms.
 
-## Use of Services
+## Service Description
 
-Our services are provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that our services will be uninterrupted, secure, or error-free.
+Jevailab provides online tools powered by third-party artificial intelligence models to generate or edit still images from text prompts, uploaded images, and published templates. Our services are provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that our services will be uninterrupted, secure, or error-free.
 
 ## User Accounts
 

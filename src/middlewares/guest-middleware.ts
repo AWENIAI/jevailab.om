@@ -1,8 +1,9 @@
 import { auth } from '@/auth/auth';
 import { redirect } from '@tanstack/react-router';
 import { createMiddleware } from '@tanstack/react-start';
-import { getRequestHeaders } from '@tanstack/react-start/server';
+import { getRequestHeaders, getRequestUrl } from '@tanstack/react-start/server';
 import { DEFAULT_LOGIN_REDIRECT, Routes } from '@/lib/routes';
+import { getSafeInternalRedirect } from '@/lib/safe-redirect';
 import { websiteConfig } from '@/config/website';
 
 /**
@@ -20,7 +21,15 @@ export const guestRouteMiddleware = createMiddleware().server(
     const session = await auth.api.getSession({ headers });
 
     if (session?.user) {
-      throw redirect({ to: DEFAULT_LOGIN_REDIRECT });
+      const callbackUrl = new URL(getRequestUrl()).searchParams.get(
+        'callbackUrl'
+      );
+      throw redirect({
+        href:
+          getSafeInternalRedirect(callbackUrl) ??
+          getSafeInternalRedirect(DEFAULT_LOGIN_REDIRECT) ??
+          Routes.Root,
+      });
     }
 
     return await next();

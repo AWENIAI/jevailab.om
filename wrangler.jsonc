@@ -84,13 +84,16 @@
    */
   "r2_buckets": [
     {
-      "bucket_name": "jevailab",
+      "bucket_name": "ai-image",
       "binding": "BUCKET"
     }
   ],
   "send_email": [
     {
       "name": "EMAIL",
+      // Use the real Email Service during local Vite/Workers development.
+      // Production deployments use this same binding without a simulator.
+      "remote": true,
       "allowed_sender_addresses": ["support@jevailab.com"]
     }
   ],

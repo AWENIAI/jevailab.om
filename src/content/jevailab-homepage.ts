@@ -28,8 +28,7 @@ export type PublishedImageTemplateId =
 export type JevailabFeature = {
   title: string;
   description: string;
-  kind: 'image' | 'video';
-  comingSoon: boolean;
+  kind: 'image';
   actionLabel?: string;
 };
 
@@ -53,7 +52,6 @@ type JevailabHomepageContent = {
     description: string;
     primaryAction: string;
     secondaryAction: string;
-    videoNote: string;
   };
   sections: readonly string[];
   about: {
@@ -85,8 +83,6 @@ type JevailabHomepageContent = {
     title: string;
     description: string;
     imageLabel: string;
-    videoLabel: string;
-    videoNote: string;
   };
   pricing: {
     title: string;
@@ -101,19 +97,13 @@ type JevailabHomepageContent = {
   };
 };
 
-export function isPlannedVideoFeature(feature: JevailabFeature): boolean {
-  return feature.kind === 'video' && feature.comingSoon;
-}
-
 const zh: JevailabHomepageContent = {
   hero: {
     eyebrow: 'jevailab 创作工作台',
-    h1: '一张照片，一段灵感，创作你的 AI 图片与视频',
-    description:
-      '从模板、文字或一张参考图开始。现在即可创建 AI 图片，也可以用照片制作 AI 视频。',
+    h1: '一张照片，一段灵感，创作你的 AI 图片',
+    description: '从模板、文字或一张参考图开始，创作属于你的 AI 图片。',
     primaryAction: '开始创作图片',
     secondaryAction: '浏览模板示例',
-    videoNote: '进入视频创作',
   },
   sections: Object.values(JEVAILAB_ANCHORS),
   about: {
@@ -176,15 +166,7 @@ const zh: JevailabHomepageContent = {
       title: 'AI 图片创作',
       description: '从文字、模板与可选参考图开始生成图片。',
       kind: 'image',
-      comingSoon: false,
       actionLabel: '现在开始',
-    },
-    {
-      title: 'AI 视频创作',
-      description: '上传一张照片，选择视频示例与生成设置后开始创作。',
-      kind: 'video',
-      comingSoon: false,
-      actionLabel: '创作视频',
     },
   ],
   howItWorks: {
@@ -224,10 +206,8 @@ const zh: JevailabHomepageContent = {
   },
   tools: {
     title: '创作工具',
-    description: '选择 AI 图片或 AI 视频工具，按你的创作目标开始。',
+    description: '选择图片模板与创作设置，按你的创作目标开始。',
     imageLabel: 'AI 图片创作',
-    videoLabel: 'AI 视频创作',
-    videoNote: '进入视频创作',
   },
   pricing: {
     title: '按创作需求使用积分',
@@ -239,10 +219,6 @@ const zh: JevailabHomepageContent = {
     {
       question: 'jevailab 现在可以做什么？',
       answer: '你现在可以使用模板、文字和可选参考图创建 AI 图片。',
-    },
-    {
-      question: 'AI 视频可以使用了吗？',
-      answer: '可以。上传一张照片，选择视频示例与生成设置后即可开始创作。',
     },
     {
       question: '我一定要上传照片吗？',
@@ -295,12 +271,11 @@ const zh: JevailabHomepageContent = {
 const en: JevailabHomepageContent = {
   hero: {
     eyebrow: 'jevailab creative workspace',
-    h1: 'Create AI images and videos from a photo and an idea',
+    h1: 'Create AI images from a photo and an idea',
     description:
-      'Start from a template, a prompt, or one reference photo. Create AI images now, or turn a photo into an AI video.',
+      'Start from a template, a prompt, or one reference photo and create an AI image.',
     primaryAction: 'Create an image',
     secondaryAction: 'Explore templates',
-    videoNote: 'Open video creator',
   },
   sections: Object.values(JEVAILAB_ANCHORS),
   about: {
@@ -369,16 +344,7 @@ const en: JevailabHomepageContent = {
       description:
         'Create images from text, templates, and an optional reference photo.',
       kind: 'image',
-      comingSoon: false,
       actionLabel: 'Create now',
-    },
-    {
-      title: 'AI video creation',
-      description:
-        'Upload one photo, choose a video example and generation settings, then create.',
-      kind: 'video',
-      comingSoon: false,
-      actionLabel: 'Create video',
     },
   ],
   howItWorks: {
@@ -435,10 +401,8 @@ const en: JevailabHomepageContent = {
   tools: {
     title: 'Creative tools',
     description:
-      'Choose the AI image or AI video tool that fits what you want to create.',
+      'Choose an image template and creation settings that fit what you want to make.',
     imageLabel: 'AI image creator',
-    videoLabel: 'AI video creator',
-    videoNote: 'Open video creator',
   },
   pricing: {
     title: 'Use credits for the work you create',
@@ -451,11 +415,6 @@ const en: JevailabHomepageContent = {
       question: 'What can jevailab do today?',
       answer:
         'You can create AI images with templates, text, and an optional reference photo.',
-    },
-    {
-      question: 'Is AI video available?',
-      answer:
-        'Yes. Upload one photo, choose a video example and generation settings, then start creating.',
     },
     {
       question: 'Do I need to upload a photo?',

@@ -1,7 +1,11 @@
 import { getBaseUrl } from '@/lib/urls';
+import { Routes } from '@/lib/routes';
 
 export const PAYMENT_RETURN_URL_ERROR =
   'Payment return URL must use the application origin';
+
+/** Every completed checkout lands on the billing tab. */
+export const PAYMENT_SUCCESS_PATH = Routes.SettingsBilling;
 
 /**
  * Resolve a caller-provided payment return URL against the configured app

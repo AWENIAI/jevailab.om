@@ -5,7 +5,7 @@ import { JevailabHomepageSections } from '@/components/blocks/jevailab-homepage-
 import { getJevailabHomepageContent } from '@/content/jevailab-homepage';
 
 describe('Jevailab homepage sections', () => {
-  it('renders real sections, an active video entry, FAQ disclosure, and mapped examples', () => {
+  it('renders real image-creation sections, FAQ disclosure, and mapped examples', () => {
     const markup = renderToStaticMarkup(
       createElement(JevailabHomepageSections, {
         content: getJevailabHomepageContent('en'),
@@ -15,9 +15,9 @@ describe('Jevailab homepage sections', () => {
 
     expect(markup).toContain('What is jevailab?');
     expect(markup).toContain('Create an AI image in three steps');
-    expect(markup).toContain('AI video creation');
-    expect(markup).toContain('Create video');
-    expect(markup).toContain('href="#video"');
+    expect(markup).toContain('AI image creation');
+    expect(markup).toContain('Create now');
+    expect(markup).not.toMatch(/video|视频/i);
     expect(markup).toContain('<summary');
     expect(markup).toContain('data-template-id="image-template-1015"');
     expect(markup).toContain('Summer Sky Editorial Portrait');

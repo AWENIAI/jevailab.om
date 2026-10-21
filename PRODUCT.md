@@ -8,11 +8,11 @@ web
 
 ## Users
 
-**Primary audience:** creators and teams who want a focused workspace for making AI images and videos from photos, templates, and ideas. They value private-by-default workflows, clear controls, and predictable creation costs.
+**Primary audience:** creators and teams who want a focused workspace for making AI images from photos, templates, and ideas. They value private-by-default workflows, clear controls, and predictable creation costs.
 
 ## Product Purpose
 
-jevailab is an AI image and video creation workspace. Success means a user can choose a template, optionally upload a reference photo, describe an idea, review the credit quote, and receive a private creation without unnecessary setup.
+jevailab is an AI image creation workspace. Success means a user can choose a template, optionally upload a reference photo, describe an idea, review the credit quote, and receive a private image without unnecessary setup.
 
 ## Positioning
 

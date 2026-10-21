@@ -1,3 +1,4 @@
+import { authClient } from '@/auth/client';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -8,11 +9,16 @@ import {
 } from '@/components/ui/accordion';
 import type {
   LaunchPricingContent,
+  LaunchPricingPlanId,
   LaunchPricingPlan,
 } from '@/content/launch-pricing';
+import { getPricePlans } from '@/lib/price-plan';
+import { Routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
-import { IconArrowRight, IconCheck, IconInfoCircle } from '@tabler/icons-react';
+import { IconArrowRight, IconCheck, IconClock } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
+import { useEffect, useState, type ReactNode } from 'react';
+import { CheckoutButton } from './create-checkout-button';
 
 type LaunchPricingProps = {
   content: LaunchPricingContent;
@@ -21,21 +27,249 @@ type LaunchPricingProps = {
 const surfaceClassName =
   'rounded-[2rem] border border-border/70 bg-card/80 shadow-sm';
 
-function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
+type CheckoutTarget = {
+  planId: string;
+  priceId: string;
+};
+
+type CountdownValue = {
+  days: string;
+  hours: string;
+  minutes: string;
+  seconds: string;
+  expired: boolean;
+};
+
+const countdownUnits = [
+  { key: 'days', label: '天', englishLabel: 'D' },
+  { key: 'hours', label: '时', englishLabel: 'H' },
+  { key: 'minutes', label: '分', englishLabel: 'M' },
+  { key: 'seconds', label: '秒', englishLabel: 'S' },
+] as const;
+
+function getCountdownValue(endsAt: string, now: number): CountdownValue {
+  const remaining = Math.max(0, new Date(endsAt).getTime() - now);
+  const totalSeconds = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return {
+    days: String(days).padStart(2, '0'),
+    hours: String(hours).padStart(2, '0'),
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+    expired: remaining === 0,
+  };
+}
+
+function useCountdown(endsAt: string, enabled: boolean) {
+  const [countdown, setCountdown] = useState<CountdownValue | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const update = () => setCountdown(getCountdownValue(endsAt, Date.now()));
+    update();
+    const timer = window.setInterval(update, 1_000);
+
+    return () => window.clearInterval(timer);
+  }, [enabled, endsAt]);
+
+  return countdown;
+}
+
+function LaunchCountdown({
+  endsAt,
+  expiredLabel,
+  label,
+  locale,
+}: {
+  endsAt: string;
+  expiredLabel: string;
+  label: string;
+  locale: 'zh' | 'en';
+}) {
+  const countdown = useCountdown(endsAt, true);
+
+  return (
+    <div
+      className="rounded-2xl border border-primary/25 bg-primary/[0.07] p-3"
+      data-testid="launch-countdown"
+      aria-live="polite"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+          <IconClock className="size-3.5" aria-hidden="true" />
+          {countdown?.expired ? expiredLabel : label}
+        </span>
+        {countdown ? (
+          <div className="flex items-center gap-1.5" role="timer">
+            {countdownUnits.map((unit) => (
+              <div key={unit.key} className="text-center">
+                <span
+                  className="flex min-w-8 items-center justify-center rounded-lg bg-background px-1.5 py-1 text-sm font-semibold tabular-nums text-foreground shadow-sm"
+                  data-testid={`launch-countdown-${unit.key}`}
+                >
+                  {countdown[unit.key]}
+                </span>
+                <span className="mt-1 block text-[0.6rem] text-muted-foreground">
+                  {locale === 'zh' ? unit.label : unit.englishLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">--</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const checkoutPlanByLaunchPlan: Record<
+  LaunchPricingPlanId,
+  { planId: 'pro' | 'lifetime'; interval?: 'month' | 'year' }
+> = {
+  starter: { planId: 'lifetime' },
+  monthly: { planId: 'pro', interval: 'month' },
+  annual: { planId: 'pro', interval: 'year' },
+};
+
+function getCheckoutTarget(launchPlanId: LaunchPricingPlanId) {
+  const mapping = checkoutPlanByLaunchPlan[launchPlanId];
+  const plan = getPricePlans()[mapping.planId];
+  if (!plan || plan.disabled) return null;
+
+  const price = plan.prices.find(
+    (candidate) =>
+      !candidate.disabled &&
+      candidate.priceId.trim() &&
+      (mapping.interval
+        ? candidate.type === 'subscription' &&
+          candidate.interval === mapping.interval
+        : candidate.type === 'one_time')
+  );
+
+  return price ? { planId: plan.id, priceId: price.priceId } : null;
+}
+
+function LaunchPricingCta({
+  children,
+  className,
+  checkoutTarget,
+  dataTestId,
+  featured = false,
+  variant = 'default',
+}: {
+  children: ReactNode;
+  className?: string;
+  checkoutTarget: CheckoutTarget | null;
+  dataTestId?: string;
+  featured?: boolean;
+  variant?: 'default' | 'outline';
+}) {
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAuthenticated = mounted && !!session?.user;
+  const isCheckingSession = !mounted || isSessionPending;
+  const ctaClassName = cn(
+    buttonVariants({ variant, size: 'lg' }),
+    'h-10 rounded-xl sm:h-11',
+    featured &&
+      'border-background bg-background text-foreground hover:bg-background/85',
+    className
+  );
+
+  if (!checkoutTarget) {
+    return (
+      <button
+        type="button"
+        disabled
+        className={ctaClassName}
+        data-testid={dataTestId}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  if (isCheckingSession) {
+    return (
+      <button
+        type="button"
+        disabled
+        className={ctaClassName}
+        data-testid={dataTestId}
+        aria-busy="true"
+      >
+        {children}
+      </button>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Link
+        to={Routes.Login}
+        search={{ callbackUrl: Routes.LaunchPricing }}
+        className={ctaClassName}
+        data-testid={dataTestId}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <CheckoutButton
+      planId={checkoutTarget.planId}
+      priceId={checkoutTarget.priceId}
+      variant={variant}
+      size="lg"
+      className={ctaClassName}
+      data-testid={dataTestId}
+    >
+      {children}
+    </CheckoutButton>
+  );
+}
+
+function PlanCard({
+  locale,
+  plan,
+}: {
+  locale: 'zh' | 'en';
+  plan: LaunchPricingPlan;
+}) {
   const featured = plan.id === 'annual';
+  const promoted = !!plan.discountLabel;
+  const checkoutTarget = getCheckoutTarget(plan.id);
   return (
     <article
+      data-testid={`launch-plan-${plan.id}`}
       className={cn(
         'relative flex h-full flex-col overflow-x-clip p-5 sm:p-6 xl:p-7',
         surfaceClassName,
+        promoted && 'border-primary/45 shadow-lg shadow-primary/10',
         featured &&
           'border-primary/55 bg-foreground text-background shadow-2xl shadow-primary/15'
       )}
     >
-      {featured ? (
+      {featured || promoted ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full bg-primary/25 blur-3xl"
+          className={cn(
+            'pointer-events-none absolute -top-24 -right-20 size-64 rounded-full blur-3xl',
+            featured ? 'bg-primary/25' : 'bg-primary/15'
+          )}
         />
       ) : null}
       <div className="relative flex items-start justify-between gap-3">
@@ -47,7 +281,14 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
         >
           {plan.eyebrow}
         </p>
-        {plan.badge ? (
+        {plan.discountLabel ? (
+          <span
+            className="inline-flex h-6 items-center rounded-full bg-primary px-2.5 text-[0.68rem] font-bold tracking-wide text-primary-foreground shadow-sm"
+            data-testid="launch-starter-discount"
+          >
+            {plan.discountLabel}
+          </span>
+        ) : plan.badge ? (
           <Badge
             variant={featured ? 'default' : 'outline'}
             className={cn(
@@ -72,13 +313,14 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
         {plan.description}
       </p>
 
-      <div className="relative mt-5 flex items-end gap-2">
+      <div className="relative mt-5 flex flex-wrap items-end gap-x-2 gap-y-1">
         {plan.regularPrice ? (
           <span
             className={cn(
               'pb-1.5 text-base font-medium text-muted-foreground line-through decoration-primary/70 decoration-2',
               featured && 'text-background/45'
             )}
+            data-testid="launch-starter-regular-price"
           >
             {plan.regularPrice}
           </span>
@@ -97,6 +339,14 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
           </span>
         ) : null}
       </div>
+      {plan.regularPrice && plan.discountLabel ? (
+        <p className="relative mt-1 text-xs text-muted-foreground">
+          <span className="font-semibold text-primary">
+            {plan.discountLabel}
+          </span>
+          {plan.discountNote ? <span> · {plan.discountNote}</span> : null}
+        </p>
+      ) : null}
       <div className="relative mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         <span
           className={cn(
@@ -117,6 +367,16 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
           </span>
         ) : null}
       </div>
+      {plan.countdownEndsAt ? (
+        <div className="relative mt-4">
+          <LaunchCountdown
+            endsAt={plan.countdownEndsAt}
+            expiredLabel={plan.countdownExpiredLabel ?? ''}
+            label={plan.countdownLabel ?? ''}
+            locale={locale}
+          />
+        </div>
+      ) : null}
 
       <div
         className={cn(
@@ -148,18 +408,15 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
       </ul>
 
       <div className="relative mt-auto pt-6">
-        <Link
-          to="/pricing"
-          className={cn(
-            buttonVariants({ size: 'lg' }),
-            'h-10 w-full rounded-xl sm:h-11',
-            featured &&
-              'border-background bg-background text-foreground hover:bg-background/85'
-          )}
+        <LaunchPricingCta
+          checkoutTarget={checkoutTarget}
+          dataTestId={`launch-cta-${plan.id}`}
+          featured={featured}
+          className="w-full"
         >
           {plan.actionLabel}
           <IconArrowRight className="size-4" aria-hidden="true" />
-        </Link>
+        </LaunchPricingCta>
         <p
           className={cn(
             'mt-3 min-h-8 text-xs leading-5 text-muted-foreground sm:min-h-10',
@@ -173,7 +430,14 @@ function PlanCard({ plan }: { plan: LaunchPricingPlan }) {
   );
 }
 
-export function LaunchPricing({ content }: LaunchPricingProps) {
+export function LaunchPricing({
+  content,
+  locale,
+}: LaunchPricingProps & {
+  locale: 'zh' | 'en';
+}) {
+  const annualCheckoutTarget = getCheckoutTarget('annual');
+
   return (
     <div className="overflow-x-clip">
       <section className="relative px-4 pt-8 pb-14 sm:px-6 sm:pt-10 sm:pb-20 lg:px-8 xl:pt-12">
@@ -225,82 +489,9 @@ export function LaunchPricing({ content }: LaunchPricingProps) {
                 )}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <PlanCard plan={plan} />
+                <PlanCard locale={locale} plan={plan} />
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-muted/45 p-5 sm:p-8 lg:p-10">
-            <div
-              aria-hidden="true"
-              className="absolute top-0 right-0 h-full w-1/2 bg-[radial-gradient(circle_at_80%_20%,var(--primary),transparent_55%)] opacity-[0.08]"
-            />
-            <div className="relative grid gap-6 md:gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-              <div>
-                <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                  {content.comparison.eyebrow}
-                </p>
-                <h2 className="mt-3 text-balance text-2xl font-semibold tracking-tight sm:mt-4 sm:text-3xl lg:text-4xl">
-                  {content.comparison.title}
-                </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:mt-4">
-                  {content.comparison.description}
-                </p>
-              </div>
-              <div className="grid gap-3 min-[480px]:grid-cols-2">
-                {[content.comparison.left, content.comparison.right].map(
-                  (item, index) => (
-                    <div
-                      key={item.label}
-                      className={cn(
-                        'rounded-2xl border p-4 sm:p-5',
-                        index === 1
-                          ? 'border-primary/30 bg-primary text-primary-foreground'
-                          : 'border-border/70 bg-background/80'
-                      )}
-                    >
-                      <p
-                        className={cn(
-                          'text-xs font-semibold tracking-wide uppercase',
-                          index === 1
-                            ? 'text-primary-foreground/70'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        {item.label}
-                      </p>
-                      <p className="mt-3 text-2xl font-semibold tracking-tight sm:mt-4 sm:text-3xl">
-                        {item.price}
-                      </p>
-                      <p
-                        className={cn(
-                          'mt-2 text-sm leading-6',
-                          index === 1
-                            ? 'text-primary-foreground/80'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        {item.detail}
-                      </p>
-                    </div>
-                  )
-                )}
-                <Link
-                  to="/pricing"
-                  className={cn(
-                    buttonVariants({ variant: 'outline', size: 'lg' }),
-                    'h-11 rounded-xl min-[480px]:col-span-2'
-                  )}
-                >
-                  {content.comparison.actionLabel}
-                  <IconArrowRight className="size-4" aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -353,44 +544,6 @@ export function LaunchPricing({ content }: LaunchPricingProps) {
       </section>
 
       <section className="px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-5 rounded-[2rem] border border-primary/20 bg-primary/[0.055] p-5 sm:gap-6 sm:p-7 md:grid-cols-[auto_1fr] md:items-start lg:grid-cols-[auto_1fr_auto] lg:items-center lg:p-9">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <IconInfoCircle className="size-6" aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">
-                {content.notice.title}
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                {content.notice.description}
-              </p>
-              <ul className="mt-4 grid gap-2 text-xs leading-5 text-muted-foreground md:grid-cols-3">
-                {content.notice.points.map((point) => (
-                  <li key={point} className="flex gap-2">
-                    <IconCheck
-                      className="mt-0.5 size-3.5 shrink-0 text-primary"
-                      aria-hidden="true"
-                    />
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Link
-              to="/pricing"
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'lg' }),
-                'h-10 rounded-xl whitespace-nowrap md:col-start-2 md:justify-self-start lg:col-start-3'
-              )}
-            >
-              {content.notice.actionLabel}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-primary px-5 py-10 text-primary-foreground sm:rounded-[2.5rem] sm:px-10 sm:py-16 lg:px-12 lg:py-20">
           <div
             aria-hidden="true"
@@ -422,15 +575,14 @@ export function LaunchPricing({ content }: LaunchPricingProps) {
                 {content.finalCta.primaryAction}
                 <IconArrowRight className="size-4" aria-hidden="true" />
               </Link>
-              <Link
-                to="/pricing"
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'lg' }),
-                  'h-11 rounded-xl border-primary-foreground/30 bg-transparent px-5 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
-                )}
+              <LaunchPricingCta
+                variant="outline"
+                checkoutTarget={annualCheckoutTarget}
+                dataTestId="launch-cta-final"
+                className="h-11 border-primary-foreground/30 bg-transparent px-5 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
               >
                 {content.finalCta.secondaryAction}
-              </Link>
+              </LaunchPricingCta>
             </div>
           </div>
         </div>

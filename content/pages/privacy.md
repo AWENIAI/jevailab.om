@@ -13,6 +13,7 @@ Welcome to our Privacy Policy. This document explains how we collect, use, and p
 We may collect the following types of information:
 
 - **Personal Information**: Name, email address, and contact details you provide when registering or contacting us.
+- **Creation Inputs**: Text prompts, uploaded images, and published-template selections you provide when using image generation or editing tools.
 - **Usage Data**: Information about how you interact with our website, including pages visited and time spent.
 - **Device Information**: Details about the device you use to access our services, such as IP address, browser type, and operating system.
 

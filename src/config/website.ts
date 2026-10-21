@@ -135,7 +135,7 @@ export const websiteConfig: WebsiteConfig = {
             {
               type: 'subscription',
               priceId: priceIds.proMonthly,
-              amount: 9990, // $99.90
+              amount: 990, // $9.90
               currency: 'USD',
               interval: 'month',
             },

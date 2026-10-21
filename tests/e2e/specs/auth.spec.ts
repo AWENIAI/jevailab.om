@@ -138,17 +138,9 @@ test('offers verification recovery after registration and unverified login', asy
   await page.locator('input[name="email"]').fill(user.email);
   await page.locator('input[name="password"]').fill(user.password);
   await page.locator('form button[type="submit"]').click();
-  await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  await expect(page.getByTestId('auth-resend-verification')).toBeDisabled();
   // Retain the registered address even if the user edits the form afterward.
   await page.locator('input[name="email"]').fill('e2e-edited@example.test');
-  const resend = page.waitForResponse((r) =>
-    r.url().includes('/send-verification-email')
-  );
-  await page.getByTestId('auth-resend-verification').click();
-  const response = await resend;
-  expect(response.status()).toBe(200);
-  expect(response.request().postDataJSON().email).toBe(user.email);
-  await expect(page.getByTestId('auth-resend-verification')).toBeDisabled();
   await page.goto('/auth/login');
   await page.waitForLoadState('networkidle');
   await page.locator('input[name="email"]').fill(user.email);
@@ -157,6 +149,14 @@ test('offers verification recovery after registration and unverified login', asy
   await page.locator('form button[type="submit"]').click();
   expect((await login).status()).toBe(403);
   await expect(page.getByTestId('auth-resend-verification')).toBeEnabled();
+  const resend = page.waitForResponse((r) =>
+    r.url().includes('/send-verification-email')
+  );
+  await page.getByTestId('auth-resend-verification').click();
+  const response = await resend;
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON().email).toBe(user.email);
+  await expect(page.getByTestId('auth-resend-verification')).toBeDisabled();
   expect(await (await request.get('/api/auth/get-session')).json()).toBeNull();
 });
 

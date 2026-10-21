@@ -10,7 +10,7 @@ import {
   PAYMENT_MAX_POLL_TIME,
   PAYMENT_POLL_INTERVAL,
 } from '@/payment/constants';
-import { getSafePaymentCallback } from '@/lib/payment-return-url';
+import { PAYMENT_SUCCESS_PATH } from '@/lib/payment-return-url';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -91,18 +91,13 @@ function StatusIcon({ status }: { status: PaymentStatus }) {
 }
 type PaymentCardProps = {
   sessionId: string | undefined;
-  callback?: string;
 };
 /**
  * Payment result card: polls for completion, shows status, invalidates plan cache and redirects on success.
  */
-export function PaymentCard({
-  sessionId,
-  callback = '/settings/billing',
-}: PaymentCardProps) {
+export function PaymentCard({ sessionId }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const safeCallback = getSafePaymentCallback(callback) ?? '/settings/billing';
   const [status, setStatus] = useState<PaymentStatus>(() =>
     sessionId ? 'processing' : 'failed'
   );
@@ -137,16 +132,17 @@ export function PaymentCard({
     };
     poll();
   }, [sessionId, status]);
-  // On success: invalidate currentPlan then redirect to callback
+  // Every provider returns here first so the webhook can finish before the
+  // user lands on the billing tab with the refreshed entitlement.
   useEffect(() => {
     if (status !== 'success') return;
     const run = async () => {
       await queryClient.invalidateQueries({ queryKey: ['currentPlan'] });
       await queryClient.refetchQueries({ queryKey: ['currentPlan'] });
-      navigate({ to: safeCallback });
+      navigate({ to: PAYMENT_SUCCESS_PATH });
     };
     run();
-  }, [status, safeCallback, queryClient, navigate]);
+  }, [status, queryClient, navigate]);
   const { title, description } = getStatusContent(status);
   return (
     <div className="flex min-h-[60vh] items-center justify-center">

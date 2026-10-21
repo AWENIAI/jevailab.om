@@ -18,5 +18,7 @@ export const Route = createFileRoute('/(pages)/launch-pricing')({
 
 function LaunchPricingPage() {
   const locale = getLocale() === 'zh' ? 'zh' : 'en';
-  return <LaunchPricing content={getLaunchPricingContent(locale)} />;
+  return (
+    <LaunchPricing content={getLaunchPricingContent(locale)} locale={locale} />
+  );
 }

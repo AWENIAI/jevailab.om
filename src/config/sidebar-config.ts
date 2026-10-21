@@ -24,6 +24,7 @@ export function getSidebarLinks(): MenuItemConfig[] {
       icon: IconLayoutDashboard,
       href: Routes.Dashboard,
       external: false,
+      hidden: true,
     },
     {
       title: m.admin_title(),
@@ -69,12 +70,14 @@ export function getSidebarLinks(): MenuItemConfig[] {
           icon: IconFileUpload,
           href: Routes.SettingsFiles,
           external: false,
+          hidden: true,
         },
         {
           title: m.dashboard_sidebar_api_keys(),
           icon: IconKey,
           href: Routes.SettingsApiKeys,
           external: false,
+          hidden: true,
         },
         ...(websiteConfig.newsletter?.enable
           ? [
@@ -83,6 +86,7 @@ export function getSidebarLinks(): MenuItemConfig[] {
                 icon: IconBell,
                 href: Routes.SettingsNotifications,
                 external: false,
+                hidden: true,
               },
             ]
           : []),

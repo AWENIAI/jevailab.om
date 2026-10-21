@@ -38,8 +38,7 @@ export const Route = createFileRoute('/sitemap.xml')({
           staticUrls.push({ path: '/blog', changefreq: 'weekly' });
         }
         if (websiteConfig.payment?.enable) {
-          staticUrls.push({ path: '/pricing', changefreq: 'weekly' });
-          staticUrls.push({ path: '/launch-pricing', changefreq: 'weekly' });
+          // Checkout is an action, not an indexable marketing page.
         }
 
         const pages = staticUrls.map((page) => ({

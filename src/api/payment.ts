@@ -26,7 +26,6 @@ import { z } from 'zod';
 const checkoutSchema = z.object({
   planId: z.string().min(1),
   priceId: z.string().min(1),
-  successUrl: z.string().trim().min(1).optional(),
   cancelUrl: z.string().trim().min(1).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   theme: z.enum(['dark', 'light']).optional(),
@@ -44,8 +43,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .where(eq(user.id, userId))
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
-    const { planId, priceId, successUrl, cancelUrl, metadata, theme } = data;
-    const normalizedSuccessUrl = normalizePaymentReturnUrl(successUrl);
+    const { planId, priceId, cancelUrl, metadata, theme } = data;
     const normalizedCancelUrl = normalizePaymentReturnUrl(cancelUrl);
     const locale = getLocale();
     const provider = getPaymentProvider();
@@ -62,15 +60,11 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     // neither replaces URL placeholders, so the server generates an
     // order-scoped reference that is carried through provider metadata and
     // the webhook-backed payment row.
+    // Successful payments always pass through the result page so the webhook
+    // can settle before the client refreshes entitlements and opens Billing.
     const success = hostsPostCheckoutPage
-      ? (normalizedSuccessUrl ??
-        getCanonicalUrl(
-          `${Routes.Payment}?checkout_id=${paymentReference}&callback=${encodeURIComponent(Routes.SettingsBilling)}`
-        ))
-      : (normalizedSuccessUrl ??
-        getCanonicalUrl(
-          `${Routes.Payment}?session_id={CHECKOUT_SESSION_ID}&callback=${Routes.SettingsBilling}`
-        ));
+      ? getCanonicalUrl(`${Routes.Payment}?checkout_id=${paymentReference}`)
+      : getCanonicalUrl(`${Routes.Payment}?session_id={CHECKOUT_SESSION_ID}`);
     const checkoutMetadata = {
       ...metadata,
       userId,

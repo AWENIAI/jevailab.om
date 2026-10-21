@@ -28,7 +28,7 @@ export interface UiConfig {
 export interface MetadataConfig {
   name?: string;         // The name of the website, e.g. 'jevailab'
   title?: string;        // The title of the website, e.g. 'jevailab - AI image creation'
-  description?: string;  // The description of the website, e.g. 'jevailab helps you create images and videos.'
+  description?: string;  // The description of the website, e.g. 'jevailab helps you create images.'
   images?: ImagesConfig; // The images of the website
 }
 
@@ -123,6 +123,7 @@ export interface MenuItemConfig {
   href?: string;                                    // The url to link to
   icon?: ComponentType<{ className?: string }>;     // The icon to display
   external?: boolean;                               // Whether the link is external
+  hidden?: boolean;                                 // Whether to hide the item from menus
   authorizeOnly?: string[];                         // The roles that are authorized to see the item
   items?: MenuItemConfig[];                         // Nested items for dropdown/group
 }

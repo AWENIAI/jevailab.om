@@ -2,15 +2,43 @@ import { m } from '@/locale/paraglide/messages';
 import { createCheckoutSession } from '@/api/payment';
 import { Button } from '@/components/ui/button';
 import { useResolvedTheme } from '@/components/theme/theme-provider';
+import { logOperationalEvent } from '@/lib/observability';
 import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { logOperationalEvent } from '@/lib/observability';
-interface CheckoutButtonProps {
+
+export async function startCheckout({
+  planId,
+  priceId,
+  metadata,
+  theme,
+}: {
   planId: string;
   priceId: string;
   metadata?: Record<string, string>;
+  theme?: 'dark' | 'light';
+}): Promise<string> {
+  const result = await createCheckoutSession({
+    data: {
+      planId,
+      priceId,
+      theme,
+      metadata,
+    },
+  });
+  if (!result?.url) {
+    throw new Error(m.pricing_checkout_failed());
+  }
+  return result.url;
+}
+
+interface CheckoutButtonProps {
+  planId: string;
+  priceId: string;
+  'data-testid'?: string;
+  metadata?: Record<string, string>;
+  'aria-busy'?: boolean;
   variant?:
     | 'default'
     | 'outline'
@@ -26,6 +54,7 @@ interface CheckoutButtonProps {
 export function CheckoutButton({
   planId,
   priceId,
+  'data-testid': dataTestId,
   metadata,
   variant = 'default',
   size = 'default',
@@ -37,22 +66,15 @@ export function CheckoutButton({
   const handleClick = async () => {
     try {
       setIsLoading(true);
-      // merge metadata with existing metadata
       const mergedMetadata = metadata ? { ...metadata } : {};
-      const result = await createCheckoutSession({
-        data: {
-          planId,
-          priceId,
-          theme: resolvedTheme,
-          metadata:
-            Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
-        },
+      const url = await startCheckout({
+        planId,
+        priceId,
+        theme: resolvedTheme,
+        metadata:
+          Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
       });
-      if (result?.url) {
-        window.location.href = result.url;
-      } else {
-        toast.error(m.pricing_checkout_failed());
-      }
+      window.location.href = url;
     } catch (err) {
       logOperationalEvent.error('Checkout error:', err);
       toast.error(m.pricing_checkout_failed());
@@ -62,6 +84,7 @@ export function CheckoutButton({
   };
   return (
     <Button
+      data-testid={dataTestId}
       variant={variant}
       size={size}
       className={cn(className)}

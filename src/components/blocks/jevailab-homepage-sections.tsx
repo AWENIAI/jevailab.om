@@ -7,7 +7,6 @@ import {
   IconLock,
   IconPhoto,
   IconSparkles,
-  IconVideo,
   IconWand,
 } from '@tabler/icons-react';
 import type {
@@ -32,9 +31,6 @@ export function JevailabHomepageSections({
 }: JevailabHomepageSectionsProps) {
   const imageFeature = content.features.find(
     (feature) => feature.kind === 'image'
-  );
-  const videoFeature = content.features.find(
-    (feature) => feature.kind === 'video'
   );
 
   return (
@@ -142,7 +138,7 @@ export function JevailabHomepageSections({
             {content.tools.description}
           </p>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8">
           {imageFeature ? (
             <a
               href={JEVAILAB_ANCHORS.create}
@@ -159,30 +155,6 @@ export function JevailabHomepageSections({
               </p>
               <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                 {imageFeature.actionLabel}
-                <IconArrowRight
-                  className="size-4 transition group-hover:translate-x-1"
-                  aria-hidden="true"
-                />
-              </span>
-            </a>
-          ) : null}
-          {videoFeature ? (
-            <a
-              href="#video"
-              className={`${surfaceClassName} group relative block overflow-hidden transition hover:border-primary/55 hover:shadow-lg`}
-              aria-label={videoFeature.title}
-            >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                <IconVideo className="size-6" aria-hidden="true" />
-              </span>
-              <h3 className="mt-6 text-xl font-semibold">
-                {videoFeature.title}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {videoFeature.description}
-              </p>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                {videoFeature.actionLabel ?? content.tools.videoNote}
                 <IconArrowRight
                   className="size-4 transition group-hover:translate-x-1"
                   aria-hidden="true"
@@ -347,7 +319,7 @@ export function JevailabHomepageSections({
             </p>
           </div>
           <a
-            href={Routes.Pricing}
+            href={Routes.LaunchPricing}
             className="inline-flex h-10 items-center justify-center rounded-lg border border-primary/40 px-4 text-sm font-semibold text-primary transition hover:bg-primary/10"
           >
             {content.pricing.actionLabel}

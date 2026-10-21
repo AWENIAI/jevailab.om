@@ -4,19 +4,21 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { m } from '@/locale/paraglide/messages';
 
-const RESEND_COOLDOWN_SECONDS = 60;
+export const RESEND_COOLDOWN_SECONDS = 60;
 
 export function ResendVerificationButton({
   email,
   callbackUrl,
   initialMessage,
+  initialCooldownSeconds = 0,
 }: {
   email: string;
   callbackUrl: string;
   initialMessage: string;
+  initialCooldownSeconds?: number;
 }) {
   const [pending, setPending] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(initialCooldownSeconds);
   const [result, setResult] = useState<'success' | 'error' | null>(null);
   useEffect(() => {
     if (!cooldown) return;

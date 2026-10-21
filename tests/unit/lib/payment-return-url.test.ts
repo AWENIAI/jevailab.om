@@ -1,6 +1,7 @@
 import {
   getSafePaymentCallback,
   normalizePaymentReturnUrl,
+  PAYMENT_SUCCESS_PATH,
   PAYMENT_RETURN_URL_ERROR,
 } from '@/lib/payment-return-url';
 import { describe, expect, test } from 'vitest';
@@ -8,6 +9,10 @@ import { describe, expect, test } from 'vitest';
 const APPLICATION_URL = 'https://app.example.test';
 
 describe('payment return URL security', () => {
+  test('sends every completed payment to the billing tab', () => {
+    expect(PAYMENT_SUCCESS_PATH).toBe('/settings/billing');
+  });
+
   test.each([
     ['/settings/billing', 'https://app.example.test/settings/billing'],
     ['settings/billing', 'https://app.example.test/settings/billing'],

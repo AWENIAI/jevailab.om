@@ -16,7 +16,7 @@ describe('Jevailab homepage content', () => {
     const content = getJevailabHomepageContent(locale);
 
     expect(content.hero.h1.trim()).not.toHaveLength(0);
-    expect(content.faq).toHaveLength(12);
+    expect(content.faq).toHaveLength(11);
     expect(Object.values(JEVAILAB_ANCHORS)).toEqual([
       '#create',
       '#gallery',
@@ -47,14 +47,14 @@ describe('Jevailab homepage content', () => {
     );
   });
 
-  it('exposes the video creation entry as an active destination', () => {
-    const videoFeatures = getJevailabHomepageContent('en').features.filter(
-      (feature) => feature.kind === 'video'
-    );
+  it('exposes image creation as the only homepage capability', () => {
+    const features = getJevailabHomepageContent('en').features;
 
-    expect(videoFeatures).not.toHaveLength(0);
-    expect(videoFeatures.every((feature) => !feature.comingSoon)).toBe(true);
-    expect(videoFeatures.every((feature) => feature.actionLabel)).toBe(true);
+    expect(features).toHaveLength(1);
+    expect(features[0]).toMatchObject({
+      kind: 'image',
+      actionLabel: 'Create now',
+    });
   });
 
   it('maps each gallery example to a published public image template', () => {
@@ -72,7 +72,7 @@ describe('Jevailab homepage content', () => {
     }
   });
 
-  it('uses generic AI video metadata and only active homepage destinations', () => {
+  it('uses image-only metadata and only active homepage destinations', () => {
     const projectRoot = fileURLToPath(new URL('../..', import.meta.url));
     const zhMessages = JSON.parse(
       readFileSync(`${projectRoot}/project.inlang/messages/zh.json`, 'utf8')
@@ -88,9 +88,9 @@ describe('Jevailab homepage content', () => {
 
     for (const messages of [zhMessages, enMessages]) {
       expect(messages.site_name).toContain('jevailab');
-      expect(messages.site_title).toMatch(/AI|视频|Video/);
+      expect(messages.site_title).toMatch(/AI|图片|Image/);
       expect(messages.site_description.toLowerCase()).toContain('ai');
-      expect(messages.site_description).toMatch(/video|视频/i);
+      expect(Object.values(messages).join(' ')).not.toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
       expect.arrayContaining(['/#image', '/launch-pricing'])

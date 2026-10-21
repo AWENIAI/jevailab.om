@@ -8,8 +8,6 @@ import {
 
 const publicPages = [
   { path: '/', name: 'home' },
-  { path: '/pricing', name: 'pricing' },
-  { path: '/launch-pricing', name: 'launch pricing' },
   { path: '/blog', name: 'blog index' },
   { path: '/blog/getting-started', name: 'blog detail' },
   { path: '/ai', name: 'ai playground' },
@@ -18,6 +16,7 @@ const publicPages = [
   { path: '/changelog', name: 'changelog' },
   { path: '/roadmap', name: 'roadmap' },
   { path: '/waitlist', name: 'waitlist' },
+  { path: '/launch-pricing', name: 'launch pricing' },
   { path: '/cookie', name: 'cookie policy' },
   { path: '/privacy', name: 'privacy policy' },
   { path: '/terms', name: 'terms of service' },
@@ -97,6 +96,35 @@ test.describe('public page smoke coverage', () => {
     await expect(response).toBeOK();
     expect(await response.json()).toEqual({ message: 'pong' });
   });
+
+  for (const locale of locales) {
+    test(`public ${locale} pages contain no video product copy`, async ({
+      page,
+    }) => {
+      for (const publicPage of publicPages) {
+        await test.step(publicPage.name, async () => {
+          await page.goto(localizedPath(publicPage.path, locale), {
+            waitUntil: 'domcontentloaded',
+          });
+          await expect(page.locator('body')).toBeVisible();
+
+          const description =
+            (await page
+              .locator('meta[name="description"]')
+              .getAttribute('content')) ?? '';
+          const publicCopy = [
+            await page.title(),
+            description,
+            await page.locator('body').innerText(),
+          ].join('\n');
+
+          expect(publicCopy, `${publicPage.name} contains video copy`).not.toMatch(
+            /video|视频/i
+          );
+        });
+      }
+    });
+  }
 });
 
 test('localized content metadata and sitemap agree', async ({
@@ -117,16 +145,20 @@ test('localized content metadata and sitemap agree', async ({
     }
   }
 
-  const origin = new URL(page.url()).origin;
   const response = await request.get('/sitemap.xml');
   expect(response.ok()).toBe(true);
   const xml = await response.text();
+  const canonicalHref = await page
+    .locator('link[rel="canonical"]')
+    .getAttribute('href');
+  expect(canonicalHref).not.toBeNull();
+  const siteOrigin = new URL(canonicalHref as string).origin;
   for (const path of [
     '/terms',
     '/en/terms',
     '/blog/getting-started',
     '/en/blog/getting-started',
   ]) {
-    expect(xml).toContain(`<loc>${origin}${path}</loc>`);
+    expect(xml).toContain(`<loc>${siteOrigin}${path}</loc>`);
   }
 });
