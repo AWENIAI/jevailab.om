@@ -94,17 +94,11 @@ export const Route = createFileRoute('/api/storage/file')({
             .from(imageGenerationOutputs)
             .innerJoin(
               imageGenerationJobs,
-              eq(
-                imageGenerationJobs.id,
-                imageGenerationOutputs.jobId
-              )
+              eq(imageGenerationJobs.id, imageGenerationOutputs.jobId)
             )
             .where(
               and(
-                eq(
-                  imageGenerationOutputs.privateStorageKey,
-                  key
-                ),
+                eq(imageGenerationOutputs.privateStorageKey, key),
                 isNull(imageGenerationJobs.deletedAt)
               )
             )
@@ -120,11 +114,7 @@ export const Route = createFileRoute('/api/storage/file')({
             return new Response('Not Found', { status: 404 });
           }
 
-          if (
-            privateOwnerId &&
-            !fileRecord?.isPublic &&
-            !hasPrivateAccess
-          ) {
+          if (privateOwnerId && !fileRecord?.isPublic && !hasPrivateAccess) {
             if (!userId || privateOwnerId !== userId) {
               return new Response('Forbidden', { status: 403 });
             }

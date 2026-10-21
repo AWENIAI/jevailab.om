@@ -65,4 +65,3 @@ console.log('Waffo test products created. Copy these public product IDs:');
 console.log(`VITE_WAFFO_PRODUCT_PRO_MONTHLY='${monthly.id}'`);
 console.log(`VITE_WAFFO_PRODUCT_PRO_YEARLY='${yearly.id}'`);
 console.log(`VITE_WAFFO_PRODUCT_LIFETIME='${lifetime.id}'`);
-

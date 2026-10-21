@@ -10,7 +10,9 @@ const onlyChinese = () => ['zh'] as const;
 describe('content links for missing translations', () => {
   it('links to the available source document', () => {
     expect(getContentHref('/terms', 'zh', onlyEnglish())).toBe('/en/terms');
-    expect(getContentHref('/blog/post', 'en', onlyChinese())).toBe('/blog/post');
+    expect(getContentHref('/blog/post', 'en', onlyChinese())).toBe(
+      '/blog/post'
+    );
   });
 
   it('redirects missing localized content while leaving available and unrelated URLs alone', () => {
