@@ -1,17 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
 import { baseLocale, locales, localizeHref } from '@/lib/locale';
-
-const disallowedPaths = ['/auth', '/admin', '/settings', '/dashboard'];
+import { ROBOTS_DISALLOWED_PATHS } from '@/lib/indexing-policy';
 
 function getDisallowRules() {
-  return disallowedPaths
-    .flatMap((path) => [
-      path,
-      ...locales
-        .filter((locale) => locale !== baseLocale)
-        .map((locale) => localizeHref(path, { locale })),
-    ])
+  return ROBOTS_DISALLOWED_PATHS.flatMap((path) => [
+    path,
+    ...locales
+      .filter((locale) => locale !== baseLocale)
+      .map((locale) => localizeHref(path, { locale })),
+  ])
     .map((path) => `Disallow: ${path}`)
     .join('\n');
 }

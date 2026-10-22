@@ -100,7 +100,6 @@ export const LOCALIZED_PATHS = new Set([
   '/contact',
   '/cookie',
   '/launch-pricing',
-  '/pricing',
   '/privacy',
   '/roadmap',
   '/terms',

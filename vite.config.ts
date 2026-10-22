@@ -1,13 +1,47 @@
 import { defineConfig } from 'vite';
+import type { Plugin } from 'vite';
 import { devtools } from '@tanstack/devtools-vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 import { fileURLToPath, URL } from 'url';
+import { readFile } from 'node:fs/promises';
 import tailwindcss from '@tailwindcss/vite';
 import { cloudflare } from '@cloudflare/vite-plugin';
 import contentCollections from '@content-collections/vite';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
+import {
+  extractRouteTreePathsFromSource,
+  formatRouteCoverageWarning,
+  getRouteCoverageGaps,
+} from './src/lib/sitemap-routes';
+
+function sitemapRouteCoveragePlugin(): Plugin {
+  let checked = false;
+
+  return {
+    name: 'sitemap-route-coverage',
+    async buildStart() {
+      if (checked) return;
+      checked = true;
+
+      const routeTreeSource = await readFile(
+        fileURLToPath(new URL('./src/routeTree.gen.ts', import.meta.url)),
+        'utf8'
+      );
+      const gaps = getRouteCoverageGaps(
+        extractRouteTreePathsFromSource(routeTreeSource)
+      );
+
+      if (
+        gaps.missingFromSitemap.length > 0 ||
+        gaps.missingFromRouteTree.length > 0
+      ) {
+        this.warn(formatRouteCoverageWarning(gaps));
+      }
+    },
+  };
+}
 
 /**
  * Vite configuration
@@ -28,6 +62,7 @@ const config = defineConfig({
     },
   },
   plugins: [
+    sitemapRouteCoveragePlugin(),
     devtools({
       eventBusConfig: {
         port: 0,

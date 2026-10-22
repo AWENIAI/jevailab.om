@@ -13,15 +13,16 @@ export function jsonLdScript(data: unknown) {
 export function organizationStructuredData(locale: Locale) {
   const url = getCanonicalUrlForLocale('/', locale);
   const logo = websiteConfig.metadata?.images?.logoLight;
+  const sameAs = Object.values(websiteConfig.social ?? {}).filter(
+    (value): value is string => typeof value === 'string' && !!value
+  );
   return {
     '@type': 'Organization',
     '@id': `${url}#organization`,
     name: websiteConfig.metadata?.name ?? '',
     url,
     ...(logo && { logo: getImageUrl(logo) }),
-    sameAs: Object.values(websiteConfig.social ?? {}).filter(
-      (value): value is string => typeof value === 'string' && !!value
-    ),
+    ...(sameAs.length > 0 && { sameAs }),
   };
 }
 
@@ -83,4 +84,24 @@ export function pageStructuredData(
       ],
     }),
   ];
+}
+
+export function faqPageStructuredData(options: {
+  url: string;
+  items: readonly { question: string; answer: string }[];
+}) {
+  return jsonLdScript({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${options.url}#faq`,
+    url: options.url,
+    mainEntity: options.items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  });
 }

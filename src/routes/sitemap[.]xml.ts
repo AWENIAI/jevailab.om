@@ -5,6 +5,45 @@ import { getSortedPosts } from '@/lib/blog';
 import { getPageLocales } from '@/lib/pages';
 import { websiteConfig } from '@/config/website';
 import { locales, type Locale } from '@/lib/locale';
+import { logOperationalEvent } from '@/lib/observability';
+import {
+  formatRouteCoverageWarning,
+  getRouteCoverageGaps,
+  normalizeRoutePath,
+  PUBLIC_ROUTES,
+} from '@/lib/sitemap-routes';
+
+type RouteTreeNode = {
+  fullPath: string;
+  children?: readonly RouteTreeNode[] | Record<string, RouteTreeNode>;
+};
+
+function collectRouteTreePaths(route: RouteTreeNode, paths: Set<string>) {
+  if (route.fullPath) paths.add(normalizeRoutePath(route.fullPath));
+  const children = Array.isArray(route.children)
+    ? route.children
+    : Object.values(route.children ?? {});
+  for (const child of children) {
+    collectRouteTreePaths(child, paths);
+  }
+}
+
+function warnAboutRouteCoverage(routeTree: RouteTreeNode) {
+  if (import.meta.env.PROD && !import.meta.env.DEV) return;
+  const routePaths = new Set<string>();
+  collectRouteTreePaths(routeTree, routePaths);
+  const gaps = getRouteCoverageGaps([...routePaths]);
+  if (
+    gaps.missingFromSitemap.length > 0 ||
+    gaps.missingFromRouteTree.length > 0
+  ) {
+    logOperationalEvent.warn(formatRouteCoverageWarning(gaps), {
+      reason: 'sitemap_route_coverage_gap',
+      missingFromSitemap: gaps.missingFromSitemap,
+      missingFromRouteTree: gaps.missingFromRouteTree,
+    });
+  }
+}
 
 /**
  * Dynamic sitemap.xml
@@ -15,34 +54,28 @@ export const Route = createFileRoute('/sitemap.xml')({
     handlers: {
       GET: async () => {
         const base = getBaseUrl().replace(/\/$/, '');
+        const { routeTree } = await import('@/routeTree.gen');
+        warnAboutRouteCoverage(routeTree as unknown as RouteTreeNode);
+
         const staticUrls: {
           path: string;
-          changefreq?: string;
-          priority?: string;
-          lastmod?: string;
           availableLocales?: Locale[];
-        }[] = [
-          { path: '/', changefreq: 'daily', priority: '1.0' },
-          { path: '/about', changefreq: 'monthly' },
-          { path: '/changelog', changefreq: 'weekly' },
-          { path: '/roadmap', changefreq: 'monthly' },
-          { path: '/contact', changefreq: 'monthly' },
-          { path: '/waitlist', changefreq: 'monthly' },
-          { path: '/launch-pricing', changefreq: 'weekly', priority: '0.9' },
-          { path: '/terms', changefreq: 'monthly' },
-          { path: '/privacy', changefreq: 'monthly' },
-          { path: '/cookie', changefreq: 'monthly' },
-        ];
-
-        if (websiteConfig.blog?.enable) {
-          staticUrls.push({ path: '/blog', changefreq: 'weekly' });
-        }
+        }[] = PUBLIC_ROUTES.filter(
+          (route) => route.path !== '/blog' || websiteConfig.blog?.enable
+        ).map((route) => ({
+          path: route.path,
+          availableLocales: [...route.locales],
+        }));
         if (websiteConfig.payment?.enable) {
           // Checkout is an action, not an indexable marketing page.
         }
 
-        const pages = staticUrls.map((page) => ({
-          ...page,
+        const pages: {
+          path: string;
+          availableLocales?: Locale[];
+          lastmod?: string;
+        }[] = staticUrls.map((page) => ({
+          path: page.path,
           availableLocales: ['/terms', '/privacy', '/cookie'].includes(
             page.path
           )
@@ -70,7 +103,6 @@ export const Route = createFileRoute('/sitemap.xml')({
           for (const [slug, post] of postsBySlug) {
             pages.push({
               path: `/blog/${slug}`,
-              changefreq: 'weekly',
               lastmod: post.lastmod,
               availableLocales: post.availableLocales,
             });

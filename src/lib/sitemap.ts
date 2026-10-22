@@ -10,8 +10,6 @@ import {
 type SitemapPage = {
   path: string;
   availableLocales?: readonly Locale[];
-  changefreq?: string;
-  priority?: string;
   lastmod?: string;
 };
 
@@ -55,13 +53,7 @@ export function renderSitemap(baseUrl: string, pages: readonly SitemapPage[]) {
       const lastmod = page.lastmod
         ? `\n    <lastmod>${escapeXml(page.lastmod)}</lastmod>`
         : '';
-      const changefreq = page.changefreq
-        ? `\n    <changefreq>${escapeXml(page.changefreq)}</changefreq>`
-        : '';
-      const priority = page.priority
-        ? `\n    <priority>${escapeXml(page.priority)}</priority>`
-        : '';
-      return `  <url>\n    <loc>${escapeXml(url)}</loc>${alternateLinks}${defaultLink}${lastmod}${changefreq}${priority}\n  </url>`;
+      return `  <url>\n    <loc>${escapeXml(url)}</loc>${alternateLinks}${defaultLink}${lastmod}\n  </url>`;
     });
   });
 

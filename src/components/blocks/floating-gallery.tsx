@@ -3,13 +3,34 @@ import { m } from '@/locale/paraglide/messages';
 import { useState } from 'react';
 
 const GALLERY_IMAGES = [
-  '/images/hero-gallery/1.png',
-  '/images/hero-gallery/2.png',
-  '/images/hero-gallery/3.png',
-  '/images/hero-gallery/4.png',
-  '/images/hero-gallery/5.png',
-  '/images/hero-gallery/6.png',
+  {
+    src: '/images/hero-gallery/1.png',
+    alt: 'Summer Sky Editorial Portrait: a woman in a pale blue outfit beneath a bright cloudy sky, paired with a blue-toned poster illustration',
+  },
+  {
+    src: '/images/hero-gallery/2.png',
+    alt: 'Wind and Sky editorial poster with a woman in a blue shirt, windblown blonde hair, and a blue illustrated companion panel',
+  },
+  {
+    src: '/images/hero-gallery/3.png',
+    alt: 'Moving Light art poster featuring a woman in sunglasses and a patterned orange top against a vivid red background',
+  },
+  {
+    src: '/images/hero-gallery/4.png',
+    alt: 'Same Streets Ahead poster showing a woman walking past blurred city traffic, with a graphic street-style illustration below',
+  },
+  {
+    src: '/images/hero-gallery/5.png',
+    alt: 'Summer Breeze poster of a smiling woman in a cream blouse on a sunlit street, paired with a blue and olive illustration',
+  },
+  {
+    src: '/images/hero-gallery/6.png',
+    alt: 'Summer Days poster with two people in blue summer clothing sharing watermelon slices above a matching illustrated scene',
+  },
 ] as const;
+
+const GALLERY_IMAGE_WIDTH = 1086;
+const GALLERY_IMAGE_HEIGHT = 1448;
 
 const SLOTS = [
   { left: '-3%', top: '6%', width: 'clamp(7rem, 12vw, 11rem)' },
@@ -46,7 +67,7 @@ export default function FloatingGallery() {
       onClick={() => setSelected(null)}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--background)/0.92)_0%,hsl(var(--background)/0.7)_48%,transparent_82%)]" />
-      {GALLERY_IMAGES.map((src, index) => {
+      {GALLERY_IMAGES.map(({ src, alt }, index) => {
         const slot = SLOTS[index];
         const isSelected = selected === index;
 
@@ -85,9 +106,11 @@ export default function FloatingGallery() {
           >
             <img
               src={src}
-              alt={m.common_generated_image_example()}
+              alt={alt}
               className="size-full object-cover"
               draggable={false}
+              width={GALLERY_IMAGE_WIDTH}
+              height={GALLERY_IMAGE_HEIGHT}
               loading={index < 2 ? 'eager' : 'lazy'}
             />
           </button>
