@@ -64,6 +64,7 @@ describe('renderSitemap', () => {
     ]);
 
     expect(xml).toContain('<lastmod>2026-10-21</lastmod>');
+    expect(xml.indexOf('<lastmod>')).toBeLessThan(xml.indexOf('<xhtml:link'));
     expect(xml).not.toContain('<changefreq>');
     expect(xml).not.toContain('<priority>');
   });

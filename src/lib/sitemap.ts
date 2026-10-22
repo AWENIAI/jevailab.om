@@ -53,7 +53,10 @@ export function renderSitemap(baseUrl: string, pages: readonly SitemapPage[]) {
       const lastmod = page.lastmod
         ? `\n    <lastmod>${escapeXml(page.lastmod)}</lastmod>`
         : '';
-      return `  <url>\n    <loc>${escapeXml(url)}</loc>${alternateLinks}${defaultLink}${lastmod}\n  </url>`;
+      // The sitemap schema requires lastmod before extension elements such as
+      // xhtml:link. Google is lenient, but emitting the canonical order avoids
+      // differences between strict and production validators.
+      return `  <url>\n    <loc>${escapeXml(url)}</loc>${lastmod}${alternateLinks}${defaultLink}\n  </url>`;
     });
   });
 
