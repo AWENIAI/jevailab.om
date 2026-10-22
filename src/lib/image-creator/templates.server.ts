@@ -1,4 +1,8 @@
-import type { PublicImageTemplate } from './types';
+import type {
+  ImageTemplateStyleFamily,
+  ImageTemplateUseCase,
+  PublicImageTemplate,
+} from './types';
 import { spreadsheetImageTemplateSeeds } from './spreadsheet-templates.server';
 
 export type ImageTemplate = PublicImageTemplate & {
@@ -26,9 +30,27 @@ export function toPublicImageTemplate(
     defaultMode: template.defaultMode,
     defaultRatio: template.defaultRatio,
     defaultCount: template.defaultCount,
+    ...(template.useCase ? { useCase: template.useCase } : {}),
+    ...(template.styleFamily ? { styleFamily: template.styleFamily } : {}),
   };
 }
 
 export function findImageTemplate(id: string): ImageTemplate | undefined {
   return imageTemplateSeeds.find((template) => template.id === id);
+}
+
+export function listClassifiedImageTemplates({
+  useCase,
+  styleFamily,
+}: {
+  useCase?: ImageTemplateUseCase;
+  styleFamily?: ImageTemplateStyleFamily;
+} = {}): ImageTemplate[] {
+  return imageTemplateSeeds.filter(
+    (template) =>
+      template.useCase !== undefined &&
+      template.styleFamily !== undefined &&
+      (useCase === undefined || template.useCase === useCase) &&
+      (styleFamily === undefined || template.styleFamily === styleFamily)
+  );
 }

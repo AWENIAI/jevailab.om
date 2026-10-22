@@ -14,6 +14,18 @@ export const IMAGE_CREATOR_RATIOS = [
 export type ImageCreatorMode = (typeof IMAGE_CREATOR_MODES)[number];
 export type ImageCreatorRatio = (typeof IMAGE_CREATOR_RATIOS)[number];
 export type ImageTemplateInputPolicy = 'optional' | 'required' | 'forbidden';
+export type ImageTemplateUseCase =
+  | 'social'
+  | 'event'
+  | 'travel'
+  | 'cinematic'
+  | 'pet'
+  | 'personal-brand';
+export type ImageTemplateStyleFamily =
+  | 'photo-editorial'
+  | 'hand-drawn'
+  | 'collage'
+  | 'poster-print';
 
 export type ImageCreatorDraft = {
   templateId: string | null;
@@ -36,4 +48,6 @@ export type PublicImageTemplate = {
   defaultMode: ImageCreatorMode;
   defaultRatio: ImageCreatorRatio;
   defaultCount: number;
+  useCase?: ImageTemplateUseCase;
+  styleFamily?: ImageTemplateStyleFamily;
 };
