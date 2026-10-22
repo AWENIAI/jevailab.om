@@ -11,13 +11,11 @@ test.describe('image creator draft handoff', () => {
   });
 
   test('guest edits an image-only draft locally', async ({ page }) => {
-    await page.goto('/#create');
+    await page.goto('/create');
     const creator = page.getByTestId('image-creator-form');
     await expect(creator).toBeVisible();
 
-    await page
-      .getByRole('button', { name: '蓝天跃动艺术海报', exact: true })
-      .click();
+    await page.locator('[data-template-id="image-template-1013"]').click();
     await creator.locator('textarea').fill('warm summer light');
     await creator.getByRole('button', { name: '16:9' }).click();
     await creator.getByRole('checkbox').check();
@@ -29,11 +27,9 @@ test.describe('image creator draft handoff', () => {
   test('generation resumes after sign-in', async ({ page, request }) => {
     const user = await registerE2EUser(request);
 
-    await page.goto('/#create');
+    await page.goto('/create');
     const creator = page.getByTestId('image-creator-form');
-    await page
-      .getByRole('button', { name: '蓝天跃动艺术海报', exact: true })
-      .click();
+    await page.locator('[data-template-id="image-template-1013"]').click();
     await creator.locator('textarea').fill('warm summer light');
     await creator.getByRole('button', { name: '16:9' }).click();
     await creator.getByRole('checkbox').check();
@@ -47,11 +43,11 @@ test.describe('image creator draft handoff', () => {
       .getByRole('link');
     await expect(authSwitchLink).toHaveAttribute(
       'href',
-      '/auth/register?callbackUrl=%2F%3Fcreate%3D1'
+      '/auth/register?callbackUrl=%2Fcreate'
     );
-    await page.getByRole('link', { name: '注册' }).click();
+    await page.locator('a[href^="/auth/register"]').click();
     await expect(page).toHaveURL(/\/auth\/register\?callbackUrl=/);
-    await page.getByRole('link', { name: '登录' }).click();
+    await page.locator('a[href^="/auth/login"]').click();
     await expect(page).toHaveURL(/\/auth\/login\?callbackUrl=/);
 
     const loginForm = page
@@ -62,7 +58,7 @@ test.describe('image creator draft handoff', () => {
     await loginForm.locator('input[name="email"]').fill(user.email);
     await loginForm.locator('input[name="password"]').fill(user.password);
     await loginForm.locator('button[type="submit"]').click();
-    await expect(page).toHaveURL(/\/\?create=1$/);
+    await expect(page).toHaveURL(/\/create$/);
     await expect(creator.locator('textarea')).toHaveValue('warm summer light');
     await expect(creator.getByRole('button', { name: '16:9' })).toHaveAttribute(
       'aria-pressed',

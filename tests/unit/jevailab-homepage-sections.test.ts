@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { JevailabHomepageSections } from '@/components/blocks/jevailab-homepage-sections';
 import { getJevailabHomepageContent } from '@/content/jevailab-homepage';
 
@@ -9,7 +9,6 @@ describe('Jevailab homepage sections', () => {
     const markup = renderToStaticMarkup(
       createElement(JevailabHomepageSections, {
         content: getJevailabHomepageContent('en'),
-        onSelectTemplate: vi.fn(),
       })
     );
 
@@ -23,6 +22,8 @@ describe('Jevailab homepage sections', () => {
     expect(markup).toContain('<summary');
     expect(markup).toContain('data-template-id="image-template-1015"');
     expect(markup).toContain('Summer Sky Editorial Portrait');
+    expect(markup).toContain('href="/create"');
+    expect(markup).not.toContain('href="/#create"');
     expect(markup).not.toContain('The latest image creation template.');
   });
 
@@ -30,7 +31,6 @@ describe('Jevailab homepage sections', () => {
     const markup = renderToStaticMarkup(
       createElement(JevailabHomepageSections, {
         content: getJevailabHomepageContent('zh'),
-        onSelectTemplate: vi.fn(),
       })
     );
 

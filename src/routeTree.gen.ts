@@ -24,6 +24,7 @@ import { Route as pagesAboutRouteImport } from './routes/(pages)/about'
 import { Route as pagesAiRouteImport } from './routes/(pages)/ai'
 import { Route as pagesChangelogRouteImport } from './routes/(pages)/changelog'
 import { Route as pagesContactRouteImport } from './routes/(pages)/contact'
+import { Route as pagesCreateRouteImport } from './routes/(pages)/create'
 import { Route as pagesLaunchPricingRouteImport } from './routes/(pages)/launch-pricing'
 import { Route as pagesPricingRouteImport } from './routes/(pages)/pricing'
 import { Route as pagesRoadmapRouteImport } from './routes/(pages)/roadmap'
@@ -132,6 +133,11 @@ const pagesChangelogRoute = pagesChangelogRouteImport.update({
 const pagesContactRoute = pagesContactRouteImport.update({
   id: '/(pages)/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const pagesCreateRoute = pagesCreateRouteImport.update({
+  id: '/(pages)/create',
+  path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const pagesLaunchPricingRoute = pagesLaunchPricingRouteImport.update({
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof pagesAiRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
+  '/create': typeof pagesCreateRoute
   '/launch-pricing': typeof pagesLaunchPricingRoute
   '/pricing': typeof pagesPricingRoute
   '/roadmap': typeof pagesRoadmapRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/ai': typeof pagesAiRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
+  '/create': typeof pagesCreateRoute
   '/launch-pricing': typeof pagesLaunchPricingRoute
   '/pricing': typeof pagesPricingRoute
   '/roadmap': typeof pagesRoadmapRoute
@@ -421,6 +429,7 @@ export interface FileRoutesById {
   '/(pages)/ai': typeof pagesAiRoute
   '/(pages)/changelog': typeof pagesChangelogRoute
   '/(pages)/contact': typeof pagesContactRoute
+  '/(pages)/create': typeof pagesCreateRoute
   '/(pages)/launch-pricing': typeof pagesLaunchPricingRoute
   '/(pages)/pricing': typeof pagesPricingRoute
   '/(pages)/roadmap': typeof pagesRoadmapRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/changelog'
     | '/contact'
+    | '/create'
     | '/launch-pricing'
     | '/pricing'
     | '/roadmap'
@@ -522,6 +532,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/changelog'
     | '/contact'
+    | '/create'
     | '/launch-pricing'
     | '/pricing'
     | '/roadmap'
@@ -573,6 +584,7 @@ export interface FileRouteTypes {
     | '/(pages)/ai'
     | '/(pages)/changelog'
     | '/(pages)/contact'
+    | '/(pages)/create'
     | '/(pages)/launch-pricing'
     | '/(pages)/pricing'
     | '/(pages)/roadmap'
@@ -625,6 +637,7 @@ export interface RootRouteChildren {
   pagesAiRoute: typeof pagesAiRoute
   pagesChangelogRoute: typeof pagesChangelogRoute
   pagesContactRoute: typeof pagesContactRoute
+  pagesCreateRoute: typeof pagesCreateRoute
   pagesLaunchPricingRoute: typeof pagesLaunchPricingRoute
   pagesPricingRoute: typeof pagesPricingRoute
   pagesRoadmapRoute: typeof pagesRoadmapRoute
@@ -750,6 +763,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof pagesContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/create': {
+      id: '/(pages)/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof pagesCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(pages)/launch-pricing': {
@@ -1077,6 +1097,7 @@ const rootRouteChildren: RootRouteChildren = {
   pagesAiRoute: pagesAiRoute,
   pagesChangelogRoute: pagesChangelogRoute,
   pagesContactRoute: pagesContactRoute,
+  pagesCreateRoute: pagesCreateRoute,
   pagesLaunchPricingRoute: pagesLaunchPricingRoute,
   pagesPricingRoute: pagesPricingRoute,
   pagesRoadmapRoute: pagesRoadmapRoute,

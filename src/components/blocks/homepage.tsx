@@ -6,13 +6,18 @@ import {
   getJevailabHomepageContent,
   type PublishedImageTemplateId,
 } from '@/content/jevailab-homepage';
-import { JEVAILAB_TEMPLATE_SELECTION_EVENT } from '@/lib/image-creator/ui-state';
 import { getLocale } from '@/lib/locale';
 import { useEffect } from 'react';
 
 export function HomePage() {
   const locale = getLocale();
   const content = getJevailabHomepageContent(locale);
+
+  function selectTemplate(templateId: PublishedImageTemplateId) {
+    window.location.assign(
+      `/create?template=${encodeURIComponent(templateId)}`
+    );
+  }
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('create') !== '1') {
@@ -25,26 +30,10 @@ export function HomePage() {
     });
   }, []);
 
-  function selectTemplate(templateId: PublishedImageTemplateId) {
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent(JEVAILAB_TEMPLATE_SELECTION_EVENT, {
-          detail: { templateId },
-        })
-      );
-      document
-        .getElementById('create')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }
-
   return (
     <div className="flex flex-col">
-      <HeroSection />
-      <JevailabHomepageSections
-        content={content}
-        onSelectTemplate={selectTemplate}
-      />
+      <HeroSection onSelectTemplate={selectTemplate} />
+      <JevailabHomepageSections content={content} />
     </div>
   );
 }

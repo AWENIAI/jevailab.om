@@ -83,6 +83,8 @@ describe('renderSitemap', () => {
     expect(urls).toEqual([
       'https://example.com/',
       'https://example.com/zh/',
+      'https://example.com/create',
+      'https://example.com/zh/create',
       'https://example.com/about',
       'https://example.com/zh/about',
       'https://example.com/changelog',

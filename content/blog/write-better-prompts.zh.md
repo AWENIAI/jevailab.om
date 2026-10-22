@@ -1,7 +1,7 @@
 ---
 title: 如何写出更清晰的 AI 图片提示词
 description: 描述目标画面时可直接使用的实用清单。
-date: 2026-10-20
+date: 2026-10-22
 category: 技巧
 image: /images/blog-hello-world.webp
 ---
@@ -24,4 +24,4 @@ image: /images/blog-hello-world.webp
 
 通读一次提示词并删除重复想法，确认所选模板与图片比例符合目标结果。
 
-[用这些方法开始创作](/#create)
+[用这些方法开始创作](/zh/create)

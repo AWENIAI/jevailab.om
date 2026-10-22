@@ -97,7 +97,7 @@ describe('Jevailab homepage content', () => {
       expect(Object.values(messages).join(' ')).not.toMatch(/video|视频/i);
     }
     expect(hrefs).toEqual(
-      expect.arrayContaining(['/#create', '/launch-pricing'])
+      expect.arrayContaining(['/create', '/launch-pricing'])
     );
     expect(items.map((item) => item.title)).not.toContain('AI');
     expect(hrefs).not.toContain('/#image');

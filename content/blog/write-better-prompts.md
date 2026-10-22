@@ -1,7 +1,7 @@
 ---
 title: Write a clearer prompt for an AI image
 description: A practical checklist for describing the image you want to create.
-date: 2026-10-20
+date: 2026-10-22
 category: Tips
 image: /images/blog-hello-world.webp
 ---
@@ -24,4 +24,4 @@ Add useful notes about lighting, color, mood, and composition. Use plain languag
 
 Read the prompt once and remove repeated ideas. Check that the selected template and image ratio support the result you want.
 
-[Create an image with these tips](/#create)
+[Create an image with these tips](/create)

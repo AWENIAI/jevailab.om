@@ -13,13 +13,13 @@ describe('sitemap route coverage', () => {
     const gaps = getRouteCoverageGaps([
       ...publicPaths,
       '/blog/$slug',
-      '/create',
+      '/template-gallery',
     ]);
 
-    expect(gaps.missingFromSitemap).toEqual(['/create']);
+    expect(gaps.missingFromSitemap).toEqual(['/template-gallery']);
     expect(gaps.missingFromRouteTree).toEqual([]);
     expect(formatRouteCoverageWarning(gaps)).toContain(
-      'Route exists but is not covered by PUBLIC_ROUTES/sitemap: /create'
+      'Route exists but is not covered by PUBLIC_ROUTES/sitemap: /template-gallery'
     );
   });
 

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { getCreatePageContent } from '@/content/create-page';
 import { getJevailabHomepageContent } from '@/content/jevailab-homepage';
 import { getLaunchPricingContent } from '@/content/launch-pricing';
 
@@ -16,13 +17,14 @@ describe('public bilingual product copy', () => {
     'zh',
   ] as const)('keeps %s public product and legal content accurate and image-only', (locale) => {
     const homepage = JSON.stringify(getJevailabHomepageContent(locale));
+    const createPage = JSON.stringify(getCreatePageContent(locale));
     const pricing = JSON.stringify(getLaunchPricingContent(locale));
     const suffix = locale === 'zh' ? '.zh' : '';
     const legal = ['terms', 'privacy', 'cookie']
       .map((slug) => read(`content/pages/${slug}${suffix}.md`))
       .join('\n');
 
-    const publicCopy = `${homepage}\n${pricing}\n${legal}`;
+    const publicCopy = `${homepage}\n${createPage}\n${pricing}\n${legal}`;
 
     expect(publicCopy).not.toMatch(/video|视频|影片/i);
     expect(publicCopy).not.toMatch(

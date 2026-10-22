@@ -1,7 +1,7 @@
 ---
 title: Create an AI image from a template and a prompt
 description: Learn the image-only workflow available in jevailab today.
-date: 2026-10-21
+date: 2026-10-22
 category: Guide
 image: /images/blog-get-started.webp
 ---
@@ -37,4 +37,4 @@ Accept the content-safety confirmation and review the credit quote shown before 
 
 Only image generation is available in this workspace. Published descriptions describe that current workflow; features shown as unavailable are not part of the live service.
 
-[Start creating an image](/#create)
+[Start creating an image](/create)

@@ -99,6 +99,7 @@ export const LOCALIZED_PATHS = new Set([
   '/changelog',
   '/contact',
   '/cookie',
+  '/create',
   '/launch-pricing',
   '/privacy',
   '/roadmap',

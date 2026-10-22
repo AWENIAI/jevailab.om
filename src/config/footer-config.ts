@@ -24,7 +24,7 @@ export function getFooterLinks(): MenuItemConfig[] {
     {
       title: m.nav_product(),
       items: [
-        { title: m.home_hero_primary(), href: '/#create', external: false },
+        { title: m.home_hero_primary(), href: '/create', external: false },
         { title: m.jevailab_nav_gallery(), href: '/#gallery', external: false },
         {
           title: m.jevailab_nav_how_it_works(),

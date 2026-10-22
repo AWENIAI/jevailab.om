@@ -124,7 +124,7 @@ precondition for editing.
 
 | # | Test name | Flow |
 |---|---|---|
-| 1 | Guest edits an image-only draft locally | Open `/#create`, select a template, enter a text prompt, choose a ratio, accept the content notice, and verify the draft is ready without any reference-image control or upload request. |
+| 1 | Guest edits an image-only draft locally | Open `/create`, select a template, enter a text prompt, choose a ratio, accept the content notice, and verify the draft is ready without any reference-image control or upload request. |
 | 2 | Generate resumes after sign-in | Click Generate as a guest, verify navigation to login with a callback URL, switch to registration and back, sign in as a verified E2E user, and verify the editor returns with the same prompt, template, ratio, and accepted content notice. |
 
 ### Retired AI playground redirect
@@ -132,7 +132,7 @@ precondition for editing.
 **File:** `specs/public-pages.spec.ts` | **Priority:** P0
 
 Open `/ai` and `/en/ai` and verify each redirects to the image workspace at
-`/#create`, with no retired playground controls or provider demos rendered.
+`/create`, with no retired playground controls or provider demos rendered.
 
 ## 3. Protected Page Smoke Test
 

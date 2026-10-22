@@ -564,8 +564,7 @@ export function LaunchPricing({
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/"
-                hash="create"
+                to="/create"
                 className={cn(
                   buttonVariants({ size: 'lg' }),
                   'h-11 rounded-xl bg-background px-5 text-foreground hover:bg-background/85'

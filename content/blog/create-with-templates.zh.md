@@ -1,7 +1,7 @@
 ---
 title: 用模板与文字提示创作 AI 图片
 description: 了解 jevailab 当前开放的纯图片生成流程。
-date: 2026-10-21
+date: 2026-10-22
 category: 指南
 image: /images/blog-get-started.webp
 ---
@@ -37,4 +37,4 @@ image: /images/blog-get-started.webp
 
 本工作台目前仅提供图片生成。网站只描述当前开放的流程；界面标记为暂不可用的功能不属于当前服务范围。
 
-[开始创作图片](/#create)
+[开始创作图片](/zh/create)

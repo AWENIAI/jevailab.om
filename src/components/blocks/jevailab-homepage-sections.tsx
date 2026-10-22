@@ -9,16 +9,11 @@ import {
   IconSparkles,
   IconWand,
 } from '@tabler/icons-react';
-import type {
-  JevailabHomepageContent,
-  PublishedImageTemplateId,
-} from '@/content/jevailab-homepage';
-import { JEVAILAB_ANCHORS } from '@/content/jevailab-homepage';
+import type { JevailabHomepageContent } from '@/content/jevailab-homepage';
 import { Routes } from '@/lib/routes';
 
 type JevailabHomepageSectionsProps = {
   content: JevailabHomepageContent;
-  onSelectTemplate: (templateId: PublishedImageTemplateId) => void;
 };
 
 const sectionClassName = 'scroll-mt-16 py-14 sm:py-20';
@@ -27,7 +22,6 @@ const surfaceClassName =
 
 export function JevailabHomepageSections({
   content,
-  onSelectTemplate,
 }: JevailabHomepageSectionsProps) {
   const imageFeature = content.features.find(
     (feature) => feature.kind === 'image'
@@ -98,11 +92,10 @@ export function JevailabHomepageSections({
         </div>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {content.galleryExamples.map((example) => (
-            <button
+            <a
               key={example.templateId}
-              type="button"
+              href={`/create?template=${encodeURIComponent(example.templateId)}`}
               data-template-id={example.templateId}
-              onClick={() => onSelectTemplate(example.templateId)}
               className="group relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-start shadow-sm outline-none transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-primary/35"
             >
               <img
@@ -114,7 +107,7 @@ export function JevailabHomepageSections({
               <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/55 to-transparent px-3 pt-12 pb-3 text-white">
                 <p className="text-sm font-semibold">{example.title}</p>
               </div>
-            </button>
+            </a>
           ))}
         </div>
       </section>
@@ -141,7 +134,7 @@ export function JevailabHomepageSections({
         <div className="mt-8">
           {imageFeature ? (
             <a
-              href={JEVAILAB_ANCHORS.create}
+              href="/create"
               className={`${surfaceClassName} group block transition hover:border-primary/55 hover:shadow-lg`}
             >
               <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -286,7 +279,7 @@ export function JevailabHomepageSections({
             </p>
           </div>
           <a
-            href={JEVAILAB_ANCHORS.create}
+            href="/create"
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
           >
             {content.hero.primaryAction}
@@ -386,7 +379,7 @@ export function JevailabHomepageSections({
               {content.finalCta.description}
             </p>
             <a
-              href={JEVAILAB_ANCHORS.create}
+              href="/create"
               className="mt-7 inline-flex h-10 items-center gap-2 rounded-lg bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-background/85"
             >
               {content.finalCta.actionLabel}

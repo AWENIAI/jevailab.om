@@ -41,6 +41,7 @@ export function buildImageCreatorCallbackUrl({
 }): string {
   const params = new URLSearchParams(search);
   params.delete('create');
+  params.delete('template');
   if (hash === '#create') params.set('create', '1');
   const query = params.toString();
   return `${pathname}${query ? `?${query}` : ''}`;

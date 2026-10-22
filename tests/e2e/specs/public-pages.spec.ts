@@ -9,6 +9,7 @@ import {
 
 const publicPages = [
   { path: '/', name: 'home' },
+  { path: '/create', name: 'AI image creator' },
   { path: '/blog', name: 'blog index' },
   { path: '/blog/create-with-templates', name: 'blog detail' },
   { path: '/about', name: 'about' },
@@ -81,6 +82,22 @@ test.describe('public page smoke coverage', () => {
     await page.goto('/en/launch-pricing');
     await expect(page).toHaveURL(/\/launch-pricing\/?$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+
+  test('redirects the retired AI route to the localized creator page', async ({
+    page,
+  }) => {
+    await page.goto('/ai');
+    await expect(page).toHaveURL(/\/create\/?$/);
+    await expect(
+      page.getByRole('heading', { name: 'AI Image Creator' })
+    ).toBeVisible();
+
+    await page.goto('/zh/ai');
+    await expect(page).toHaveURL(/\/zh\/create\/?$/);
+    await expect(
+      page.getByRole('heading', { name: 'AI 图片创作工具' })
+    ).toBeVisible();
   });
 
   for (const locale of locales) {
@@ -227,6 +244,7 @@ test('localized content metadata and sitemap agree', async ({
   request,
 }) => {
   for (const path of [
+    '/create',
     '/terms',
     '/blog/create-with-templates',
     '/launch-pricing',

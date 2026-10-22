@@ -90,7 +90,7 @@ function BlogListPage() {
     throw notFound();
   }
   if (posts.length === 0) {
-    throw redirect({ to: '/', hash: 'create' });
+    throw redirect({ to: '/create' });
   }
   return (
     <Container className="py-16 px-4">

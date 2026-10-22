@@ -14,6 +14,7 @@ export type PublicRoute = {
  */
 export const PUBLIC_ROUTES = [
   { path: '/', locales: ['en', 'zh'] },
+  { path: '/create', locales: ['en', 'zh'] },
   { path: '/about', locales: ['en', 'zh'] },
   { path: '/changelog', locales: ['en', 'zh'] },
   { path: '/roadmap', locales: ['en', 'zh'] },

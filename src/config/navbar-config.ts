@@ -6,7 +6,7 @@ export function getNavbarLinks(): MenuItemConfig[] {
     {
       key: 'image',
       title: m.jevailab_nav_image_title(),
-      href: '/#create',
+      href: '/create',
       external: false,
     },
     {

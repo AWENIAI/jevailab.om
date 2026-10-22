@@ -685,6 +685,15 @@ export default function AiImageCreatorSection() {
     void getImageCreatorTemplates().then((result) => {
       setTemplates(result.items);
       setCategories(result.categories);
+      const requestedTemplate = new URLSearchParams(window.location.search).get(
+        'template'
+      );
+      if (
+        requestedTemplate &&
+        result.items.some((template) => template.id === requestedTemplate)
+      ) {
+        setTemplateId(requestedTemplate);
+      }
     });
     void getImageCreatorPolicy().then((result) => {
       setPolicyVersion(result.version);
@@ -1123,6 +1132,7 @@ function TemplateBrowser({
             <button
               type="button"
               key={template.id}
+              data-template-id={template.id}
               onClick={() => onChoose(template)}
               className={cn(
                 'group relative rounded-xl border p-1.5 text-start transition-colors hover:border-primary/60',
