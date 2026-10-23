@@ -11,6 +11,7 @@ import {
   PAYMENT_POLL_INTERVAL,
 } from '@/payment/constants';
 import { PAYMENT_SUCCESS_PATH } from '@/lib/payment-return-url';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -119,6 +120,10 @@ export function PaymentCard({ sessionId }: PaymentCardProps) {
             data: { sessionId },
           });
           if (result?.isPaid) {
+            trackAnalyticsEvent('purchase', {
+              plan_id: 'confirmed_purchase',
+              billing_interval: 'unknown',
+            });
             setStatus('success');
             pollEndRef.current = true;
             return;

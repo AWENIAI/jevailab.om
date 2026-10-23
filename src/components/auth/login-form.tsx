@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { websiteConfig } from '@/config/website';
 import { authClient } from '@/auth/client';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { cn } from '@/lib/utils';
 import { DEFAULT_LOGIN_REDIRECT, Routes } from '@/lib/routes';
 import { getPathWithLocale } from '@/lib/urls';
@@ -83,6 +84,7 @@ export function LoginForm({
         },
         onResponse: () => setIsPending(false),
         onSuccess: () => {
+          trackAnalyticsEvent('login', { method: 'email' });
           onSuccess?.();
         },
         onError: (ctx) => {

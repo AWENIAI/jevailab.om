@@ -33,6 +33,7 @@ import type {
 } from '@/lib/image-creator/types';
 import { getPathWithLocale } from '@/lib/urls';
 import { cn } from '@/lib/utils';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import {
   IconArrowRight,
   IconCheck,
@@ -642,8 +643,14 @@ export default function AiImageCreatorSection() {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const pendingGenerateRef = useRef(false);
   const resumeStartedRef = useRef(false);
+  const quotedDraftRef = useRef<string | undefined>(undefined);
+  const terminalTicketRef = useRef<string | undefined>(undefined);
   const creatorFormRef = useRef<HTMLElement>(null);
   const [creatorFormHeight, setCreatorFormHeight] = useState<number>();
+
+  useEffect(() => {
+    trackAnalyticsEvent('create_page_view', { locale });
+  }, [locale]);
 
   useEffect(() => {
     const element = creatorFormRef.current;
@@ -783,7 +790,19 @@ export default function AiImageCreatorSection() {
     const timeout = setTimeout(() => {
       setIsQuoteLoading(true);
       void quoteImageCreatorDraft({ data: draft })
-        .then((nextQuote) => setQuote(nextQuote))
+        .then((nextQuote) => {
+          setQuote(nextQuote);
+          const quoteKey = `${templateId ?? 'free'}:${mode}:${ratio}:${count}:${nextQuote.totalCredits}`;
+          if (quotedDraftRef.current !== quoteKey) {
+            quotedDraftRef.current = quoteKey;
+            trackAnalyticsEvent('quote_requested', {
+              mode,
+              ratio,
+              output_count: count,
+              total_credits: nextQuote.totalCredits,
+            });
+          }
+        })
         .catch(() => setQuote(undefined))
         .finally(() => setIsQuoteLoading(false));
     }, 300);
@@ -799,6 +818,16 @@ export default function AiImageCreatorSection() {
         const result = await getKieImageGenerationStatus({ data: { ticket } });
         if (stopped) return;
         setTasks(result.tasks);
+        if (result.complete && terminalTicketRef.current !== ticket) {
+          terminalTicketRef.current = ticket;
+          const failed = result.tasks.some((task) => task.state === 'fail');
+          trackAnalyticsEvent(
+            failed ? 'generation_failed' : 'generation_completed',
+            failed
+              ? { failure_stage: 'generation', error_code: 'generation_failed' }
+              : { mode, ratio, output_count: count }
+          );
+        }
         if (!result.complete) timeout = setTimeout(poll, 3_000);
       } catch (pollError) {
         if (!stopped) {
@@ -841,6 +870,12 @@ export default function AiImageCreatorSection() {
           : '3:4'
       );
       setCount(template.defaultCount);
+    }
+    if (template) {
+      trackAnalyticsEvent('template_selected', {
+        template_id: template.id,
+        template_category: template.category,
+      });
     }
     setQuote(undefined);
   }
@@ -891,6 +926,12 @@ export default function AiImageCreatorSection() {
           consentAccepted: true,
           policyVersion,
         },
+      });
+      trackAnalyticsEvent('generation_started', {
+        mode,
+        ratio,
+        output_count: count,
+        total_credits: quote?.totalCredits ?? 0,
       });
       pendingGenerateRef.current = false;
       setPendingGenerate(false);
@@ -1034,6 +1075,8 @@ export default function AiImageCreatorSection() {
             imageUrls={imageUrls}
             isGenerating={isSubmitting || isGenerating}
             ticket={ticket}
+            mode={mode}
+            ratio={ratio}
             locale={locale}
           />
         </CardContent>
@@ -1369,11 +1412,15 @@ function GenerationPreview({
   imageUrls,
   isGenerating,
   ticket,
+  mode,
+  ratio,
   locale,
 }: {
   imageUrls: string[];
   isGenerating: boolean;
   ticket?: string;
+  mode: ImageCreatorMode;
+  ratio: ImageCreatorRatio;
   locale: CreatorLocale;
 }) {
   return (
@@ -1409,6 +1456,9 @@ function GenerationPreview({
                   href={url}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() =>
+                    trackAnalyticsEvent('image_downloaded', { mode, ratio })
+                  }
                   className={cn(
                     buttonVariants({ size: 'sm', variant: 'secondary' }),
                     'absolute end-2 bottom-2'

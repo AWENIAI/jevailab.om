@@ -19,6 +19,7 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { getPathWithLocale } from '@/lib/urls';
 import { Routes } from '@/lib/routes';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { CheckoutAuthButton } from './checkout-auth-button';
 
 type LaunchPricingProps = {
@@ -436,6 +437,10 @@ export function LaunchPricing({
   locale: Locale;
 }) {
   const annualCheckoutTarget = getCheckoutTarget('annual');
+
+  useEffect(() => {
+    trackAnalyticsEvent('pricing_viewed', { locale });
+  }, [locale]);
 
   return (
     <div className="overflow-x-clip">

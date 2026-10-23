@@ -33,7 +33,7 @@ describe('public bilingual product copy', () => {
     expect(publicCopy).not.toMatch(/priority generation queue|优先生成队列/i);
     expect(publicCopy).not.toMatch(/\bJevailab\b/);
     expect(pricing).not.toMatch(/free trial|免费试用/i);
-    expect(legal).toContain('2026-10-21');
+    expect(legal).toContain('2026-10-23');
   });
 
   it('does not expose template starter copy on the English About page', () => {

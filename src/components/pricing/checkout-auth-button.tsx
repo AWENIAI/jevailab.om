@@ -4,6 +4,7 @@ import { LoginDialog } from '@/components/auth/login-dialog';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useResolvedTheme } from '@/components/theme/theme-provider';
 import { logOperationalEvent } from '@/lib/observability';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -156,6 +157,10 @@ export function CheckoutAuthButton({
         priceId,
         metadata,
         theme,
+      });
+      trackAnalyticsEvent('checkout_started', {
+        plan_id: planId,
+        billing_interval: planId === 'lifetime' ? 'one_time' : 'subscription',
       });
       window.location.href = url;
     } catch (error) {

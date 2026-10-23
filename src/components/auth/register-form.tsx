@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { websiteConfig } from '@/config/website';
 import { authClient } from '@/auth/client';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { DEFAULT_LOGIN_REDIRECT, Routes } from '@/lib/routes';
 import { getPathWithLocale } from '@/lib/urls';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -82,6 +83,7 @@ export function RegisterForm({
         },
         onResponse: () => setIsPending(false),
         onSuccess: () => {
+          trackAnalyticsEvent('sign_up', { method: 'email' });
           setVerificationEmail(values.email);
           setSuccess(m.auth_register_check_email());
           onSuccess?.();

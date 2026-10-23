@@ -1,7 +1,7 @@
 ---
 title: Cookie Policy
 description: How jevailab uses cookies, local storage, and similar technologies
-date: 2026-10-21
+date: 2026-10-23
 ---
 
 ## 1. Scope
@@ -32,7 +32,16 @@ The image workspace can save an unfinished text-based draft in your browser's lo
 
 ## 6. Analytics and support tools
 
-When configured and enabled, we may use privacy-oriented or standard analytics tools to understand aggregate site usage, diagnose errors, and improve the Service. We may also load a customer-support chat tool so you can contact us. These providers may receive technical information such as your IP address, device and browser details, and interaction data, subject to their terms and our configuration. We do not currently use these technologies for targeted advertising.
+With your consent, we use Google Analytics to understand aggregate visits,
+pages viewed, page engagement, approximate country or region, traffic sources,
+and high-level product actions. We do not send prompts, media, email
+addresses, account identifiers, or payment identifiers to Google Analytics.
+You can accept or decline analytics in the site prompt; clearing jevailab site
+data removes that stored choice. We may also load a customer-support chat tool
+so you can contact us. These providers may receive technical information such
+as your IP address, device and browser details, and interaction data, subject
+to their terms and our configuration. We do not use these technologies for
+targeted advertising.
 
 ## 7. Managing cookies and storage
 

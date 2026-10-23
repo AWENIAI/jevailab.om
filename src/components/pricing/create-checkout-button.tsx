@@ -3,6 +3,7 @@ import { createCheckoutSession } from '@/api/payment';
 import { Button } from '@/components/ui/button';
 import { useResolvedTheme } from '@/components/theme/theme-provider';
 import { logOperationalEvent } from '@/lib/observability';
+import { trackAnalyticsEvent } from '@/lib/analytics/events';
 import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { useState } from 'react';
@@ -73,6 +74,10 @@ export function CheckoutButton({
         theme: resolvedTheme,
         metadata:
           Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
+      });
+      trackAnalyticsEvent('checkout_started', {
+        plan_id: planId,
+        billing_interval: planId === 'lifetime' ? 'one_time' : 'subscription',
       });
       window.location.href = url;
     } catch (err) {
