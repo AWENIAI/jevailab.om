@@ -38,11 +38,13 @@ You must not use the Service to:
 - create or distribute illegal, fraudulent, abusive, harassing, hateful, discriminatory, or sexually exploitative content;
 - create, request, promote, glorify, threaten, or distribute violence, graphic injury, gore, torture, self-harm, or content that facilitates real-world harm;
 - create, request, upload, possess, distribute, solicit, facilitate, or sexualize child sexual abuse material (CSAM) or any sexual content involving a minor. jevailab has zero tolerance for CSAM;
+- create, request, distribute, advertise, or facilitate pornographic or sexually explicit content, sexual services, sexual solicitation, non-consensual intimate imagery, or sexual deepfakes;
 - facilitate human trafficking, child exploitation, non-consensual sexual content, or the exploitation of any person;
+- create, distribute, promote, recruit for, or glorify terrorist or violent extremist content, organizations, or acts;
 - impersonate a person or falsely suggest that an image is an authentic recording of a real event;
 - infringe copyright, trademark, privacy, publicity, or other rights;
 - attempt to identify, track, or harm another person without lawful justification;
-- create or facilitate illegal goods, services, weapons, explosives, malware, fraud, or deceptive schemes;
+- create or facilitate illegal goods or services, including weapons, explosives, illegal drugs, dangerous chemicals, counterfeit or false identity documents, malware, phishing, credential theft, fraud, or deceptive schemes;
 - bypass safety systems, usage limits, access controls, or payment requirements;
 - upload malware, probe our systems, scrape the Service at scale, or interfere with its operation; or
 - resell, sublicense, or provide the Service to third parties except as expressly authorized by jevailab.
@@ -52,14 +54,18 @@ You must not use the Service to:
 To report suspected prohibited content or activity, email
 [support@jevailab.com](mailto:support@jevailab.com?subject=Content%20Report)
 with the subject line “Content Report,” or use our [contact page](/contact).
-Please include enough detail for us to locate the material, such as the account
-or generation reference, date, and an explanation of the concern. We will
-acknowledge a report within two business days and aim to complete an initial
-review and take appropriate action within five business days. Credible reports
-of CSAM receive urgent priority: we will restrict access to the material and
-associated account as quickly as practicable, and within 24 hours where
-technically possible. We may preserve relevant records and report suspected
-illegal activity to providers or authorities where required by law.
+Please include enough detail for us to locate the material, such as a URL,
+screenshot, account or generation reference, date, and an explanation of the
+concern. We will acknowledge a report within two business days and complete an
+initial review and take appropriate action within five business days. During a
+review, we may preserve relevant records, seek additional information, limit
+access to the content or account, remove content, reject a generation request,
+or suspend or terminate an account. Credible reports of CSAM, non-consensual
+intimate imagery, or an imminent threat of real-world harm receive urgent
+priority: we will restrict access to the material and associated account within
+24 hours of receipt, unless doing so is technically impossible or prohibited
+by law. We may report suspected illegal activity to providers or authorities
+where required by law.
 
 ## 7. Content review and enforcement
 

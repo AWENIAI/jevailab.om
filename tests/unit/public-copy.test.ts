@@ -60,6 +60,39 @@ describe('public bilingual product copy', () => {
     expect(terms).toContain(acknowledgment);
   });
 
+  it.each([
+    [
+      'terms.md',
+      [
+        'pornographic or sexually explicit content',
+        'terrorist or violent extremist content',
+        'illegal drugs',
+        'phishing',
+        'non-consensual intimate imagery',
+        'five business days',
+        '24 hours of receipt',
+      ],
+    ],
+    [
+      'terms.zh.md',
+      [
+        '色情或露骨性内容',
+        '恐怖主义或暴力极端主义内容',
+        '非法毒品',
+        '网络钓鱼',
+        '未经同意传播的私密影像',
+        '五个工作日',
+        '24 小时内',
+      ],
+    ],
+  ] as const)('lists every high-risk AUP category and a report-handling process in %s', (file, requiredCopy) => {
+    const terms = read(`content/pages/${file}`);
+
+    for (const item of requiredCopy) {
+      expect(terms).toContain(item);
+    }
+  });
+
   it('does not expose template starter copy on the English About page', () => {
     const messages = JSON.parse(
       read('project.inlang/messages/en.json')
