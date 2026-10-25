@@ -1,7 +1,7 @@
 ---
 title: Terms of Service
 description: Terms governing your use of jevailab and its AI image tools
-date: 2026-10-21
+date: 2026-10-25
 ---
 
 ## 1. Agreement to these terms
@@ -35,13 +35,31 @@ You represent that you have the rights and permissions needed to submit User Con
 You must not use the Service to:
 
 - violate any applicable law or the rights of another person;
-- create or distribute illegal, fraudulent, abusive, harassing, hateful, or sexually exploitative content;
+- create or distribute illegal, fraudulent, abusive, harassing, hateful, discriminatory, or sexually exploitative content;
+- create, request, promote, glorify, threaten, or distribute violence, graphic injury, gore, torture, self-harm, or content that facilitates real-world harm;
+- create, request, upload, possess, distribute, solicit, facilitate, or sexualize child sexual abuse material (CSAM) or any sexual content involving a minor. jevailab has zero tolerance for CSAM;
+- facilitate human trafficking, child exploitation, non-consensual sexual content, or the exploitation of any person;
 - impersonate a person or falsely suggest that an image is an authentic recording of a real event;
 - infringe copyright, trademark, privacy, publicity, or other rights;
 - attempt to identify, track, or harm another person without lawful justification;
+- create or facilitate illegal goods, services, weapons, explosives, malware, fraud, or deceptive schemes;
 - bypass safety systems, usage limits, access controls, or payment requirements;
 - upload malware, probe our systems, scrape the Service at scale, or interfere with its operation; or
 - resell, sublicense, or provide the Service to third parties except as expressly authorized by jevailab.
+
+### Reporting prohibited content
+
+To report suspected prohibited content or activity, email
+[support@jevailab.com](mailto:support@jevailab.com?subject=Content%20Report)
+with the subject line “Content Report,” or use our [contact page](/contact).
+Please include enough detail for us to locate the material, such as the account
+or generation reference, date, and an explanation of the concern. We will
+acknowledge a report within two business days and aim to complete an initial
+review and take appropriate action within five business days. Credible reports
+of CSAM receive urgent priority: we will restrict access to the material and
+associated account as quickly as practicable, and within 24 hours where
+technically possible. We may preserve relevant records and report suspected
+illegal activity to providers or authorities where required by law.
 
 ## 7. Content review and enforcement
 

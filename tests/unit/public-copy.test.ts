@@ -33,7 +33,31 @@ describe('public bilingual product copy', () => {
     expect(publicCopy).not.toMatch(/priority generation queue|优先生成队列/i);
     expect(publicCopy).not.toMatch(/\bJevailab\b/);
     expect(pricing).not.toMatch(/free trial|免费试用/i);
-    expect(legal).toContain('2026-10-23');
+    expect(legal).toContain('2026-10-25');
+  });
+
+  it.each([
+    [
+      'terms.md',
+      'violence',
+      'CSAM',
+      'support@jevailab.com',
+      'two business days',
+    ],
+    [
+      'terms.zh.md',
+      '暴力或血腥',
+      '儿童性虐待材料',
+      'support@jevailab.com',
+      '两个工作日',
+    ],
+  ] as const)('publishes a complete AUP and report channel in %s', (file, violence, csam, email, acknowledgment) => {
+    const terms = read(`content/pages/${file}`);
+
+    expect(terms).toContain(violence);
+    expect(terms).toContain(csam);
+    expect(terms).toContain(email);
+    expect(terms).toContain(acknowledgment);
   });
 
   it('does not expose template starter copy on the English About page', () => {

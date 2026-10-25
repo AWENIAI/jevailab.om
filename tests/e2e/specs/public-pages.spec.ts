@@ -171,6 +171,42 @@ test.describe('public page smoke coverage', () => {
     expect(await response.json()).toEqual({ message: 'pong' });
   });
 
+  test('publishes the bilingual content-report channel and CSAM prohibition', async ({
+    page,
+  }) => {
+    await page.goto('/terms');
+    await expect(
+      page.getByText(/violence, graphic injury, gore/i)
+    ).toBeVisible();
+    await expect(
+      page.getByText(/child sexual abuse material \(CSAM\)/i)
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        'a[href="mailto:support@jevailab.com?subject=Content%20Report"]'
+      )
+    ).toHaveAttribute(
+      'href',
+      /mailto:support@jevailab\.com\?subject=Content%20Report/
+    );
+    await expect(page.getByText(/two business days/i)).toBeVisible();
+
+    await page.goto('/zh/terms');
+    await expect(page.getByText('暴力或血腥')).toBeVisible();
+    await expect(
+      page.locator('li').filter({ hasText: '儿童性虐待材料' })
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        'a[href="mailto:support@jevailab.com?subject=Content%20Report"]'
+      )
+    ).toHaveAttribute(
+      'href',
+      /mailto:support@jevailab\.com\?subject=Content%20Report/
+    );
+    await expect(page.getByText('两个工作日')).toBeVisible();
+  });
+
   for (const locale of locales) {
     test(`public ${locale} pages contain no video product copy`, async ({
       page,
