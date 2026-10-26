@@ -115,6 +115,27 @@ test.describe('public page smoke coverage', () => {
     ).toBeVisible();
   });
 
+  test('permanently redirects retired scaffold blog posts to the localized blog index', async ({
+    request,
+  }) => {
+    const redirects = [
+      ['/blog/hello-world', '/blog'],
+      ['/zh/blog/hello-world', '/zh/blog'],
+      ['/blog/getting-started', '/blog'],
+      ['/zh/blog/getting-started', '/zh/blog'],
+      ['/blog/deploy-to-production', '/blog'],
+      ['/zh/blog/deploy-to-production', '/zh/blog'],
+    ] as const;
+
+    for (const [path, location] of redirects) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(301);
+      expect(new URL(response.headers().location ?? response.url()).pathname, path).toBe(
+        location
+      );
+    }
+  });
+
   for (const locale of locales) {
     test(`renders all public pages in ${locale}`, async ({ page }) => {
       const monitor = installPageHealthMonitor(page);

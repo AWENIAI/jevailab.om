@@ -3,7 +3,7 @@ title: 如何写出更清晰的 AI 图片提示词
 description: 描述目标画面时可直接使用的实用清单。
 date: 2026-10-22
 category: 技巧
-image: /images/blog-hello-world.webp
+image: /images/blog-deployment.webp
 ---
 
 清晰的提示词能帮助图片模型理解目标结果。提示词不必很长，几个具体细节通常比堆叠模糊形容词更有效。

@@ -3,7 +3,10 @@
 import { logOperationalEvent } from '@/lib/observability';
 import handler from '@tanstack/react-start/server-entry';
 import { localeMiddleware } from '@/locale/middleware';
-import { getUnavailableContentRedirect } from '@/lib/content-links';
+import {
+  getLegacyBlogRedirect,
+  getUnavailableContentRedirect,
+} from '@/lib/content-links';
 import { serverEnv } from '@/env/server';
 import {
   getTrustedExtensionOrigins,
@@ -53,6 +56,13 @@ export default {
 
     if (request.method === 'GET' || request.method === 'HEAD') {
       const url = new URL(request.url);
+      const legacyBlogTarget = getLegacyBlogRedirect(url.pathname);
+      if (legacyBlogTarget) {
+        url.pathname = legacyBlogTarget;
+        url.search = '';
+        return Response.redirect(url, 301);
+      }
+
       const target = getUnavailableContentRedirect(url.pathname);
       if (target) {
         url.pathname = target;

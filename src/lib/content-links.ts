@@ -11,6 +11,12 @@ const blogFiles = import.meta.glob('../../content/blog/*.md', {
   import: 'default',
 });
 
+const LEGACY_BLOG_SLUGS = new Set([
+  'hello-world',
+  'getting-started',
+  'deploy-to-production',
+]);
+
 export function getAvailableLocales(path: string): Locale[] | undefined {
   const legalSlug = path.match(/^\/(privacy|terms|cookie)$/)?.[1];
   const blogSlug = path.match(/^\/blog\/([^/]+)$/)?.[1];
@@ -45,6 +51,15 @@ export function getContentHref(
       ? locale
       : available[0];
   return localizeHref(path, { locale: target });
+}
+
+/** Redirect blog posts that were removed because they described the site itself. */
+export function getLegacyBlogRedirect(pathname: string): string | null {
+  const normalized = pathname.replace(/\/+$/, '') || '/';
+  const match = normalized.match(/^(\/zh)?\/blog\/([^/]+)$/);
+  if (!match || !LEGACY_BLOG_SLUGS.has(match[2])) return null;
+
+  return `${match[1] ?? ''}/blog`;
 }
 
 /** Redirect explicit locale URLs that only serve another language's content. */

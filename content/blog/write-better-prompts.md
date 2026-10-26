@@ -3,7 +3,7 @@ title: Write a clearer prompt for an AI image
 description: A practical checklist for describing the image you want to create.
 date: 2026-10-22
 category: Tips
-image: /images/blog-hello-world.webp
+image: /images/blog-deployment.webp
 ---
 
 A clear prompt helps the image model understand what should appear in the result. You do not need a long prompt; a few concrete details usually work better than a list of vague adjectives.
