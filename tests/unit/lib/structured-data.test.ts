@@ -28,11 +28,20 @@ vi.mock('@/lib/locale', () => ({
 
 import {
   faqPageStructuredData,
+  homepageFaqStructuredData,
   jsonLdScript,
   pageStructuredData,
 } from '@/lib/structured-data';
 
 describe('structured data', () => {
+  it('builds the homepage FAQ schema from the visible localized FAQ', () => {
+    const script = homepageFaqStructuredData('en');
+
+    expect(script.children).toContain('FAQPage');
+    expect(script.children).toContain('What can jevailab do today?');
+    expect(script.children).toContain('https://example.com');
+  });
+
   it('keeps embedded HTML inert without changing the JSON value', () => {
     const value = { name: '</script><script>alert(1)</script>' };
     const { children } = jsonLdScript(value);

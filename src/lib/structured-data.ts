@@ -1,4 +1,8 @@
 import { websiteConfig } from '@/config/website';
+import {
+  getJevailabHomepageContent,
+  type JevailabLocale,
+} from '@/content/jevailab-homepage';
 import { getCanonicalUrlForLocale, getImageUrl } from '@/lib/urls';
 import { localeConfig, type Locale } from '@/lib/locale';
 
@@ -103,5 +107,12 @@ export function faqPageStructuredData(options: {
         text: item.answer,
       },
     })),
+  });
+}
+
+export function homepageFaqStructuredData(locale: JevailabLocale) {
+  return faqPageStructuredData({
+    url: getCanonicalUrlForLocale('/', locale),
+    items: getJevailabHomepageContent(locale).faq,
   });
 }
