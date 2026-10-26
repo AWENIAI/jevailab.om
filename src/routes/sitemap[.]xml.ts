@@ -5,6 +5,7 @@ import { getSortedPosts } from '@/lib/blog';
 import { getPageLocales } from '@/lib/pages';
 import { websiteConfig } from '@/config/website';
 import { locales, type Locale } from '@/lib/locale';
+import { imageTemplateSeeds } from '@/lib/image-creator/templates.server';
 import { logOperationalEvent } from '@/lib/observability';
 import {
   formatRouteCoverageWarning,
@@ -107,6 +108,12 @@ export const Route = createFileRoute('/sitemap.xml')({
               availableLocales: post.availableLocales,
             });
           }
+        }
+        for (const template of imageTemplateSeeds) {
+          pages.push({
+            path: `/templates/${template.id}`,
+            availableLocales: [...locales],
+          });
         }
 
         const sitemap = renderSitemap(base, pages);

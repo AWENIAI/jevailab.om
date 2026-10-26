@@ -2,6 +2,7 @@
 
 import AiImageCreatorSection from '@/components/blocks/ai-image-creator';
 import { getCreatePageContent } from '@/content/create-page';
+import type { PublicImageTemplate } from '@/lib/image-creator/types';
 import { getLocale } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 import {
@@ -18,7 +19,13 @@ const sectionClassName = 'mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16';
 const surfaceClassName =
   'rounded-3xl border border-border/70 bg-card/80 p-5 shadow-sm sm:p-8';
 
-export function CreatePage() {
+export function CreatePage({
+  initialTemplates,
+  initialCategories,
+}: {
+  initialTemplates: PublicImageTemplate[];
+  initialCategories: string[];
+}) {
   const locale = getLocale();
   const content = getCreatePageContent(locale);
 
@@ -58,7 +65,10 @@ export function CreatePage() {
       </section>
 
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <AiImageCreatorSection />
+        <AiImageCreatorSection
+          initialTemplates={initialTemplates}
+          initialCategories={initialCategories}
+        />
       </div>
 
       <section

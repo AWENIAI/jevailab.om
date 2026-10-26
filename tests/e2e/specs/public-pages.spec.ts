@@ -30,6 +30,34 @@ const publicPages = [
 const locales: LocaleMode[] = [...supportedLocales];
 
 test.describe('public page smoke coverage', () => {
+  test('renders published image templates in the server HTML', async ({
+    request,
+  }) => {
+    const response = await request.get('/create');
+    expect(response.ok()).toBeTruthy();
+    const html = await response.text();
+
+    expect(html).toContain('image-template-1015');
+    expect(html).toContain('/images/image-templates/1015.png');
+  });
+
+  test('publishes crawlable template detail pages and sitemap entries', async ({
+    request,
+  }) => {
+    const detailResponse = await request.get('/templates/image-template-1015');
+    expect(detailResponse.ok()).toBeTruthy();
+    const detailHtml = await detailResponse.text();
+    expect(detailHtml).toContain('Summer Sky Editorial Portrait');
+    expect(detailHtml).toContain('/images/image-templates/1015.png');
+    expect(detailHtml).toContain('AI Poster Template');
+
+    const sitemapResponse = await request.get('/sitemap.xml');
+    expect(sitemapResponse.ok()).toBeTruthy();
+    expect(await sitemapResponse.text()).toContain(
+      '/templates/image-template-1015'
+    );
+  });
+
   test('defaults to English and light mode without the retired AI tab', async ({
     page,
   }) => {
@@ -130,9 +158,10 @@ test.describe('public page smoke coverage', () => {
     for (const [path, location] of redirects) {
       const response = await request.get(path, { maxRedirects: 0 });
       expect(response.status(), path).toBe(301);
-      expect(new URL(response.headers().location ?? response.url()).pathname, path).toBe(
-        location
-      );
+      expect(
+        new URL(response.headers().location ?? response.url()).pathname,
+        path
+      ).toBe(location);
     }
   });
 

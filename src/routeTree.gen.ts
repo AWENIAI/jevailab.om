@@ -51,6 +51,7 @@ import { Route as SettingsNotificationsRouteImport } from './routes/settings/not
 import { Route as SettingsPaymentRouteImport } from './routes/settings/payment'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
+import { Route as pagesTemplatesTemplateIdRouteImport } from './routes/(pages)/templates/$templateId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiE2eUsersRouteImport } from './routes/api/e2e/users'
 import { Route as ApiMiniprogramSplatRouteImport } from './routes/api/miniprogram/$'
@@ -271,6 +272,12 @@ const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
   path: '/security',
   getParentRoute: () => SettingsRoute,
 } as any)
+const pagesTemplatesTemplateIdRoute =
+  pagesTemplatesTemplateIdRouteImport.update({
+    id: '/(pages)/templates/$templateId',
+    path: '/templates/$templateId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -360,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/templates/$templateId': typeof pagesTemplatesTemplateIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
@@ -410,6 +418,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/templates/$templateId': typeof pagesTemplatesTemplateIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
@@ -464,6 +473,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/(pages)/templates/$templateId': typeof pagesTemplatesTemplateIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
   '/api/miniprogram/$': typeof ApiMiniprogramSplatRoute
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/dashboard/'
     | '/settings/'
+    | '/templates/$templateId'
     | '/api/auth/$'
     | '/api/e2e/users'
     | '/api/miniprogram/$'
@@ -569,6 +580,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/dashboard'
     | '/settings'
+    | '/templates/$templateId'
     | '/api/auth/$'
     | '/api/e2e/users'
     | '/api/miniprogram/$'
@@ -622,6 +634,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/dashboard/'
     | '/settings/'
+    | '/(pages)/templates/$templateId'
     | '/api/auth/$'
     | '/api/e2e/users'
     | '/api/miniprogram/$'
@@ -660,6 +673,7 @@ export interface RootRouteChildren {
   ApiPingRoute: typeof ApiPingRoute
   BlogSlugRoute: typeof BlogSlugRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  pagesTemplatesTemplateIdRoute: typeof pagesTemplatesTemplateIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiE2eUsersRoute: typeof ApiE2eUsersRoute
   ApiMiniprogramSplatRoute: typeof ApiMiniprogramSplatRoute
@@ -967,6 +981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsSecurityRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/(pages)/templates/$templateId': {
+      id: '/(pages)/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/templates/$templateId'
+      preLoaderRoute: typeof pagesTemplatesTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -1128,6 +1149,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPingRoute: ApiPingRoute,
   BlogSlugRoute: BlogSlugRoute,
   BlogIndexRoute: BlogIndexRoute,
+  pagesTemplatesTemplateIdRoute: pagesTemplatesTemplateIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiE2eUsersRoute: ApiE2eUsersRoute,
   ApiMiniprogramSplatRoute: ApiMiniprogramSplatRoute,

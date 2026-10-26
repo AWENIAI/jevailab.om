@@ -115,5 +115,5 @@ export const LOCALIZED_PATHS = new Set([
  */
 export function isLocalizedPath(path: string): boolean {
   if (LOCALIZED_PATHS.has(path)) return true;
-  return path.startsWith('/blog/');
+  return path.startsWith('/blog/') || path.startsWith('/templates/');
 }

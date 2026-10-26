@@ -24,7 +24,10 @@ export const PUBLIC_ROUTES = [
  * Dynamic public routes are generated from content data, not scanned from the
  * route tree. Coverage validation recognizes their concrete sitemap URLs.
  */
-export const AUTO_GENERATED_PUBLIC_ROUTE_PATTERNS = ['/blog/$slug'] as const;
+export const AUTO_GENERATED_PUBLIC_ROUTE_PATTERNS = [
+  '/blog/$slug',
+  '/templates/$templateId',
+] as const;
 
 export type RouteCoverageGap = {
   missingFromSitemap: string[];

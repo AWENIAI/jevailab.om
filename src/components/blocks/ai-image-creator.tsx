@@ -618,12 +618,19 @@ const ratios: Array<
   Extract<ImageCreatorRatio, '3:4' | '9:16' | '1:1' | '4:3' | '16:9'>
 > = ['3:4', '9:16', '1:1', '4:3', '16:9'];
 
-export default function AiImageCreatorSection() {
+export default function AiImageCreatorSection({
+  initialTemplates = [],
+  initialCategories = [],
+}: {
+  initialTemplates?: PublicImageTemplate[];
+  initialCategories?: string[];
+}) {
   const locale: CreatorLocale = getLocale();
   const { data: session } = authClient.useSession();
   const signedIn = Boolean(session?.user);
-  const [templates, setTemplates] = useState<PublicImageTemplate[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [templates, setTemplates] =
+    useState<PublicImageTemplate[]>(initialTemplates);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
   const [policyVersion, setPolicyVersion] = useState('2026-10-16');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
@@ -1172,34 +1179,41 @@ function TemplateBrowser({
         {templates.map((template) => {
           const displayedTemplate = getLocalizedImageTemplate(template, locale);
           return (
-            <button
-              type="button"
-              key={template.id}
-              data-template-id={template.id}
-              onClick={() => onChoose(template)}
-              className={cn(
-                'group relative rounded-xl border p-1.5 text-start transition-colors hover:border-primary/60',
-                selectedId === template.id &&
-                  'border-primary bg-primary/10 ring-1 ring-primary'
-              )}
-            >
-              <img
-                src={template.coverUrl}
-                alt=""
-                className="aspect-[3/4] w-full rounded-lg object-cover"
-              />
-              <span
+            <div key={template.id} className="min-w-0">
+              <button
+                type="button"
+                data-template-id={template.id}
+                onClick={() => onChoose(template)}
                 className={cn(
-                  'absolute top-3 end-3 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground transition-opacity',
-                  selectedId === template.id ? 'opacity-100' : 'opacity-0'
+                  'group relative w-full rounded-xl border p-1.5 text-start transition-colors hover:border-primary/60',
+                  selectedId === template.id &&
+                    'border-primary bg-primary/10 ring-1 ring-primary'
                 )}
               >
-                <IconCheck className="size-3.5" />
-              </span>
-              <p className="mt-2 truncate px-1 text-xs font-medium">
-                {displayedTemplate.name}
-              </p>
-            </button>
+                <img
+                  src={template.coverUrl}
+                  alt={displayedTemplate.name}
+                  className="aspect-[3/4] w-full rounded-lg object-cover"
+                />
+                <span
+                  className={cn(
+                    'absolute top-3 end-3 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground transition-opacity',
+                    selectedId === template.id ? 'opacity-100' : 'opacity-0'
+                  )}
+                >
+                  <IconCheck className="size-3.5" />
+                </span>
+                <p className="mt-2 truncate px-1 text-xs font-medium">
+                  {displayedTemplate.name}
+                </p>
+              </button>
+              <a
+                href={getPathWithLocale(`/templates/${template.id}`, locale)}
+                className="mt-1 block truncate px-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+              >
+                {locale === 'zh' ? '查看模板详情' : 'View template details'}
+              </a>
+            </div>
           );
         })}
       </div>

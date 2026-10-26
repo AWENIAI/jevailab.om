@@ -58,6 +58,25 @@ describe('renderSitemap', () => {
     expect(urls[0]).not.toContain('alternate');
   });
 
+  it('emits localized template detail URLs', () => {
+    const urls = entries(
+      renderSitemap('https://example.com', [
+        {
+          path: '/templates/image-template-1015',
+          availableLocales: ['en', 'zh'],
+        },
+      ])
+    );
+
+    expect(urls).toHaveLength(2);
+    expect(urls.map((url) => url.match(/<loc>(.*?)<\/loc>/)?.[1])).toEqual(
+      expect.arrayContaining([
+        'https://example.com/templates/image-template-1015',
+        'https://example.com/zh/templates/image-template-1015',
+      ])
+    );
+  });
+
   it('does not emit ignored changefreq or priority hints', () => {
     const xml = renderSitemap('https://example.com', [
       { path: '/', lastmod: '2026-10-21' },
