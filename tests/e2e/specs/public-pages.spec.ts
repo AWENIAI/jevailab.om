@@ -84,19 +84,34 @@ test.describe('public page smoke coverage', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 
-  test('redirects the retired AI route to the localized creator page', async ({
+  test('permanently redirects the retired AI route to the localized homepage', async ({
     page,
+    request,
   }) => {
+    const englishRedirect = await request.get('/ai', {
+      maxRedirects: 0,
+    });
+    expect(englishRedirect.status()).toBe(301);
+    expect(englishRedirect.headers().location).toBe('/');
+
+    const chineseRedirect = await request.get('/zh/ai', {
+      maxRedirects: 0,
+    });
+    expect(chineseRedirect.status()).toBe(301);
+    expect(chineseRedirect.headers().location).toBe('/zh/');
+
     await page.goto('/ai');
-    await expect(page).toHaveURL(/\/create\/?$/);
+    await expect(page).toHaveURL(/\/$/);
     await expect(
-      page.getByRole('heading', { name: 'AI Image Creator' })
+      page.getByRole('heading', {
+        name: 'Create AI images from a template and your words',
+      })
     ).toBeVisible();
 
     await page.goto('/zh/ai');
-    await expect(page).toHaveURL(/\/zh\/create\/?$/);
+    await expect(page).toHaveURL(/\/zh\/?$/);
     await expect(
-      page.getByRole('heading', { name: 'AI 图片创作工具' })
+      page.getByRole('heading', { name: '从模板与文字，创作你的 AI 图片' })
     ).toBeVisible();
   });
 
