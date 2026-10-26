@@ -22,6 +22,7 @@ import { Route as legalsPrivacyRouteImport } from './routes/(legals)/privacy'
 import { Route as legalsTermsRouteImport } from './routes/(legals)/terms'
 import { Route as pagesAboutRouteImport } from './routes/(pages)/about'
 import { Route as pagesAiRouteImport } from './routes/(pages)/ai'
+import { Route as pagesAiPosterMakerRouteImport } from './routes/(pages)/ai-poster-maker'
 import { Route as pagesChangelogRouteImport } from './routes/(pages)/changelog'
 import { Route as pagesContactRouteImport } from './routes/(pages)/contact'
 import { Route as pagesCreateRouteImport } from './routes/(pages)/create'
@@ -123,6 +124,11 @@ const pagesAboutRoute = pagesAboutRouteImport.update({
 const pagesAiRoute = pagesAiRouteImport.update({
   id: '/(pages)/ai',
   path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const pagesAiPosterMakerRoute = pagesAiPosterMakerRouteImport.update({
+  id: '/(pages)/ai-poster-maker',
+  path: '/ai-poster-maker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const pagesChangelogRoute = pagesChangelogRouteImport.update({
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof legalsTermsRoute
   '/about': typeof pagesAboutRoute
   '/ai': typeof pagesAiRoute
+  '/ai-poster-maker': typeof pagesAiPosterMakerRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
   '/create': typeof pagesCreateRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/terms': typeof legalsTermsRoute
   '/about': typeof pagesAboutRoute
   '/ai': typeof pagesAiRoute
+  '/ai-poster-maker': typeof pagesAiPosterMakerRoute
   '/changelog': typeof pagesChangelogRoute
   '/contact': typeof pagesContactRoute
   '/create': typeof pagesCreateRoute
@@ -427,6 +435,7 @@ export interface FileRoutesById {
   '/(legals)/terms': typeof legalsTermsRoute
   '/(pages)/about': typeof pagesAboutRoute
   '/(pages)/ai': typeof pagesAiRoute
+  '/(pages)/ai-poster-maker': typeof pagesAiPosterMakerRoute
   '/(pages)/changelog': typeof pagesChangelogRoute
   '/(pages)/contact': typeof pagesContactRoute
   '/(pages)/create': typeof pagesCreateRoute
@@ -481,6 +490,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/about'
     | '/ai'
+    | '/ai-poster-maker'
     | '/changelog'
     | '/contact'
     | '/create'
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/about'
     | '/ai'
+    | '/ai-poster-maker'
     | '/changelog'
     | '/contact'
     | '/create'
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/(legals)/terms'
     | '/(pages)/about'
     | '/(pages)/ai'
+    | '/(pages)/ai-poster-maker'
     | '/(pages)/changelog'
     | '/(pages)/contact'
     | '/(pages)/create'
@@ -635,6 +647,7 @@ export interface RootRouteChildren {
   legalsTermsRoute: typeof legalsTermsRoute
   pagesAboutRoute: typeof pagesAboutRoute
   pagesAiRoute: typeof pagesAiRoute
+  pagesAiPosterMakerRoute: typeof pagesAiPosterMakerRoute
   pagesChangelogRoute: typeof pagesChangelogRoute
   pagesContactRoute: typeof pagesContactRoute
   pagesCreateRoute: typeof pagesCreateRoute
@@ -749,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof pagesAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/ai-poster-maker': {
+      id: '/(pages)/ai-poster-maker'
+      path: '/ai-poster-maker'
+      fullPath: '/ai-poster-maker'
+      preLoaderRoute: typeof pagesAiPosterMakerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(pages)/changelog': {
@@ -1095,6 +1115,7 @@ const rootRouteChildren: RootRouteChildren = {
   legalsTermsRoute: legalsTermsRoute,
   pagesAboutRoute: pagesAboutRoute,
   pagesAiRoute: pagesAiRoute,
+  pagesAiPosterMakerRoute: pagesAiPosterMakerRoute,
   pagesChangelogRoute: pagesChangelogRoute,
   pagesContactRoute: pagesContactRoute,
   pagesCreateRoute: pagesCreateRoute,

@@ -16,6 +16,7 @@ export const PUBLIC_ROUTES = [
   { path: '/', locales: ['en', 'zh'] },
   { path: '/create', locales: ['en', 'zh'] },
   { path: '/launch-pricing', locales: ['en', 'zh'] },
+  { path: '/ai-poster-maker', locales: ['en', 'zh'] },
   { path: '/blog', locales: ['en', 'zh'] },
 ] as const satisfies readonly PublicRoute[];
 

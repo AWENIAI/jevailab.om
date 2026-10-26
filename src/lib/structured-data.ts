@@ -1,4 +1,5 @@
 import { websiteConfig } from '@/config/website';
+import { getAiPosterMakerContent } from '@/content/ai-poster-maker';
 import {
   getJevailabHomepageContent,
   type JevailabLocale,
@@ -39,6 +40,7 @@ const PUBLIC_PAGE_TYPES: Record<string, string> = {
   '/roadmap': 'WebPage',
   '/waitlist': 'WebPage',
   '/launch-pricing': 'WebPage',
+  '/ai-poster-maker': 'WebPage',
   '/pricing': 'WebPage',
   '/privacy': 'WebPage',
   '/terms': 'WebPage',
@@ -115,4 +117,40 @@ export function homepageFaqStructuredData(locale: JevailabLocale) {
     url: getCanonicalUrlForLocale('/', locale),
     items: getJevailabHomepageContent(locale).faq,
   });
+}
+
+export function aiPosterMakerStructuredData(options: {
+  url: string;
+  locale: JevailabLocale;
+}) {
+  const content = getJevailabHomepageContent(options.locale);
+  const posterFaq = getAiPosterMakerContent(options.locale).faq;
+  const home = getCanonicalUrlForLocale('/', options.locale);
+  const scripts = [
+    jsonLdScript({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      '@id': `${options.url}#application`,
+      name: 'jevailab AI Poster Maker',
+      applicationCategory: 'DesignApplication',
+      operatingSystem: 'Web',
+      url: options.url,
+      description: getAiPosterMakerContent(options.locale).meta.description,
+      offers: [
+        { '@type': 'Offer', name: 'Starter Pack', price: '9.90', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Pro Monthly', price: '19.90', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Pro Annual', price: '149', priceCurrency: 'USD' },
+      ],
+    }),
+    faqPageStructuredData({ url: `${options.url}#faq`, items: posterFaq }),
+    jsonLdScript({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: content.hero.eyebrow, item: home },
+        { '@type': 'ListItem', position: 2, name: 'AI Poster Maker', item: options.url },
+      ],
+    }),
+  ];
+  return scripts;
 }

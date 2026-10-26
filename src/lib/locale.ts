@@ -101,6 +101,7 @@ export const LOCALIZED_PATHS = new Set([
   '/cookie',
   '/create',
   '/launch-pricing',
+  '/ai-poster-maker',
   '/privacy',
   '/roadmap',
   '/terms',
