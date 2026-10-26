@@ -25,13 +25,13 @@ describe('sitemap route coverage', () => {
 
   it('reports allowlist paths missing from the route tree', () => {
     const gaps = getRouteCoverageGaps(
-      publicPaths.filter((path) => path !== '/roadmap')
+      publicPaths.filter((path) => path !== '/create')
     );
 
     expect(gaps.missingFromSitemap).toEqual([]);
-    expect(gaps.missingFromRouteTree).toEqual(['/roadmap']);
+    expect(gaps.missingFromRouteTree).toEqual(['/create']);
     expect(formatRouteCoverageWarning(gaps)).toContain(
-      'PUBLIC_ROUTES declares a path missing from the route tree: /roadmap'
+      'PUBLIC_ROUTES declares a path missing from the route tree: /create'
     );
   });
 

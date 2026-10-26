@@ -15,15 +15,7 @@ export type PublicRoute = {
 export const PUBLIC_ROUTES = [
   { path: '/', locales: ['en', 'zh'] },
   { path: '/create', locales: ['en', 'zh'] },
-  { path: '/about', locales: ['en', 'zh'] },
-  { path: '/changelog', locales: ['en', 'zh'] },
-  { path: '/roadmap', locales: ['en', 'zh'] },
-  { path: '/contact', locales: ['en', 'zh'] },
-  { path: '/waitlist', locales: ['en', 'zh'] },
   { path: '/launch-pricing', locales: ['en', 'zh'] },
-  { path: '/terms', locales: ['en', 'zh'] },
-  { path: '/privacy', locales: ['en', 'zh'] },
-  { path: '/cookie', locales: ['en', 'zh'] },
   { path: '/blog', locales: ['en', 'zh'] },
 ] as const satisfies readonly PublicRoute[];
 

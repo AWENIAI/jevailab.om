@@ -27,6 +27,14 @@ export const NON_INDEXABLE_ROUTE_PATHS = [
   '/test-error',
   '/ai',
   '/pricing',
+  '/about',
+  '/changelog',
+  '/contact',
+  '/cookie',
+  '/privacy',
+  '/roadmap',
+  '/terms',
+  '/waitlist',
 ] as const;
 
 function matchesPathPrefix(path: string, rule: string): boolean {

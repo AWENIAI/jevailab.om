@@ -86,26 +86,15 @@ describe('renderSitemap', () => {
       'https://example.com/zh/',
       'https://example.com/create',
       'https://example.com/zh/create',
-      'https://example.com/about',
-      'https://example.com/zh/about',
-      'https://example.com/changelog',
-      'https://example.com/zh/changelog',
-      'https://example.com/roadmap',
-      'https://example.com/zh/roadmap',
-      'https://example.com/contact',
-      'https://example.com/zh/contact',
-      'https://example.com/waitlist',
-      'https://example.com/zh/waitlist',
       'https://example.com/launch-pricing',
       'https://example.com/zh/launch-pricing',
-      'https://example.com/terms',
-      'https://example.com/zh/terms',
-      'https://example.com/privacy',
-      'https://example.com/zh/privacy',
-      'https://example.com/cookie',
-      'https://example.com/zh/cookie',
       'https://example.com/blog',
       'https://example.com/zh/blog',
     ]);
+
+    expect(urls.join('\n')).not.toMatch(
+      /\/(?:terms|privacy|cookie|changelog|roadmap|contact|waitlist|about)(?:\/?|\b)/
+    );
+    expect(urls.join('\n')).not.toContain('/ai');
   });
 });
