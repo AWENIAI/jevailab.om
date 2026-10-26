@@ -46,13 +46,13 @@ type CreatePageContent = {
 
 const en: CreatePageContent = {
   meta: {
-    title: 'AI Image Creator',
+    title: 'AI Image Creator — Free Online, No Login',
     description:
       'Use the jevailab image workspace to choose a template, describe your idea, choose a ratio, review the server credit quote, and create a still image.',
   },
   hero: {
     eyebrow: 'jevailab image workspace',
-    h1: 'AI Image Creator',
+    h1: 'Create an image from a photo or a prompt',
     description:
       'This is the working image tool. Choose a published template or free creation, write the visual direction, select a supported ratio, and review the server quote before you submit.',
     workspaceLabel: 'Create an image',

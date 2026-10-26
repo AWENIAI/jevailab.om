@@ -15,7 +15,9 @@ describe('AI image creator page content', () => {
     expect(content.meta.title.trim()).not.toHaveLength(0);
     expect(content.meta.description.trim()).not.toHaveLength(0);
     expect(content.hero.h1).toBe(
-      locale === 'en' ? 'AI Image Creator' : 'AI 图片创作工具'
+      locale === 'en'
+        ? 'Create an image from a photo or a prompt'
+        : 'AI 图片创作工具'
     );
     expect(content.workflow.steps).toHaveLength(5);
     expect(content.ratios.items.map((item) => item.ratio)).toEqual([
