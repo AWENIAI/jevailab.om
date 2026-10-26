@@ -2,17 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
 import { baseLocale, locales, localizeHref } from '@/lib/locale';
 import { ROBOTS_DISALLOWED_PATHS } from '@/lib/indexing-policy';
-
-function getDisallowRules() {
-  return ROBOTS_DISALLOWED_PATHS.flatMap((path) => [
-    path,
-    ...locales
-      .filter((locale) => locale !== baseLocale)
-      .map((locale) => localizeHref(path, { locale })),
-  ])
-    .map((path) => `Disallow: ${path}`)
-    .join('\n');
-}
+import { buildRobotsTxt } from '@/lib/robots';
 
 /**
  * Dynamic robots.txt
@@ -23,11 +13,13 @@ export const Route = createFileRoute('/robots.txt')({
     handlers: {
       GET: async () => {
         const base = getBaseUrl().replace(/\/$/, '');
-        const robots = `User-agent: *
-Allow: /
-${getDisallowRules()}
-
-Sitemap: ${base}/sitemap.xml`;
+        const disallowRules = ROBOTS_DISALLOWED_PATHS.flatMap((path) => [
+          path,
+          ...locales
+            .filter((locale) => locale !== baseLocale)
+            .map((locale) => localizeHref(path, { locale })),
+        ]);
+        const robots = buildRobotsTxt(base, disallowRules);
 
         return new Response(robots, {
           headers: {
