@@ -39,6 +39,9 @@ test.describe('public page smoke coverage', () => {
 
     expect(html).toContain('image-template-1015');
     expect(html).toContain('/images/image-templates/1015.png');
+    expect(html).toContain('image-template-1016');
+    expect(html).toContain('image-template-1025');
+    expect(html).toContain('/images/image-templates/1025.png');
   });
 
   test('publishes crawlable template detail pages and sitemap entries', async ({
@@ -56,6 +59,17 @@ test.describe('public page smoke coverage', () => {
     expect(await sitemapResponse.text()).toContain(
       '/templates/image-template-1015'
     );
+    expect(await sitemapResponse.text()).toContain(
+      '/templates/image-template-1025'
+    );
+
+    const newDetailResponse = await request.get(
+      '/templates/image-template-1025'
+    );
+    expect(newDetailResponse.ok()).toBeTruthy();
+    const newDetailHtml = await newDetailResponse.text();
+    expect(newDetailHtml).toContain('Oversized Surreal Fashion Poster');
+    expect(newDetailHtml).toContain('/images/image-templates/1025.png');
   });
 
   test('defaults to English and light mode without the retired AI tab', async ({

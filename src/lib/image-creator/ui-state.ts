@@ -645,6 +645,136 @@ const spreadsheetTemplateCopy: Record<string, SpreadsheetTemplateCopy> = {
       category: 'Image creation',
     },
   },
+  'image-template-1016': {
+    zh: {
+      name: '阳光日插画海报',
+      description: '把照片转化为明亮、轻快的夏日插画故事海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Sunshine Day Illustrated Poster',
+      description:
+        'A bright summer illustration poster with warm light and playful botanical forms.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1017': {
+    zh: {
+      name: '春日花园故事海报',
+      description: '花朵、动物与户外日常组成的温柔春日海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Spring Garden Story Poster',
+      description:
+        'A gentle spring poster combining flowers, animals, and everyday outdoor moments.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1018': {
+    zh: {
+      name: '玻璃光影梦境海报',
+      description: '玻璃反射、水波光影和柔和夏日色彩构成的梦幻海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Glass Light Dream Poster',
+      description:
+        'A luminous dreamlike poster with glass reflections and watery summer light.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1019': {
+    zh: {
+      name: '旅行风景编辑海报',
+      description: '适合海岸、村落、桥梁与安静风景故事的旅行海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Travel Landscape Editorial',
+      description:
+        'A refined destination poster for coastlines, villages, bridges, and quiet landscape stories.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1020': {
+    zh: {
+      name: '七种艺术滤镜海报',
+      description: '用多种视觉处理方式展示同一主体的艺术海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Seven Styles Filter Poster',
+      description:
+        'A curated multi-panel poster presenting one subject through several art treatments.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1021': {
+    zh: {
+      name: '世界旅行风景海报',
+      description: '为地标、山川、海岸与旅途记忆打造的电影感旅行海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'World Travel Scenic Poster',
+      description:
+        'A cinematic travel poster for landmarks, mountains, coastlines, and memorable journeys.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1022': {
+    zh: {
+      name: '绿色几何时尚肖像',
+      description: '绿色几何结构与现代时尚人物肖像结合的艺术方向。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Green Geometry Fashion Portrait',
+      description:
+        'A modern fashion portrait with green geometric structures and clean art direction.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1023': {
+    zh: {
+      name: '棱镜玻璃时尚肖像',
+      description: '以玻璃折射、棱镜高光和 luminous contrast 打造的时尚肖像。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Prism Glass Fashion Portrait',
+      description:
+        'A high-fashion portrait shaped by glass refraction, prism highlights, and luminous contrast.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1024': {
+    zh: {
+      name: '自然光视觉研究',
+      description: '自然光、有机形态与克制构图组成的安静视觉海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Natural Light Visual Study',
+      description:
+        'A quiet visual study built from natural light, organic forms, and restrained composition.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1025': {
+    zh: {
+      name: '超大物体超现实时尚海报',
+      description: '用夸张比例和超现实场景打造大胆的时尚编辑海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Oversized Surreal Fashion Poster',
+      description:
+        'A bold editorial poster that turns ordinary subjects into oversized surreal fashion scenes.',
+      category: 'Image creation',
+    },
+  },
 };
 
 function getSpreadsheetTemplateCopy(

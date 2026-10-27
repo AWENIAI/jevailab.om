@@ -1,8 +1,10 @@
 import type { ImageTemplate } from './templates.server';
+import { additionalImageTemplateSeeds } from './additional-templates.server';
 
 // Generated from 产品方案/0901_1015图片文字含源图_中英版.xlsx.
 // This is server-only: basePrompt is intentionally never returned to the browser.
 export const spreadsheetImageTemplateSeeds: readonly ImageTemplate[] = [
+  ...additionalImageTemplateSeeds,
   {
     id: "image-template-1015",
     name: "Summer Sky Editorial Portrait",
