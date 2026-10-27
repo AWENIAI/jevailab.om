@@ -7,10 +7,10 @@ import {
 
 describe('spreadsheet image template catalog', () => {
   it('publishes the source-image templates from newest to oldest', () => {
-    expect(imageTemplateSeeds).toHaveLength(47);
+    expect(imageTemplateSeeds).toHaveLength(49);
     expect(imageTemplateSeeds[0]).toMatchObject({
-      id: 'image-template-1025',
-      coverUrl: '/images/image-templates/1025.png',
+      id: 'image-template-1027',
+      coverUrl: '/images/image-templates/1027.png',
     });
     expect(imageTemplateSeeds.at(-1)).toMatchObject({
       id: 'image-template-0908',
@@ -23,8 +23,10 @@ describe('spreadsheet image template catalog', () => {
       (template) => template.useCase && template.styleFamily
     );
 
-    expect(classifiedTemplates).toHaveLength(16);
+    expect(classifiedTemplates).toHaveLength(18);
     expect(classifiedTemplates.map(({ id }) => id)).toEqual([
+      'image-template-1027',
+      'image-template-1026',
       'image-template-1025',
       'image-template-1024',
       'image-template-1023',

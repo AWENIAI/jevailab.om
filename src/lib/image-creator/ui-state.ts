@@ -166,6 +166,32 @@ type LocalizedTemplateCopy = Pick<
 type SpreadsheetTemplateCopy = Partial<Record<Locale, LocalizedTemplateCopy>>;
 
 const spreadsheetTemplateCopy: Record<string, SpreadsheetTemplateCopy> = {
+  'image-template-1027': {
+    zh: {
+      name: 'Day 57 实验字体海报',
+      description: '主体环绕式巨型实验字体与超大留白构成的编辑海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Day 57 Experimental Type Poster',
+      description:
+        'A subject-centered experimental typography poster with oversized lettering and generous whitespace.',
+      category: 'Image creation',
+    },
+  },
+  'image-template-1026': {
+    zh: {
+      name: '语义字体双联海报',
+      description: '用主题文字重构摄影主体部分轮廓的实验字体双联海报。',
+      category: '图片创作',
+    },
+    en: {
+      name: 'Semantic Typography Double Poster',
+      description:
+        'A semantic typography poster where meaningful lettering reconstructs part of the photographed subject.',
+      category: 'Image creation',
+    },
+  },
   'image-template-1015': {
     zh: {
       name: '夏日云际编辑肖像',

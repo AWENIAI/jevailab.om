@@ -1,4 +1,6 @@
 import type { ImageTemplate } from './templates.server';
+import fullPrompt1026 from './1026-full-prompt.server.txt?raw';
+import fullPrompt1027 from './1027-full-prompt.server.txt?raw';
 
 const sharedNegativePrompt =
   'low quality, distorted details, watermark, unreadable text, extra limbs';
@@ -10,6 +12,44 @@ const posterPrompt = (style: string) =>
   `Translate the reference into ${style}. Do not add logos, watermarks, random text, borders, or unrelated objects.`;
 
 export const additionalImageTemplateSeeds: readonly ImageTemplate[] = [
+  {
+    id: 'image-template-1027',
+    name: 'Day 57 Experimental Type Poster',
+    category: 'Editorial',
+    tags: ['editorial', 'typography', 'fashion', '3:4'],
+    description:
+      'A subject-centered experimental typography poster with oversized lettering and generous whitespace.',
+    coverUrl: '/images/image-templates/1027.png',
+    exampleUrl: '/images/image-templates/1027.png',
+    inputPolicy: 'optional',
+    defaultMode: '2K_HD',
+    defaultRatio: '3:4',
+    defaultCount: 1,
+    useCase: 'personal-brand',
+    styleFamily: 'poster-print',
+    revision: 1,
+    basePrompt: fullPrompt1027,
+    negativePrompt: sharedNegativePrompt,
+  },
+  {
+    id: 'image-template-1026',
+    name: 'Semantic Typography Double Poster',
+    category: 'Editorial',
+    tags: ['editorial', 'typography', 'travel', '3:4'],
+    description:
+      'A semantic typography poster where meaningful lettering reconstructs part of the photographed subject.',
+    coverUrl: '/images/image-templates/1026.png',
+    exampleUrl: '/images/image-templates/1026.png',
+    inputPolicy: 'optional',
+    defaultMode: '2K_HD',
+    defaultRatio: '3:4',
+    defaultCount: 1,
+    useCase: 'travel',
+    styleFamily: 'poster-print',
+    revision: 1,
+    basePrompt: fullPrompt1026,
+    negativePrompt: sharedNegativePrompt,
+  },
   {
     id: 'image-template-1025',
     name: 'Oversized Surreal Fashion Poster',

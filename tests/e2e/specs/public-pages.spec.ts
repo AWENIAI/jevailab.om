@@ -42,6 +42,9 @@ test.describe('public page smoke coverage', () => {
     expect(html).toContain('image-template-1016');
     expect(html).toContain('image-template-1025');
     expect(html).toContain('/images/image-templates/1025.png');
+    expect(html).toContain('image-template-1026');
+    expect(html).toContain('image-template-1027');
+    expect(html).toContain('/images/image-templates/1027.png');
   });
 
   test('publishes crawlable template detail pages and sitemap entries', async ({
@@ -70,6 +73,19 @@ test.describe('public page smoke coverage', () => {
     const newDetailHtml = await newDetailResponse.text();
     expect(newDetailHtml).toContain('Oversized Surreal Fashion Poster');
     expect(newDetailHtml).toContain('/images/image-templates/1025.png');
+
+    for (const templateId of ['1026', '1027']) {
+      const response = await request.get(
+        `/templates/image-template-${templateId}`
+      );
+      expect(response.ok()).toBeTruthy();
+      const templateHtml = await response.text();
+      expect(templateHtml).toContain(
+        `/images/image-templates/${templateId}.png`
+      );
+      expect(templateHtml).not.toContain('主体中心保护');
+      expect(templateHtml).not.toContain('Prompt by @阿文AI实战笔记');
+    }
   });
 
   test('defaults to English and light mode without the retired AI tab', async ({
