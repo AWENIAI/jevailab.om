@@ -102,7 +102,7 @@ test.describe('public page smoke coverage', () => {
     await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
     await expect(
       page.getByRole('heading', {
-        name: 'Create AI images from a template and your words',
+        name: 'AI Poster Maker — Turn a Photo or Prompt into a Poster',
       })
     ).toBeVisible();
     await expect(
@@ -162,7 +162,7 @@ test.describe('public page smoke coverage', () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(
       page.getByRole('heading', {
-        name: 'Create AI images from a template and your words',
+        name: 'AI Poster Maker — Turn a Photo or Prompt into a Poster',
       })
     ).toBeVisible();
 

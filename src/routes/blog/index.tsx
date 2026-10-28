@@ -31,6 +31,7 @@ export const Route = createFileRoute('/blog/')({
     const metadata = seo(path, {
       title: `${m.blog_title()}${pageSuffix} | ${websiteConfig.metadata?.name}`,
       description: m.blog_description(),
+      robots: 'noindex,follow',
     });
     // Pass the current locale explicitly so canonical/prev/next are stable
     // across SSR + CSR regardless of any mid-render locale swap.

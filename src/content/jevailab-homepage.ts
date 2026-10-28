@@ -85,6 +85,7 @@ type JevailabHomepageContent = {
     title: string;
     description: string;
     imageLabel: string;
+    posterMakerAction: string;
   };
   pricing: {
     title: string;
@@ -213,6 +214,7 @@ const zh: JevailabHomepageContent = {
     title: '创作工具',
     description: '选择图片模板与画面比例，按你的创作目标开始。',
     imageLabel: 'AI 图片创作',
+    posterMakerAction: '探索 AI 海报制作器',
   },
   pricing: {
     title: '按创作需求使用积分',
@@ -276,7 +278,7 @@ const zh: JevailabHomepageContent = {
 const en: JevailabHomepageContent = {
   hero: {
     eyebrow: 'jevailab creative workspace',
-    h1: 'Create AI images from a template and your words',
+    h1: 'AI Poster Maker — Turn a Photo or Prompt into a Poster',
     description:
       'Choose a published template, describe your idea, set an image ratio, and create an AI image.',
     primaryAction: 'Create an image',
@@ -415,6 +417,7 @@ const en: JevailabHomepageContent = {
     description:
       'Choose an image template and aspect ratio for what you want to make.',
     imageLabel: 'AI image creator',
+    posterMakerAction: 'Explore AI Poster Maker',
   },
   pricing: {
     title: 'Use credits for the work you create',

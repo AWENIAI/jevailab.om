@@ -26,6 +26,8 @@ export const NON_INDEXABLE_ROUTE_PATHS = [
   '/test-404',
   '/test-error',
   '/ai',
+  '/blog',
+  '/templates',
   '/pricing',
   '/about',
   '/changelog',

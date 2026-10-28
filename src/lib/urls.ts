@@ -7,11 +7,28 @@ import {
   type Locale,
 } from '@/lib/locale';
 
+const VERIFIED_PUBLIC_ORIGIN = 'https://jevailab.com';
+
+function isLoopbackUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Site origin (build-time). Safe to call from both client and server:
  * Vite inlines import.meta.env at build time, so server bundle gets the same value.
  */
 export function getBaseUrl(): string {
+  // Cloudflare runtime vars are not automatically injected into Vite's client
+  // bundle. If a production build misses VITE_BASE_URL, preserve local URLs for
+  // development but never publish localhost as canonical, sitemap, or OG URLs.
+  if (import.meta.env.PROD && isLoopbackUrl(clientEnv.VITE_BASE_URL)) {
+    return VERIFIED_PUBLIC_ORIGIN;
+  }
   return clientEnv.VITE_BASE_URL;
 }
 

@@ -54,7 +54,7 @@ export default function HeroSection({ onSelectTemplate }: HeroSectionProps) {
             <div className="animate-fade-up delay-3 mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-12 sm:gap-4">
               <div className="bg-foreground/10 rounded-xl">
                 <Link
-                  to="/create"
+                  to="/ai-poster-maker"
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'h-10.5 rounded-xl px-5 text-base'
@@ -64,8 +64,7 @@ export default function HeroSection({ onSelectTemplate }: HeroSectionProps) {
                 </Link>
               </div>
               <Link
-                to="/"
-                hash="gallery"
+                to="/create"
                 className={cn(
                   buttonVariants({ size: 'lg', variant: 'outline' }),
                   'h-10.5 rounded-xl px-5'

@@ -279,10 +279,10 @@ export function JevailabHomepageSections({
             </p>
           </div>
           <a
-            href="/create"
+            href="/ai-poster-maker"
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
           >
-            {content.hero.primaryAction}
+            {content.tools.posterMakerAction}
             <IconArrowRight
               className="size-4 rtl:rotate-180"
               aria-hidden="true"

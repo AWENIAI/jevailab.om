@@ -29,6 +29,7 @@ export const Route = createFileRoute('/(pages)/templates/$templateId')({
     const metadata = seo(path, {
       title,
       description,
+      robots: 'noindex,follow',
       keywords: [
         'AI poster template',
         'AI art poster generator',

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AUTO_GENERATED_PUBLIC_ROUTE_PATTERNS,
+  CURATED_SITEMAP_BLOG_SLUGS,
   extractRouteTreePathsFromSource,
   formatRouteCoverageWarning,
   getRouteCoverageGaps,
@@ -9,10 +11,24 @@ import {
 const publicPaths = PUBLIC_ROUTES.map((route) => route.path);
 
 describe('sitemap route coverage', () => {
+  it('keeps template detail routes out of the curated sitemap', () => {
+    expect(PUBLIC_ROUTES.map((route) => route.path)).toEqual([
+      '/',
+      '/create',
+      '/launch-pricing',
+      '/ai-poster-maker',
+    ]);
+    expect(AUTO_GENERATED_PUBLIC_ROUTE_PATTERNS).toEqual(['/blog/$slug']);
+    expect(CURATED_SITEMAP_BLOG_SLUGS).toEqual([
+      'best-ai-poster-makers-2026',
+    ]);
+  });
+
   it('reports public routes that are missing from the allowlist', () => {
     const gaps = getRouteCoverageGaps([
       ...publicPaths,
       '/blog/$slug',
+      '/templates/$templateId',
       '/template-gallery',
     ]);
 

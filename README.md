@@ -1,8 +1,18 @@
 # jevailab
 
-Create More with AI, Keep Your Workflow Private
+Create private AI images from a visual template and a clear prompt.
 
-jevailab is a private AI image creation workspace for turning photos, templates, and ideas into finished images.
+jevailab is a private AI image workspace for turning a visual direction and
+your words into finished still images. Choose a published template, describe
+the subject, setting, and mood, select an output ratio, and review the credit
+quote before generation.
+
+## AI Poster Maker
+
+[jevailab AI Poster Maker](https://jevailab.com/ai-poster-maker) explains the
+poster workflow, supported ratios, and when an AI-generated visual is a better
+starting point than a manual layout editor. Start a creation at
+[jevailab.com/create](https://jevailab.com/create).
 
 ## Author
 
@@ -10,7 +20,8 @@ This project is maintained by the jevailab team.
 
 ## Documentation
 
-The documentation is available on the [website](https://jevailab.com). It includes guides, tutorials, and detailed explanations of the code. I designed it to be as beginner-friendly as possible, so you can start making money from day one.
+The documentation is available on the [website](https://jevailab.com). It
+includes product guides and implementation notes for the AI image workflow.
 
 If you found anything that could be improved, please let me know.
 

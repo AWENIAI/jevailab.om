@@ -23,6 +23,7 @@ describe('Jevailab homepage sections', () => {
     expect(markup).toContain('data-template-id="image-template-1015"');
     expect(markup).toContain('Summer Sky Editorial Portrait');
     expect(markup).toContain('href="/create"');
+    expect(markup).toContain('href="/ai-poster-maker"');
     expect(markup).not.toContain('href="/#create"');
     expect(markup).not.toContain('The latest image creation template.');
   });
@@ -37,5 +38,11 @@ describe('Jevailab homepage sections', () => {
     expect(markup).toContain('常见问题');
     expect(markup).toContain('默认私密');
     expect(markup).not.toContain('Private by default');
+  });
+
+  it('uses AI Poster Maker in the English homepage H1', async () => {
+    const messages = await import('../../project.inlang/messages/en.json');
+
+    expect(messages.default.home_hero_title).toMatch(/AI Poster Maker/i);
   });
 });

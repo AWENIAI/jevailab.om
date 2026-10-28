@@ -17,8 +17,15 @@ export const PUBLIC_ROUTES = [
   { path: '/create', locales: ['en', 'zh'] },
   { path: '/launch-pricing', locales: ['en', 'zh'] },
   { path: '/ai-poster-maker', locales: ['en', 'zh'] },
-  { path: '/blog', locales: ['en', 'zh'] },
 ] as const satisfies readonly PublicRoute[];
+
+/**
+ * Keep the crawl budget focused on the strongest editorial page until the
+ * remaining blog posts have enough distinct search demand to be introduced.
+ */
+export const CURATED_SITEMAP_BLOG_SLUGS = [
+  'best-ai-poster-makers-2026',
+] as const;
 
 /**
  * Dynamic public routes are generated from content data, not scanned from the
@@ -26,7 +33,6 @@ export const PUBLIC_ROUTES = [
  */
 export const AUTO_GENERATED_PUBLIC_ROUTE_PATTERNS = [
   '/blog/$slug',
-  '/templates/$templateId',
 ] as const;
 
 export type RouteCoverageGap = {

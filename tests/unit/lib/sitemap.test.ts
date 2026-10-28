@@ -109,13 +109,12 @@ describe('renderSitemap', () => {
       'https://example.com/zh/launch-pricing',
       'https://example.com/ai-poster-maker',
       'https://example.com/zh/ai-poster-maker',
-      'https://example.com/blog',
-      'https://example.com/zh/blog',
     ]);
 
     expect(urls.join('\n')).not.toMatch(
       /\/(?:terms|privacy|cookie|changelog|roadmap|contact|waitlist|about)(?:\/?|\b)/
     );
     expect(urls.join('\n')).not.toMatch(/\/ai(?:\/|$)/);
+    expect(urls.join('\n')).not.toContain('/blog');
   });
 });

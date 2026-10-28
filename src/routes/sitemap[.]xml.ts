@@ -5,9 +5,9 @@ import { getSortedPosts } from '@/lib/blog';
 import { getPageLocales } from '@/lib/pages';
 import { websiteConfig } from '@/config/website';
 import { locales, type Locale } from '@/lib/locale';
-import { imageTemplateSeeds } from '@/lib/image-creator/templates.server';
 import { logOperationalEvent } from '@/lib/observability';
 import {
+  CURATED_SITEMAP_BLOG_SLUGS,
   formatRouteCoverageWarning,
   getRouteCoverageGaps,
   normalizeRoutePath,
@@ -89,7 +89,11 @@ export const Route = createFileRoute('/sitemap.xml')({
             { availableLocales: Locale[]; lastmod: string }
           >();
           for (const locale of locales) {
-            for (const post of getSortedPosts(locale)) {
+            for (const post of getSortedPosts(locale).filter((item) =>
+              CURATED_SITEMAP_BLOG_SLUGS.includes(
+                item.slug as (typeof CURATED_SITEMAP_BLOG_SLUGS)[number]
+              )
+            )) {
               const existing = postsBySlug.get(post.slug);
               if (existing) {
                 existing.availableLocales.push(locale);
@@ -109,13 +113,6 @@ export const Route = createFileRoute('/sitemap.xml')({
             });
           }
         }
-        for (const template of imageTemplateSeeds) {
-          pages.push({
-            path: `/templates/${template.id}`,
-            availableLocales: [...locales],
-          });
-        }
-
         const sitemap = renderSitemap(base, pages);
 
         return new Response(sitemap, {
