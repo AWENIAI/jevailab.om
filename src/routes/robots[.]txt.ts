@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
 import { baseLocale, locales, localizeHref } from '@/lib/locale';
 import { ROBOTS_DISALLOWED_PATHS } from '@/lib/indexing-policy';
-import { buildRobotsTxt } from '@/lib/robots';
+import { buildRobotsTxt, getRobotsBaseUrl } from '@/lib/robots';
 
 /**
  * Dynamic robots.txt
@@ -11,8 +11,8 @@ import { buildRobotsTxt } from '@/lib/robots';
 export const Route = createFileRoute('/robots.txt')({
   server: {
     handlers: {
-      GET: async () => {
-        const base = getBaseUrl().replace(/\/$/, '');
+      GET: async ({ request }) => {
+        const base = getRobotsBaseUrl(request.url, getBaseUrl());
         const disallowRules = ROBOTS_DISALLOWED_PATHS.flatMap((path) => [
           path,
           ...locales

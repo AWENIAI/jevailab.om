@@ -7,6 +7,21 @@ const AI_SEARCH_CRAWLERS = [
   'Google-Extended',
 ] as const;
 
+export function getRobotsBaseUrl(requestUrl: string, configuredBaseUrl: string) {
+  const configured = configuredBaseUrl.replace(/\/$/, '');
+
+  try {
+    const requestOrigin = new URL(requestUrl).origin;
+    const isLoopback = /^(https?:\/\/)(localhost|127\.0\.0\.1)(:\d+)?$/i.test(
+      requestOrigin
+    );
+
+    return isLoopback ? configured : requestOrigin;
+  } catch {
+    return configured;
+  }
+}
+
 export function buildRobotsTxt(
   baseUrl: string,
   disallowPaths: readonly string[]
